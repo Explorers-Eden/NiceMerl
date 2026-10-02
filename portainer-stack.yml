@@ -1,0 +1,20 @@
+# Portainer stack for NiceMerl.
+# Paste this into Portainer -> Stacks -> Add stack -> Web editor, then add
+# DISCORD_TOKEN and CHANNEL_ID under "Environment variables".
+services:
+  nicemerl:
+    image: niceron/nicemerl:latest
+    container_name: nicemerl
+    restart: unless-stopped
+    environment:
+      DISCORD_TOKEN: ${DISCORD_TOKEN}
+      CHANNEL_ID: ${CHANNEL_ID}
+      WIKI_URL: ${WIKI_URL:-https://wiki.explorerseden.eu}
+      REINDEX_HOURS: ${REINDEX_HOURS:-6}
+      RESULTS: ${RESULTS:-3}
+      COOLDOWN_SECONDS: ${COOLDOWN_SECONDS:-5}
+    labels:
+      # Only needed if Watchtower runs with --label-enable; harmless otherwise.
+      com.centurylinklabs.watchtower.enable: "true"
+    mem_limit: 256m
+    cpus: 0.5
