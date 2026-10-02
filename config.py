@@ -10,3 +10,5 @@ WIKI_URL = os.getenv("WIKI_URL", "https://wiki.explorerseden.eu").rstrip("/")
 REINDEX_HOURS = float(os.getenv("REINDEX_HOURS") or 6)
 RESULTS = int(os.getenv("RESULTS") or 3)
 COOLDOWN_SECONDS = float(os.getenv("COOLDOWN_SECONDS") or 5)
+# Channel people are pointed to when Merl can't help (#user-help). Set to 0 to leave it out.
+HELP_CHANNEL_ID = int(os.getenv("HELP_CHANNEL_ID") or 1245007015865225256)

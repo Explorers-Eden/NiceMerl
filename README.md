@@ -4,7 +4,7 @@
 
 # NiceMerl
 
-*A fan homage to [Merl](https://minecraft.wiki/w/Earth:Merl), Minecraft Earth's mascot, now helping out on Explorer's Eden.*
+*A fan homage to [Merl](https://minecraft.wiki/w/Minecraft_Support_Virtual_Agent), Minecraft's support assistant, now helping out on Explorer's Eden.*
 
 NiceMerl is a Discord bot that answers questions in one channel by searching [wiki.explorerseden.eu](https://wiki.explorerseden.eu). It replies with the best-matching wiki pages and deep links to the matching sections. The top result shows the relevant sentences or list in full (often the complete answer), and the others show a short excerpt.
 
@@ -33,7 +33,7 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 
 - Any message in the configured channel is treated as a question (one per user every 5 seconds).
 - Saying hi (or @-mentioning her) gets a wave and a short intro.
-- When nothing matches she answers *"I don't know."*, a nod to the [real Merl support agent](https://minecraft.wiki/w/Minecraft_Support_Virtual_Agent).
+- When nothing matches she answers *"I don't know."*, a nod to the [real Merl support agent](https://minecraft.wiki/w/Minecraft_Support_Virtual_Agent), and points people to #user-help.
 - `!reindex` (requires *Manage Server*) refreshes the index right away after wiki edits.
 - To test the search without Discord: `python search.py "how do I get a boss key"`
 
@@ -47,8 +47,21 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 | `REINDEX_HOURS` | `6` | How often to re-download the wiki |
 | `RESULTS` | `3` | Results per answer |
 | `COOLDOWN_SECONDS` | `5` | Per-user cooldown |
+| `HELP_CHANNEL_ID` | `1245007015865225256` | Channel Merl points people to when she can't help (#user-help); `0` turns it off |
 
 Search tuning (stopwords, title/path weights, minimum score) lives at the top of `search.py`.
+
+## In-game version (Fabric mod)
+
+NiceMerl also exists as a server-side Fabric mod for Minecraft **26.3**, in the separate `nicemerl_mod` project ([Explorers-Eden/Nice-Merl](https://github.com/Explorers-Eden/Nice-Merl)). Players don't need to install anything.
+
+- **`/merl <question>`** searches the same wiki with the same search and answers in chat. The answer is visible only to the player who asked, titles link to the wiki, and spoilers are revealed on hover.
+- **Settings questions** (*"is pvp enabled?"*, *"keep inventory settings"*, *"blaze settings"*) list the server's current data pack settings, read live from command storage (`eden:settings`, `kattersstructures:gamerule`). Each setting shows the readable name from its pack's config dialog, e.g. *Equipment Damage: Disabled*, *Keep Inventory Type: Tag List*.
+- **`/nicemerl reindex`** (operators) re-reads the wiki right away.
+- **LuckPerms permission nodes:** `nicemerl.command.merl`, `nicemerl.command.reindex`, `nicemerl.bypass.cooldown`, `nicemerl.settings`.
+- **Releases** are published with GitHub Actions → *Publish Git Release*, using the version in `tools/release_infos.yml` and the notes in `changelog.log`.
+
+The mod re-implements the search in Java (`SearchIndex.java`), so changes to how the search works (stopwords, weights, stemming) need to be made in both `search.py` and the mod. See the mod's README for commands, config and releasing.
 
 ## Assets
 

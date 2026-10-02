@@ -25,7 +25,7 @@ GitHub also rebuilds the image every 6 hours to pick up security updates for Pyt
 1. Go to <https://discord.com/developers/applications> and click **New Application**. Name it **NiceMerl** and click **Create**.
 2. On the **General Information** page:
    - Upload [`assets/avatar.png`](assets/avatar.png) as the **App Icon**.
-   - Optional description: *"Ask me anything about Explorer's Eden! A fan homage to Merl from Minecraft Earth."*
+   - Optional description: *"Ask me anything about Explorer's Eden! A fan homage to Merl from Minecraft."*
 3. In the left sidebar, open **Bot**:
    - Set the **Username** to `NiceMerl` and upload [`assets/avatar.png`](assets/avatar.png) as the bot's **Icon**.
    - Under **Privileged Gateway Intents**, turn on **Message Content Intent** and click **Save Changes**.
@@ -93,6 +93,7 @@ NiceMerl should now appear (offline) in your server's member list.
    | `REINDEX_HOURS` | `6` | How often NiceMerl re-reads the wiki |
    | `RESULTS` | `3` | Pages shown per answer |
    | `COOLDOWN_SECONDS` | `5` | Minimum time between questions per user |
+   | `HELP_CHANNEL_ID` | `1245007015865225256` | Channel Merl points people to when she can't help (#user-help); `0` turns it off |
 
 5. Click **Deploy the stack**.
 
@@ -121,7 +122,7 @@ Post these in the channel:
 |---|---|
 | `hi merl` | wave back and explain what she does |
 | `how do I get a boss key` | explain Boss Keys in full, then link Armory and Raj Raksha |
-| `asdfgh` | answer *"I don't know."*, just like the [real Merl](https://minecraft.wiki/w/Minecraft_Support_Virtual_Agent) |
+| `asdfgh` | answer *"I don't know."*, just like the [real Merl](https://minecraft.wiki/w/Minecraft_Support_Virtual_Agent), and point to #user-help |
 | `!reindex` *(needs Manage Server)* | reply "Reindexed 222 pages." |
 
 <br clear="right">
@@ -171,4 +172,4 @@ docker compose up -d --build
 
 ---
 
-<sub>Merl and Peanut Butter are characters from *Minecraft Earth* © Mojang Studios. Images via the Minecraft Wiki ([Merl](https://minecraft.wiki/w/Earth:Merl), [Support Virtual Agent](https://minecraft.wiki/w/Minecraft_Support_Virtual_Agent)). NiceMerl is an unofficial fan homage and isn't affiliated with or endorsed by Mojang or Microsoft.</sub>
+<sub>Merl and Peanut Butter are characters from *Minecraft* © Mojang Studios. Images via the Minecraft Wiki ([Merl](https://minecraft.wiki/w/Earth:Merl), [Support Virtual Agent](https://minecraft.wiki/w/Minecraft_Support_Virtual_Agent)). NiceMerl is an unofficial fan homage and isn't affiliated with or endorsed by Mojang or Microsoft.</sub>

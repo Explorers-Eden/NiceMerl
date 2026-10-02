@@ -16,7 +16,7 @@ log = logging.getLogger("nicemerl")
 BOT_NAME = "NiceMerl"
 MERL_PINK = 0xF06EAA
 ASSETS = Path(__file__).parent / "assets"
-FOOTER = "NiceMerl · a fan homage to Merl from Minecraft Earth"
+FOOTER = "NiceMerl · a fan homage to Merl from Minecraft"
 
 FOUND_LINES = [
     "Ooh, I know where to look!",
@@ -115,16 +115,22 @@ class NiceMerl(discord.Client):
             title = s.page_title if s.heading in ("", s.page_title) else f"{s.page_title} › {s.heading}"
             quote = "\n".join(f"> {line}" for line in r.excerpt.split("\n"))
             blocks.append(f"**[{title}]({url})**\n-# {project_name(s.path)}\n{quote}")
+        help_line = f"\n\n-# Still stuck? Ask the community in {help_channel()}." if config.HELP_CHANNEL_ID else ""
         return self.branded(discord.Embed(
             title=random.choice(FOUND_LINES),
-            description="\n\n".join(blocks)[:4096],
+            description="\n\n".join(blocks)[:4096 - len(help_line)] + help_line,
             color=MERL_PINK,
         ))
 
     def not_found_embed(self) -> discord.Embed:
         return self.branded(discord.Embed(
             title=random.choice(NOT_FOUND_LINES),
-            description=f"-# Try other keywords, or have a look around the [wiki]({config.WIKI_URL}) yourself.",
+            description=(
+                f"-# Try other keywords, have a look around the [wiki]({config.WIKI_URL}) yourself, "
+                f"or post your question in {help_channel()} so someone can help you."
+                if config.HELP_CHANNEL_ID else
+                f"-# Try other keywords, or have a look around the [wiki]({config.WIKI_URL}) yourself."
+            ),
             color=MERL_PINK,
         ))
 
@@ -135,10 +141,17 @@ class NiceMerl(discord.Client):
                 "Ask me anything about the Explorer's Eden projects, like structures, enchantments, "
                 "mob variants or warping, and I'll find the right page in the "
                 f"[wiki]({config.WIKI_URL}) for you!\n\n"
-                "-# Try: *how do I get a boss key?*"
+                + (f"If I can't help, post your question in {help_channel()} and someone else will.\n\n"
+                   if config.HELP_CHANNEL_ID else "")
+                + "-# Try: *how do I get a boss key?*"
             ),
             color=MERL_PINK,
         ))
+
+
+def help_channel() -> str:
+    """Channel mention for #user-help; Discord renders it as a clickable channel name."""
+    return f"<#{config.HELP_CHANNEL_ID}>"
 
 
 def project_name(path: str) -> str:
