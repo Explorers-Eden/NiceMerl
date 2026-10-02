@@ -25,10 +25,11 @@ FOUND_LINES = [
     "Let's go exploring!",
     "Found it! I think…",
 ]
+# Homage to the real Merl support agent's famous non-answers.
 NOT_FOUND_LINES = [
-    "Hmm, I couldn't find that one, even Peanut Butter is stumped!",
-    "I looked everywhere but the wiki doesn't seem to cover that.",
-    "No luck this time! Maybe try different words?",
+    "I don't know.",
+    "I don't know the answer to that. Can I help you with a question related to Explorer's Eden?",
+    "I don't know how to help with that. Can I assist you with a question related to Explorer's Eden?",
 ]
 GREETING = re.compile(r"^\W*(hi|hey|hello|hallo|heya|hiya|yo|sup|moin|servus|merl|nicemerl)\b", re.I)
 
@@ -94,7 +95,7 @@ class NiceMerl(discord.Client):
         if results:
             await message.reply(embed=self.results_embed(results), mention_author=False)
         else:
-            await self.send_with_thumbnail(message, self.not_found_embed(), "thumb_notfound.png")
+            await self.send_with_thumbnail(message, self.not_found_embed(), "thumb_idk.png")
 
     async def send_with_thumbnail(self, message: discord.Message, embed: discord.Embed, image: str):
         file = discord.File(ASSETS / image, filename=image)
@@ -112,7 +113,8 @@ class NiceMerl(discord.Client):
             s = r.section
             url = f"{config.WIKI_URL}/{s.path}" + (f"#{s.anchor}" if s.anchor else "")
             title = s.page_title if s.heading in ("", s.page_title) else f"{s.page_title} › {s.heading}"
-            blocks.append(f"**[{title}]({url})**\n-# {project_name(s.path)}\n> {r.excerpt}")
+            quote = "\n".join(f"> {line}" for line in r.excerpt.split("\n"))
+            blocks.append(f"**[{title}]({url})**\n-# {project_name(s.path)}\n{quote}")
         return self.branded(discord.Embed(
             title=random.choice(FOUND_LINES),
             description="\n\n".join(blocks)[:4096],
@@ -122,7 +124,7 @@ class NiceMerl(discord.Client):
     def not_found_embed(self) -> discord.Embed:
         return self.branded(discord.Embed(
             title=random.choice(NOT_FOUND_LINES),
-            description=f"Try other keywords, or have a look around the [wiki]({config.WIKI_URL}) yourself.",
+            description=f"-# Try other keywords, or have a look around the [wiki]({config.WIKI_URL}) yourself.",
             color=MERL_PINK,
         ))
 

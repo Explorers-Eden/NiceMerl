@@ -11,6 +11,7 @@ from bs4 import BeautifulSoup, NavigableString, Tag
 log = logging.getLogger(__name__)
 
 HEADINGS = ("h1", "h2", "h3")
+LINE_BLOCKS = ("p", "li", "tr", "div", "dt", "dd", "blockquote", "pre", "details", "h4", "h5", "h6")
 # Marks text inside collapsed <details> blocks so excerpts can show it as a Discord spoiler.
 SPOILER_START, SPOILER_END = "\u27e6", "\u27e7"
 PAGE_LIST_QUERY = "{ pages { list(limit: 5000) { path title locale isPublished } } }"
@@ -49,12 +50,25 @@ def extract_sections(html: str, path: str, page_title: str) -> list[Section]:
             summary.decompose()
         details.insert(0, NavigableString(f" {SPOILER_START} "))
         details.append(NavigableString(f" {SPOILER_END} "))
+    # Keep the page's line structure (paragraphs, list items, table rows) so
+    # excerpts can show whole sentences and bullet lists.
+    for tr in content.find_all("tr"):
+        cells = [c.get_text(" ", strip=True) for c in tr.find_all(["td", "th"])]
+        tr.clear()
+        tr.append(NavigableString(" | ".join(c for c in cells if c)))
+    for li in content.find_all("li"):
+        li.insert(0, NavigableString("• "))
+    for tag in content.find_all(LINE_BLOCKS):
+        tag.append(NavigableString("\n"))
+    for br in content.find_all("br"):
+        br.replace_with(NavigableString("\n"))
 
     sections = [Section(path, page_title, page_title, "", "")]
     parts: list[str] = []
 
     def flush():
-        sections[-1].text = re.sub(r"\s+", " ", " ".join(parts)).strip()
+        text = re.sub(r"[^\S\n]+", " ", "".join(parts))
+        sections[-1].text = re.sub(r" ?\n[\s]*", "\n", text).strip()
         parts.clear()
 
     for node in content.descendants:

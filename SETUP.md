@@ -109,7 +109,7 @@ Fetched 1500 sections from 222 pages
 
 NiceMerl now runs permanently and restarts on her own after crashes or reboots.
 
-**Watchtower:** if your Watchtower runs with `--label-enable` (it only updates labelled containers), the stack already sets `com.centurylinklabs.watchtower.enable=true`. Otherwise it picks NiceMerl up automatically.
+**Watchtower** picks NiceMerl up automatically, with no extra setup.
 
 ## 6. Say hi
 
@@ -120,8 +120,8 @@ Post these in the channel:
 | You write | NiceMerl should… |
 |---|---|
 | `hi merl` | wave back and explain what she does |
-| `how do I get a boss key` | link Boss Key, Armory and Raj Raksha, with excerpts |
-| `asdfgh` | say she couldn't find anything (with Peanut Butter) |
+| `how do I get a boss key` | explain Boss Keys in full, then link Armory and Raj Raksha |
+| `asdfgh` | answer *"I don't know."*, just like the [real Merl](https://minecraft.wiki/w/Minecraft_Support_Virtual_Agent) |
 | `!reindex` *(needs Manage Server)* | reply "Reindexed 222 pages." |
 
 <br clear="right">
@@ -153,7 +153,7 @@ docker compose up -d --build
 
 ## Troubleshooting
 
-<img src="assets/thumb_notfound.png" alt="Merl and Peanut Butter" width="120" align="right">
+<img src="assets/thumb_idk.png" alt="Merl, the support agent" width="120" align="right">
 
 - **NiceMerl is online but never replies:**
   - Check that **Message Content Intent** is on (step 1.3).
@@ -165,10 +165,10 @@ docker compose up -d --build
 - **The GitHub workflow fails at "Login to Docker Hub":** the `DOCKER_USERNAME`/`DOCKER_PASSWORD` secrets are missing or the access token expired (step 3.3).
 - **Portainer can't pull the image:** the image is private and Portainer has no Docker Hub registry login (step 4), or the workflow hasn't run yet.
 - **Code changes don't show up:** check that the workflow run went green in GitHub's Actions tab, then give Watchtower until its next check.
-- **Everything is "couldn't find" right after a restart:** she's still reading the wiki. Give her about 10 seconds.
+- **She says "I don't know" to everything right after a restart:** she's still reading the wiki. Give her about 10 seconds.
 
 <br clear="right">
 
 ---
 
-<sub>Merl and Peanut Butter are characters from *Minecraft Earth* © Mojang Studios. Images via the [Minecraft Wiki](https://minecraft.wiki/w/Earth:Merl). NiceMerl is an unofficial fan homage and isn't affiliated with or endorsed by Mojang or Microsoft.</sub>
+<sub>Merl and Peanut Butter are characters from *Minecraft Earth* © Mojang Studios. Images via the Minecraft Wiki ([Merl](https://minecraft.wiki/w/Earth:Merl), [Support Virtual Agent](https://minecraft.wiki/w/Minecraft_Support_Virtual_Agent)). NiceMerl is an unofficial fan homage and isn't affiliated with or endorsed by Mojang or Microsoft.</sub>

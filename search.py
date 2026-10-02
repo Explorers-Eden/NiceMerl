@@ -25,6 +25,10 @@ PATH_WEIGHT = 2
 K1, B = 1.5, 0.75
 MIN_SCORE = 2.0
 EXCERPT_LEN = 220
+# The top result gets whole sentences / list lines up to this many characters.
+LONG_EXCERPT_LEN = 450
+LONG_EXCERPT_LINES = 8
+SENTENCE_END = re.compile(r"(?<=[.!?])\s+(?=[A-Z0-9\"'(\[])")
 
 
 def _fold(text: str) -> str:
@@ -97,34 +101,39 @@ class Index:
             if score >= MIN_SCORE and score > best.get(s.path, (0.0, -1))[0]:
                 best[s.path] = (score, i)
         ranked = sorted(best.values(), reverse=True)[:limit]
-        return [Result(self.sections[i], score, excerpt(self.sections[i].text, terms)) for score, i in ranked]
+        return [
+            Result(self.sections[i], score, (long_excerpt if rank == 0 else excerpt)(self.sections[i].text, terms))
+            for rank, (score, i) in enumerate(ranked)
+        ]
 
 
-def excerpt(text: str, terms: list[str], length: int = EXCERPT_LEN) -> str:
-    """Returns the window of text with the most query-term hits, hits in bold, spoilers hidden."""
-    words, spoiler = [], []
-    in_spoiler = 0
-    for w in text.split():
-        if w == SPOILER_START:
-            in_spoiler += 1
-        elif w == SPOILER_END:
-            in_spoiler = max(0, in_spoiler - 1)
-        else:
-            words.append(w)
-            spoiler.append(in_spoiler > 0)
-    if not words:
-        return ""
+Word = tuple[str, bool, bool]  # (text, is_query_hit, inside_spoiler)
+
+
+def _units(text: str, terms: list[str]) -> list[tuple[int, list[Word]]]:
+    """Splits section text into sentences / list lines, tagged with their line number."""
     term_set = set(terms)
-    hits = [any(t in term_set for t in tokenize(w)) for w in words]
+    units = []
+    in_spoiler = 0
+    for line_no, line in enumerate(text.split("\n")):
+        for sentence in SENTENCE_END.split(line):
+            words = []
+            for w in sentence.split():
+                if w == SPOILER_START:
+                    in_spoiler += 1
+                elif w == SPOILER_END:
+                    in_spoiler = max(0, in_spoiler - 1)
+                else:
+                    words.append((w, any(t in term_set for t in tokenize(w)), in_spoiler > 0))
+            if words:
+                units.append((line_no, words))
+    return units
 
-    window = 1
-    while window < len(words) and len(" ".join(words[:window + 1])) <= length:
-        window += 1
-    start = max(range(max(1, len(words) - window + 1)), key=lambda s: sum(hits[s:s + window]))
-    end = start + window
 
+def _render(words: list[Word]) -> str:
+    """Formats words for Discord: query hits bold, spoiler runs wrapped in ||…||."""
     out, run = [], []
-    for w, hit, hidden in zip(words[start:end], hits[start:end], spoiler[start:end]):
+    for w, hit, hidden in words:
         w = _escape(w)
         w = f"**{w}**" if hit else w
         if hidden:
@@ -136,12 +145,67 @@ def excerpt(text: str, terms: list[str], length: int = EXCERPT_LEN) -> str:
         out.append(w)
     if run:
         out.append(f"||{' '.join(run)}||")
+    return " ".join(out)
 
-    result = " ".join(out)
+
+def excerpt(text: str, terms: list[str], length: int = EXCERPT_LEN) -> str:
+    """Returns the single-line window of text with the most query-term hits."""
+    words = [w for _, unit in _units(text, terms) for w in unit]
+    if not words:
+        return ""
+    hits = [hit for _, hit, _ in words]
+
+    window = 1
+    while window < len(words) and len(" ".join(w for w, _, _ in words[:window + 1])) <= length:
+        window += 1
+    start = max(range(max(1, len(words) - window + 1)), key=lambda s: sum(hits[s:s + window]))
+    end = start + window
+
+    result = _render(words[start:end])
     if start > 0:
         result = "…" + result
     if end < len(words):
         result += "…"
+    return result
+
+
+def long_excerpt(text: str, terms: list[str], length: int = LONG_EXCERPT_LEN) -> str:
+    """Returns whole sentences / list lines around the best match, one line per wiki line."""
+    units = _units(text, terms)
+    if not units:
+        return ""
+
+    def size(i: int) -> int:
+        return sum(len(w) + 1 for w, _, _ in units[i][1])
+
+    hits = [sum(hit for _, hit, _ in words) for _, words in units]
+    best = max(range(len(units)), key=lambda i: (hits[i], -i))
+    if size(best) > length:
+        return excerpt(text, terms, length)
+
+    lo = hi = best
+    total = size(best)
+
+    def fits(i: int) -> bool:
+        lines = {units[j][0] for j in range(min(lo, i), max(hi, i) + 1)}
+        return total + size(i) <= length and len(lines) <= LONG_EXCERPT_LINES
+
+    while True:
+        if hi + 1 < len(units) and fits(hi + 1):
+            hi += 1
+            total += size(hi)
+        elif lo > 0 and fits(lo - 1):
+            lo -= 1
+            total += size(lo)
+        else:
+            break
+
+    lines: dict[int, list[Word]] = {}
+    for line_no, words in units[lo:hi + 1]:
+        lines.setdefault(line_no, []).extend(words)
+    result = "\n".join(_render(words) for words in lines.values())
+    if hi + 1 < len(units):
+        result += " …"
     return result
 
 
