@@ -27,7 +27,7 @@ Neither uses AI or a paid API, so there are no running costs. Both download the 
 └── .github/workflows/
     ├── docker.yml           bot → Docker Hub (on push to bot/, and every 6 h)
     ├── mod-build.yml        mod → test build (on push to mod/)
-    └── mod-release.yml      mod → GitHub release (run by hand)
+    └── mod-release.yml      mod → GitHub release, keeps the newest per MC version (run by hand)
 ```
 
 > ⚠️ The mod re-implements the bot's search in Java ([`SearchIndex.java`](mod/src/main/java/eu/explorerseden/nicemerl/SearchIndex.java) and [`search.py`](bot/search.py)). Changes to stopwords, weights, stemming or scoring need to be made in both.
@@ -146,7 +146,11 @@ Labels are sent as translation keys with the English fallback, so players with a
 3. If the Minecraft version changed, update `minecraft_version`, `fabric_api_version` and `loader_version` in [`mod/gradle.properties`](mod/gradle.properties) (see <https://fabricmc.net/develop>) and `"minecraft"` in `mod/src/main/resources/fabric.mod.json`.
 4. Push, then on GitHub run **Actions → Publish Mod Release → Run workflow**.
 
-The workflow builds `nice-merl-<version>.jar` and creates or updates the GitHub release `mod-v<version>`, using the changelog as release notes. It fails early if `gradle.properties` and `release_infos.yml` name different Minecraft versions.
+The workflow builds the mod and publishes it as the GitHub release `mod-v<version>-mc<minecraft>` with the file `nice-merl-<version>-mc<minecraft>.jar`, e.g. `mod-v1.0.0-mc26.3`. The changelog becomes the release notes, and re-running the same version updates its release.
+
+**Only the newest release per Minecraft version is kept.** Publishing `mod-v1.1.0-mc26.3` deletes `mod-v1.0.0-mc26.3` and its tag, while releases for other Minecraft versions (e.g. `mod-v1.0.0-mc26.2`) stay. The Minecraft version is the first one listed under `Versions`, the one the jar is built for.
+
+The workflow fails early if `gradle.properties` and `release_infos.yml` name different Minecraft versions.
 
 ### Development
 

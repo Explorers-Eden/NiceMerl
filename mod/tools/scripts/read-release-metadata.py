@@ -53,8 +53,12 @@ outputs = {
     "name": name,
     "version_number": version_number,
     "release_name": release_name,
-    "tag_name": f"mod-v{version_number}",
-    "jar_name": f"{slug}-{version_number}.jar",
+    # The Minecraft version is part of the tag so older releases for the same
+    # version can be cleaned up (see delete-older-releases.sh).
+    "mc_version": game_versions[0],
+    "tag_name": f"mod-v{version_number}-mc{game_versions[0]}",
+    "jar_name": f"{slug}-{version_number}-mc{game_versions[0]}.jar",
+    "built_jar": f"{slug}-{version_number}.jar",
     "version_type": version_type,
     "is_prerelease": "true" if version_type in {"beta", "alpha"} else "false",
     "changelog_path": changelog_path,

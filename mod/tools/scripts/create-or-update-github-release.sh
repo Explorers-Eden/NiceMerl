@@ -19,4 +19,6 @@ else
     $PRERELEASE_FLAG
 fi
 
+# Gradle names the jar <slug>-<version>.jar; the release file also carries the Minecraft version.
+cp "build/libs/$BUILT_JAR" "build/libs/$JAR_NAME"
 gh release upload "$TAG_NAME" "build/libs/$JAR_NAME" --clobber
