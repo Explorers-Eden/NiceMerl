@@ -1,0 +1,8 @@
+# Minecraft Version(s): 26.3
+## Changes:
+- Initial release
+- `/merl <question>` searches the Explorer's Eden wiki and answers privately in chat, with clickable links to the matching sections
+- Wiki spoilers are hidden and revealed on hover
+- `/nicemerl reindex` (operators) re-reads the wiki right away
+
+## Fixes:

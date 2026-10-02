@@ -1,0 +1,28 @@
+{
+	"schemaVersion": 1,
+	"id": "nicemerl",
+	"version": "${version}",
+	"name": "NiceMerl",
+	"description": "Ask Merl about the wiki in-game with /merl <question>. A fan homage to Merl from Minecraft.",
+	"authors": [
+		"NiceRon"
+	],
+	"contact": {
+		"homepage": "https://explorerseden.eu",
+		"sources": "https://github.com/NiceKaleido/NiceMerl"
+	},
+	"license": "GPL-3.0-only",
+	"icon": "assets/nicemerl/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"eu.explorerseden.nicemerl.NiceMerl"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.3",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}

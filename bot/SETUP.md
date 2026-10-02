@@ -7,7 +7,7 @@
 This guide takes you from nothing to a running NiceMerl in your Discord server, in about 15 minutes. You'll need:
 
 - Admin rights on the Discord server
-- A GitHub repo for this project (e.g. `Explorers-Eden/nicemerl`) and a Docker Hub account
+- Access to the [NiceKaleido/NiceMerl](https://github.com/NiceKaleido/NiceMerl) repo and a Docker Hub account
 - Your server with **Portainer** and **Watchtower** running
 
 How updates flow:
@@ -50,28 +50,20 @@ NiceMerl should now appear (offline) in your server's member list.
 2. Right-click the channel NiceMerl should answer in (e.g. `#ask-merl`) and choose **Copy Channel ID**.
 3. If the channel is private, open **Edit Channel → Permissions**, add the **NiceMerl** role, and allow the permissions from step 1.4.
 
-## 3. Push the project to GitHub
+## 3. Set up GitHub to build the image
 
-1. Create a repository on GitHub, e.g. **Explorers-Eden/nicemerl** (private is fine).
-2. Push this folder to it:
-   ```sh
-   cd discord_bot
-   git init -b main
-   git add .
-   git commit -m "NiceMerl"
-   git remote add origin https://github.com/Explorers-Eden/nicemerl.git
-   git push -u origin main
-   ```
-   `.env` and `.venv` are already in `.gitignore`, so the token can't be committed by accident.
-3. In the repo, open **Settings → Secrets and variables → Actions → New repository secret** and add:
+The code lives in [NiceKaleido/NiceMerl](https://github.com/NiceKaleido/NiceMerl): the bot in `bot/`, the in-game mod in `mod/`. Every push that changes `bot/` builds a new Docker image.
+
+1. In the repo, open **Settings → Secrets and variables → Actions → New repository secret** and add:
 
    | Name | Value |
    |---|---|
    | `DOCKER_USERNAME` | `niceron` |
    | `DOCKER_PASSWORD` | a Docker Hub **access token** (Docker Hub → Account settings → Personal access tokens, *Read & Write*) |
 
-   > 💡 If the org already has these as organization secrets (the old enchantments site used the same names), you can skip this.
-4. Open the **Actions** tab, select **Build and Push Docker Image**, then **Run workflow**. After 1–2 minutes, `niceron/nicemerl:latest` should appear on Docker Hub.
+2. Open the **Actions** tab, select **Build and Push Docker Image**, then **Run workflow**. After 1–2 minutes, `niceron/nicemerl:latest` should appear on Docker Hub.
+
+`.env` and `.venv` are in `.gitignore`, so a local token can't be committed by accident.
 
 ## 4. Create the Portainer stack
 
@@ -133,7 +125,7 @@ Post these in the channel:
 
 | What | How |
 |---|---|
-| Change the bot's code | push to `main`. GitHub builds a new image and Watchtower deploys it on its next check (with the website's once-a-day Watchtower schedule, within a day). |
+| Change the bot's code | push changes in `bot/` to `main`. GitHub builds a new image and Watchtower deploys it on its next check (with the website's once-a-day Watchtower schedule, within a day). |
 | Force a rebuild | GitHub **Actions → Build and Push Docker Image → Run workflow** |
 | Roll back | set the stack image to an older `niceron/nicemerl:sha-<commit>` tag |
 | Change the token/channel | Portainer **Stacks → nicemerl → Environment variables**, then **Update the stack** |
@@ -148,6 +140,7 @@ After you edit the wiki, NiceMerl picks up the changes within 6 hours, or right 
 Clone the repo on any machine with Docker, then:
 
 ```sh
+cd bot
 cp .env.example .env   # fill in DISCORD_TOKEN and CHANNEL_ID
 docker compose up -d --build
 ```
@@ -163,7 +156,7 @@ docker compose up -d --build
 - **Replies have no picture:** she's missing the **Attach Files** permission in that channel.
 - **NiceMerl stays offline:** check the container logs. *Improper token* means `DISCORD_TOKEN` is wrong or was reset (step 1.3).
 - **"DISCORD_TOKEN and CHANNEL_ID must be set":** the environment variables are missing from the Portainer stack (step 4.4).
-- **The GitHub workflow fails at "Login to Docker Hub":** the `DOCKER_USERNAME`/`DOCKER_PASSWORD` secrets are missing or the access token expired (step 3.3).
+- **The GitHub workflow fails at "Login to Docker Hub":** the `DOCKER_USERNAME`/`DOCKER_PASSWORD` secrets are missing or the access token expired (step 3.1).
 - **Portainer can't pull the image:** the image is private and Portainer has no Docker Hub registry login (step 4), or the workflow hasn't run yet.
 - **Code changes don't show up:** check that the workflow run went green in GitHub's Actions tab, then give Watchtower until its next check.
 - **She says "I don't know" to everything right after a restart:** she's still reading the wiki. Give her about 10 seconds.

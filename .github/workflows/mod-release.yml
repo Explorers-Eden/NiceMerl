@@ -1,0 +1,53 @@
+# Builds the Fabric mod (mod/) and publishes it as a GitHub release.
+# Version, subtitle and Minecraft versions come from mod/tools/release_infos.yml,
+# the release notes from mod/changelog.log.
+name: Publish Mod Release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+defaults:
+  run:
+    working-directory: mod
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.ref }}
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install pyyaml
+
+      - name: Read release metadata
+        id: meta
+        run: python tools/scripts/read-release-metadata.py
+
+      - uses: actions/setup-java@v5
+        with:
+          java-version: "25"
+          distribution: "microsoft"
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Build mod jar
+        run: ./gradlew build -Pversion=${{ steps.meta.outputs.version_number }}
+
+      - name: Create or update GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ steps.meta.outputs.tag_name }}
+          RELEASE_NAME: ${{ steps.meta.outputs.release_name }}
+          CHANGELOG_PATH: ${{ steps.meta.outputs.changelog_path }}
+          JAR_NAME: ${{ steps.meta.outputs.jar_name }}
+          IS_PRERELEASE: ${{ steps.meta.outputs.is_prerelease }}
+        run: bash tools/scripts/create-or-update-github-release.sh
