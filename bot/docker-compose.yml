@@ -4,5 +4,10 @@ services:
     container_name: nicemerl
     restart: unless-stopped
     env_file: .env
+    volumes:
+      - nicemerl-state:/app/state
     mem_limit: 256m
     cpus: 0.5
+
+volumes:
+  nicemerl-state:

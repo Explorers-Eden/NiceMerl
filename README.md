@@ -44,7 +44,7 @@ Neither uses AI or a paid API, so there are no running costs. Both download the 
     └── mod-release.yml      mod → GitHub release after a green build on main, keeps the newest per MC version
 ```
 
-> ⚠️ The mod re-implements the bot's search in Java: [`SearchIndex.java`](mod/src/main/java/eu/explorerseden/nicemerl/SearchIndex.java) mirrors [`search.py`](bot/search.py), and [`VanillaWiki.java`](mod/src/main/java/eu/explorerseden/nicemerl/VanillaWiki.java) mirrors [`vanilla.py`](bot/vanilla.py). Changes to stopwords, weights, stemming or scoring need to be made in both. Both currently return identical scores.
+> ⚠️ The mod re-implements the bot's search and personality in Java: [`SearchIndex.java`](mod/src/main/java/eu/explorerseden/nicemerl/SearchIndex.java) mirrors [`search.py`](bot/search.py), [`VanillaWiki.java`](mod/src/main/java/eu/explorerseden/nicemerl/VanillaWiki.java) mirrors [`vanilla.py`](bot/vanilla.py), [`MerlLines.java`](mod/src/main/java/eu/explorerseden/nicemerl/MerlLines.java) mirrors [`personality.py`](bot/personality.py) and [`MerlMemory.java`](mod/src/main/java/eu/explorerseden/nicemerl/MerlMemory.java) mirrors [`memory.py`](bot/memory.py). Changes to stopwords, weights, stemming, scoring or how replies are put together need to be made in both. Both currently return identical scores.
 >
 > Merl's lines ([`lines.json`](bot/data/lines.json)) and the synonyms ([`synonyms.json`](bot/data/synonyms.json)) are **shared**: they live in `bot/data/`, and the mod build bundles them into the jar, so they only need editing once.
 
@@ -56,7 +56,14 @@ Every message in the configured channel is treated as a question. NiceMerl repli
 
 - **Vanilla questions** are answered from the Minecraft Wiki, labelled 📗 *Minecraft Wiki*.
 - **Saying hi** (or @-mentioning her) gets a greeting that fits the time of day, using their name.
-- **Small talk:** *thanks*, *bye*, *how are you*, *who are you*, *what can you do*, *tell me a joke*, *give me a tip*, *fun fact*, *good bot*, *who is Peanut Butter*, *I died*, *I'm bored*… Over 1,000 lines in all. She answers in character and reacts with 💗 or 👋. Only messages that are *all* small talk count: *"thanks, how do I get a boss key?"* is still a question.
+- **Small talk:** *thanks*, *bye*, *how are you*, *who are you*, *what can you do*, *tell me a joke*, *give me a tip*, *fun fact*, *what should I do next?* (over 600 ideas), *good bot*, *who is Peanut Butter*, *pet Peanut Butter*, *I died*, *I'm bored*… Over 2,000 lines in all. She answers in character and reacts with 💗, 👋 or 🐱.
+- **Mixed messages:** *"thanks! how do I get a boss key?"* gets a quick *"You're welcome!"* and the answer.
+- **She sounds human:**
+  - She says how sure she is (*"Found it!"*, *"I think this is it…"*, *"This is my best guess:"*), based on the search score.
+  - She remembers each person for a little while: she notices repeated questions, understands follow-ups (*"and in the nether?"*), says *"Glad the Boss Key page helped!"* when thanked, and *"Welcome back!"* after a few hours away.
+  - She matches your energy (CAPS → excited, *"help, I'm stuck"* → calm, one word → short).
+  - She has a mood of the day and gets sleepy at night. Peanut Butter has moods too, sometimes interrupts, and her pets are counted.
+  - She shows *"typing…"* for a moment before answering, sometimes asks what you're up to, and very rarely makes a typo and corrects herself.
 - **She never repeats herself** right away, now and then adds a little aside, and her Discord status changes every 15 minutes (*Petting Peanut Butter*, *Looking out for creepers*, …).
 - **When she can't help**, she answers *"I don't know."* and points people to #user-help.
 - **`!reindex`** (requires *Manage Server*) refreshes the index right away after wiki edits.
@@ -92,15 +99,19 @@ To test the search without Discord, run `.venv/bin/python search.py "how do I ge
 | `HELP_CHANNEL_ID` | `1245007015865225256` | Channel Merl points people to when she can't help (#user-help); `0` turns it off |
 | `VANILLA_WIKI` | `true` | Answer vanilla questions from the Minecraft Wiki too |
 | `VANILLA_WIKI_URL` | `https://minecraft.wiki` | MediaWiki used for vanilla questions |
-| `TIMEZONE` | `Europe/Berlin` | Time zone for good morning / good evening |
+| `TIMEZONE` | `Europe/Berlin` | Time zone for good morning / good evening, sleepy nights and the mood of the day |
+| `STATE_DIR` | `bot/state` (`/app/state` in Docker) | Where Peanut Butter's pet count is saved. The Docker setups mount the `nicemerl-state` volume here, so it survives updates |
 
 Search tuning (stopwords, weights, typo and synonym settings) lives at the top of [`bot/search.py`](bot/search.py), and the vanilla blending (`STRONG_SCORE`, skipped chapters) at the top of [`bot/vanilla.py`](bot/vanilla.py). To test without Discord, run `.venv/bin/python search.py "how do I make a nether portal"`: it prints each source, the corrections and the blend decision.
 
 ### Merl's lines
 
 Everything Merl says lives in [`bot/data/lines.json`](bot/data/lines.json):
-- `pools`: lists of lines. Placeholders are `{user}`, `{community}`, `{term}` and `{pages}`.
-- `intents`: small-talk patterns. Each one is matched against the whole message, lowercased, without punctuation and apostrophes.
+- `pools`: lists of lines. Placeholders are `{user}`, `{community}`, `{term}`, `{pages}`, `{page}`, `{word}`, `{count}`, `{deaths}`, `{hours}` and `{advancement}`.
+- `intents`: small-talk patterns. Each one is matched against the whole message, lowercased, without punctuation and apostrophes. Messages that *start* with a greeting, thanks, sorry, ok or a compliment and go on with a question get a short line from the matching `*_prefix` pool before the answer.
+- `moods` / `pb_moods`: Merl's and Peanut Butter's mood of the day (the same in the bot and the mod), which pick from `asides_<mood>`, `status_<mood>` and `pb_<mood>`.
+- `topics`: words that tell what someone is up to after Merl asked (*"building"* → `reply_build`).
+- `progress_ideas`: the mod's progress-based ideas. Each step has an `after` advancement that must be done, an `unless` advancement that must not be, and its lines.
 
 Edit it once and both the bot and the next mod build pick it up. In Minecraft chat, emoji outside the basic plane and `*` are stripped automatically.
 
@@ -117,7 +128,10 @@ Players type `/merl <question>`, and NiceMerl answers in chat with:
 - **Minecraft Wiki** pages for vanilla questions, marked in green (looked up in the background, so the server never waits)
 - the **current data pack settings**, when the question is about settings (*"is pvp enabled?"*, *"keep inventory settings"*, *"blaze settings"*)
 
-She also does small talk (`/merl thanks`, `/merl tell me a joke`, `/merl give me a tip`, `/merl fun fact`), greets players by name, and now and then comments on where they are (*"You're in the Nether? Stay away from the lava!"*).
+She also does small talk (`/merl thanks`, `/merl tell me a joke`, `/merl give me a tip`, `/merl fun fact`, `/merl pet peanut butter`), greets players by name, and has the same human touches as the bot (mixed messages, confidence, short memory, moods, asking back). On top of that, in-game:
+- **`/merl what should I do next`** looks at the player's advancements and suggests the next step (*"You haven't been to the Nether yet!"*, *"Find an End city with a ship and grab the elytra!"*), or one of over 600 ideas.
+- **She notices what you're doing:** now and then she comments on the dimension, weather or biome, low health, what you're holding (*"Ooh, a mace! Bonk responsibly."*), your elytra, your death count or your play time. Players can turn this off with `/nicemerl comments off`.
+- **She celebrates with you:** big advancements (dragon, elytra, Wither, netherite armor…) get a private congratulation. Players can turn this off with `/nicemerl celebrate off`.
 
 Answers are **only visible to the player who asked**. Wiki spoilers are scrambled and revealed on hover. The mod is **server-side only**: players join with an unmodded client.
 
@@ -129,6 +143,8 @@ Answers are **only visible to the player who asked**. Wiki spoilers are scramble
 |---|---|---|
 | `/merl` | everyone | Merl says hi and explains herself |
 | `/merl <question>` | everyone | searches the wiki (and settings) |
+| `/nicemerl comments [on\|off]` | everyone | turns Merl's comments about you on or off, just for you |
+| `/nicemerl celebrate [on\|off]` | everyone | turns Merl's congratulations on or off, just for you |
 | `/nicemerl reindex` | operators | re-reads the wiki right away |
 
 ### Permissions (LuckPerms)
@@ -136,6 +152,7 @@ Answers are **only visible to the player who asked**. Wiki spoilers are scramble
 | Node | Default without a permissions mod |
 |---|---|
 | `nicemerl.command.merl` | everyone |
+| `nicemerl.command.toggle` | everyone (`/nicemerl comments` and `/nicemerl celebrate`) |
 | `nicemerl.command.reindex` | operators (level 2) |
 | `nicemerl.bypass.cooldown` | operators (level 2) |
 | `nicemerl.settings` | everyone (shows current data pack settings in answers) |
@@ -158,6 +175,11 @@ Example: `/lp group default permission set nicemerl.settings false` hides settin
 | `settingsIgnoreKeys` | `*_initial`, `command_template`, `*_template` | setting keys to hide |
 | `settingsResults` | `6` | most settings listed per answer |
 | `mediaWikiResults` | `2` | most pages from `mediawiki` wikis per answer |
+| `playerComments` | `true` | Merl's comments about where players are and what they're doing (each player can also turn them off) |
+| `celebrate` | `true` | congratulations on advancements (each player can also turn them off) |
+| `celebrateAdvancements` | dragon, elytra, Wither, netherite armor, … | which advancements Merl congratulates players on |
+
+Players' choices and Peanut Butter's pet count are saved in `config/nicemerl/state.json`.
 
 ### Wikis
 

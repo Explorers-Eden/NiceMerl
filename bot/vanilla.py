@@ -14,7 +14,7 @@ from urllib.parse import quote
 import aiohttp
 from bs4 import BeautifulSoup
 
-from search import MIN_SCORE, SYNONYMS, Index, Outcome, Result, edit_distance, tokenize, words
+from search import GUESS_SCORE, MIN_SCORE, SURE_SCORE, SURE_TITLE_SCORE, SYNONYMS, Index, Outcome, Result, edit_distance, tokenize, words
 from wiki import Section, split_sections
 
 log = logging.getLogger(__name__)
@@ -42,6 +42,8 @@ HOW_TO = re.compile(r"\b(make|craft|build|create|get|obtain|find|where|spawn)\b"
 HOW_TO_HEADINGS = set(tokenize("creation crafting obtaining construction recipe building natural generation spawning location"))
 CANDIDATE_PAGES = 3
 VANILLA_MIN_SCORE = MIN_SCORE / 2
+# Minecraft Wiki sections score lower; this brings them to the Eden wiki's range for confidence().
+VANILLA_SCALE = MIN_SCORE / VANILLA_MIN_SCORE
 
 
 def plan(question: str, eden: Outcome) -> str:
@@ -67,6 +69,19 @@ def combine(question: str, eden: Outcome, vanilla: list[Result], vanilla_titled:
         return head + eden.results[:total - len(head)]
     head = eden.results[:max(1, total - 1)]
     return head + vanilla[:total - len(head)]
+
+
+
+def confidence(results: list[Result], eden: Outcome) -> str:
+    """How sure Merl is about the top result: "sure", "maybe" or "guess"."""
+    top = results[0]
+    score = top.score * (VANILLA_SCALE if top.section.vanilla else 1)
+    uncertain = eden.uncertain and not top.section.vanilla
+    if score < GUESS_SCORE or (uncertain and not eden.corrections):
+        return "guess"
+    if not uncertain and (score >= SURE_SCORE or (top.title_match and score >= SURE_TITLE_SCORE)):
+        return "sure"
+    return "maybe"
 
 
 def title_matches(title: str, asked: set[str]) -> bool:

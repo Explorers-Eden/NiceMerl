@@ -62,6 +62,8 @@ public final class VanillaWiki {
 			"creation crafting obtaining construction recipe building natural generation spawning location"));
 	private static final int CANDIDATE_PAGES = 3;
 	private static final double VANILLA_MIN_SCORE = SearchIndex.MIN_SCORE / 2;
+	/** Minecraft Wiki sections score lower; this brings them to the Eden wiki's range for {@link #confidence}. */
+	private static final double VANILLA_SCALE = SearchIndex.MIN_SCORE / VANILLA_MIN_SCORE;
 
 	/** How to ask minecraft.wiki: properly, or only to add a page named after the subject. */
 	public enum Mode { SEARCH, CHECK }
@@ -115,6 +117,18 @@ public final class VanillaWiki {
 		List<SearchIndex.Result> out = new ArrayList<>(first.subList(0, Math.min(headSize, first.size())));
 		out.addAll(second.subList(0, Math.min(total - out.size(), second.size())));
 		return out;
+	}
+
+	/** How sure Merl is about the top result: "sure", "maybe" or "guess". */
+	public static String confidence(List<SearchIndex.Result> results, SearchIndex.Outcome eden) {
+		SearchIndex.Result top = results.get(0);
+		double score = top.score() * (top.section().vanilla() ? VANILLA_SCALE : 1);
+		boolean uncertain = eden.uncertain() && !top.section().vanilla();
+		if (score < SearchIndex.GUESS_SCORE || (uncertain && eden.corrections().isEmpty())) return "guess";
+		if (!uncertain && (score >= SearchIndex.SURE_SCORE || (top.titleMatch() && score >= SearchIndex.SURE_TITLE_SCORE))) {
+			return "sure";
+		}
+		return "maybe";
 	}
 
 	/** The question as search words, with slang spelled out and "vanilla"/"minecraft" removed. */

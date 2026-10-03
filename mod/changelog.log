@@ -1,31 +1,27 @@
 # Minecraft Version(s): 26.3
-## New: Vanilla Minecraft answers
-- `/merl` now answers vanilla Minecraft questions too, using the [Minecraft Wiki](https://minecraft.wiki) (*"how do I make a nether portal"*, *"what does the totem do in vanilla"*)
-- Merl blends both wikis: questions about Explorer's Eden stay on the Explorer's Eden wiki, clearly vanilla questions answer from the Minecraft Wiki first, and when our wiki has nothing good she checks the Minecraft Wiki for you
-- Minecraft Wiki results are marked `(Minecraft Wiki)` in green and link straight to the right section
-- Lookups run in the background, so the server never waits on the network
+## New: "What should I do next?"
+- Ask `/merl what should I do next` (or *any ideas?*, *what now*, *I'm out of ideas*…) and Merl suggests something to do, from over 600 ideas
+- In-game, she looks at your advancements first: never been to the Nether? She'll suggest a portal. Have blaze rods but no eye of ender? Time to find a stronghold. Killed the dragon? Go find an elytra!
 
-## New: Multiple wikis
-- The config now takes a list of `wikis` instead of a single `wikiUrl`: add as many Wiki.js wikis (downloaded and searched locally) and MediaWiki wikis (searched live, like the Minecraft Wiki) as you like
-- With several Wiki.js wikis, results say which wiki they're from
-- If one wiki can't be reached during a reindex, its pages from the last successful download are kept
-- Existing `config/nicemerl.json` files are updated automatically: your `wikiUrl` becomes the first wiki, and the Minecraft Wiki is added after it
+## Merl sounds more human
+- **Mixed messages:** *"thanks! how do I get a boss key?"* or *"hi, where are trial chambers"* get a quick reply to the small talk and the answer
+- **She says how sure she is:** a perfect match gets *"Found it!"*, a close one *"I think this is it…"*, a long shot *"This is my best guess:"*
+- **She remembers you for a little while:** she notices when you ask the same thing twice, says *"Welcome back!"* after a few hours away, understands follow-ups like *"and in the nether?"*, and when you say thanks she knows which page helped
+- **She matches your energy:** CAPS and *"!!"* get an excited reply, *"help, I'm stuck"* gets a calm one, and one-word questions get short answers
+- **Moods:** she has a mood of the day, gets sleepy late at night, and Peanut Butter has moods too (sleepy, playful, grumpy, hungry)
+- **Peanut Butter:** pet her with `/merl pet peanut butter` (everyone's pets are counted), and sometimes she interrupts or walks over the keyboard
+- **Small slips:** very rarely Merl makes a typo and corrects herself
+- **She asks back:** after *"how are you?"* she sometimes asks what you're up to, and reacts to your answer (*"just building"* → *"Ooh, what are you building?"*)
+- **She notices what you're doing:** now and then she comments on what you're holding (mace, trident, totem…), your elytra, the biome you're in, your death count or your play time
+- **She celebrates with you:** Merl congratulates you on big advancements like killing the dragon, finding an elytra or beating the Wither (only you see it)
 
-## Smarter search
-- Typos are understood: *"enchantmnt table"* finds *enchantment*, and Merl tells you what she thinks you meant
-- Player slang and abbreviations work: `tp`, `ench`, `xp`, `keepinv`, `ec`, `pearl`, `villie` and more
-- Word endings are handled better (`bosses`, `torches`, `wolves`, `boxes`)
-- Pages whose title is exactly what you asked about rank higher, and so do words that appear next to each other ("nether portal")
-- Results that cover all words of a question beat ones that only match one word, and weak extra results are left out
-- Changelog pages no longer crowd out the actual pages unless you ask about updates or changes
-- Excerpts show the part of the page that covers the most words of your question
-
-## Merl feels more alive
-- Over 1,000 lines: greetings for morning, afternoon, evening and night, varied answers, cooldown and reindex messages, and no line twice in a row
-- Small talk: thank her, say bye, ask how she's doing, who she is or what she can do, ask for a joke, a tip or a fun fact, ask about Peanut Butter or her favorite mob, block or color, tell her you're bored, hungry or just died, or call her a good bot (or a bad one…)
-- Now and then she comments on where you are (the Nether, the End, rain, night) or how you're doing (low health), or Peanut Butter chimes in
-- Merl greets players by name
+## Commands
+- `/nicemerl comments [on|off]`: turn Merl's comments about where you are and what you're doing on or off, just for you
+- `/nicemerl celebrate [on|off]`: turn Merl's congratulations on or off, just for you
+- New permission node `nicemerl.command.toggle` (default: everyone)
 
 ## Config
-- `wikiUrl` is replaced by the `wikis` list (migrated automatically, see above)
-- New option `mediaWikiResults`: how many pages from live (MediaWiki) wikis an answer shows, default 2
+- New option `playerComments` (default `true`): turns Merl's comments off for the whole server
+- New option `celebrate` (default `true`): turns congratulations off for the whole server
+- New option `celebrateAdvancements`: which advancements Merl congratulates players on
+- Players' choices and Peanut Butter's pet count are saved in `config/nicemerl/state.json`

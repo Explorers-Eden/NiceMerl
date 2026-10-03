@@ -10,7 +10,8 @@ COPY *.py .
 COPY data/ data/
 COPY assets/thumb_*.png assets/
 
-RUN useradd --create-home bot
+# state/ holds Peanut Butter's pet count; mount a volume there to keep it across updates.
+RUN useradd --create-home bot && mkdir state && chown bot state
 USER bot
 
 CMD ["python", "bot.py"]

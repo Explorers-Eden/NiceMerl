@@ -89,9 +89,11 @@ The code lives in [NiceKaleido/NiceMerl](https://github.com/NiceKaleido/NiceMerl
    | `HELP_CHANNEL_ID` | `1245007015865225256` | Channel Merl points people to when she can't help (#user-help); `0` turns it off |
    | `VANILLA_WIKI` | `true` | Also answer vanilla Minecraft questions from the Minecraft Wiki; `false` turns it off |
    | `VANILLA_WIKI_URL` | `https://minecraft.wiki` | MediaWiki used for vanilla questions |
-   | `TIMEZONE` | `Europe/Berlin` | Time zone for Merl's good morning / good evening greetings |
+   | `TIMEZONE` | `Europe/Berlin` | Time zone for Merl's good morning / good evening greetings, sleepy nights and her mood of the day |
 
 5. Click **Deploy the stack**.
+
+> 💾 The stack creates a small `nicemerl-state` volume, where Merl keeps Peanut Butter's pet count across updates. If your stack is older than that, paste the current [`portainer-stack.yml`](portainer-stack.yml) into **Stacks → nicemerl → Editor** and click **Update the stack**. Without the volume, everything still works, but the pet count starts over after each update.
 
 > 💡 If the Docker Hub image is **private**, first add Docker Hub under **Registries** in Portainer, and make sure Watchtower has the login too (e.g. by mounting `~/.docker/config.json` into it). A public image needs neither.
 

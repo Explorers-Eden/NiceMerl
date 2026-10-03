@@ -43,6 +43,11 @@ TITLE_WEIGHT = 3
 PATH_WEIGHT = 2
 K1, B = 1.5, 0.75
 MIN_SCORE = 2.0
+# How sure Merl sounds about the top result: a score this high, or this high with the page title
+# asked about, is "sure"; below GUESS_SCORE she's guessing.
+SURE_SCORE = 12.0
+SURE_TITLE_SCORE = 7.0
+GUESS_SCORE = 4.0
 # A query word the index doesn't know can still match through these, at reduced weight.
 SYNONYM_WEIGHT = 0.6        # "tp" also searches "teleport"
 SYNONYM_ONLY_WEIGHT = 0.9   # ... more so when "tp" itself appears nowhere

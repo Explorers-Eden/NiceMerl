@@ -58,6 +58,23 @@ public class MerlConfig {
 	public int settingsResults = 6;
 	/** Most pages from "mediawiki" wikis (the Minecraft Wiki) per answer. */
 	public int mediaWikiResults = 2;
+	/**
+	 * Merl now and then comments on where players are, what they hold and how they're doing.
+	 * Players can turn it off for themselves with /nicemerl comments.
+	 */
+	public boolean playerComments = true;
+	/**
+	 * Merl congratulates players (privately) on the advancements below.
+	 * Players can turn it off for themselves with /nicemerl celebrate.
+	 */
+	public boolean celebrate = true;
+	/** Advancements Merl congratulates players on. */
+	public List<String> celebrateAdvancements = new ArrayList<>(List.of(
+			"minecraft:story/enter_the_nether", "minecraft:story/enter_the_end", "minecraft:end/kill_dragon",
+			"minecraft:end/elytra", "minecraft:nether/summon_wither", "minecraft:nether/create_full_beacon",
+			"minecraft:nether/netherite_armor", "minecraft:nether/all_effects", "minecraft:adventure/adventuring_time",
+			"minecraft:adventure/kill_all_mobs", "minecraft:adventure/minecraft_trials_edition",
+			"minecraft:husbandry/bred_all_animals", "minecraft:husbandry/complete_catalogue"));
 
 	public static class SettingsSource {
 		/** Storage id, e.g. "eden:settings". */

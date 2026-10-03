@@ -1,43 +1,60 @@
 package eu.explorerseden.nicemerl;
 
 import java.net.URI;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Supplier;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 
 import net.minecraft.ChatFormatting;
+import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.core.Holder;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.PermissionLevel;
+import net.minecraft.stats.Stats;
+import net.minecraft.tags.BiomeTags;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.biome.Biomes;
 
 import me.lucko.fabric.api.permissions.v0.Permissions;
 
 /**
- * /merl [question] for everyone, /nicemerl reindex for operators.
- * Replies are system messages sent only to whoever ran the command.
+ * /merl [question] for everyone; /nicemerl comments|celebrate [on|off] for players, /nicemerl reindex
+ * for operators. Replies are system messages sent only to whoever ran the command.
  *
  * <p>Permission nodes (LuckPerms or any other Fabric permissions mod):
  * <ul>
  *   <li>{@code nicemerl.command.merl}: use /merl (default: everyone)</li>
+ *   <li>{@code nicemerl.command.toggle}: use /nicemerl comments and /nicemerl celebrate (default: everyone)</li>
  *   <li>{@code nicemerl.command.reindex}: use /nicemerl reindex (default: operators, level 2)</li>
  *   <li>{@code nicemerl.bypass.cooldown}: skip the question cooldown (default: operators, level 2)</li>
  *   <li>{@code nicemerl.settings}: see current data pack settings in answers (default: everyone)</li>
@@ -45,6 +62,7 @@ import me.lucko.fabric.api.permissions.v0.Permissions;
  */
 public final class MerlCommand {
 	public static final String PERMISSION_MERL = "nicemerl.command.merl";
+	public static final String PERMISSION_TOGGLE = "nicemerl.command.toggle";
 	public static final String PERMISSION_REINDEX = "nicemerl.command.reindex";
 	public static final String PERMISSION_BYPASS_COOLDOWN = "nicemerl.bypass.cooldown";
 	public static final String PERMISSION_SETTINGS = "nicemerl.settings";
@@ -53,10 +71,27 @@ public final class MerlCommand {
 	private static final TextColor HIT_COLOR = TextColor.fromRgb(0xFFD966);
 
 	private static final TextColor VANILLA_GREEN = TextColor.fromRgb(0x7BC96F);
-	/** Roughly one answer in this many mentions where the player is (Nether, night, low health…). */
+	/** Roughly one answer in this many comes with a word about where the player is or what they're doing. */
 	private static final int CONTEXT_CHANCE = 4;
+	/** "What should I do next" answers from the player's progress, except one time in this many. */
+	private static final int RANDOM_IDEA_CHANCE = 3;
+	private static final int MANY_DEATHS = 25;
+	private static final int VETERAN_HOURS = 100;
+	private static final long CELEBRATE_COOLDOWN_MS = 2 * 60_000L;
+	private static final Map<Item, String> HELD_ITEMS = Map.ofEntries(
+			Map.entry(Items.MACE, "holding_mace"), Map.entry(Items.TRIDENT, "holding_trident"),
+			Map.entry(Items.TOTEM_OF_UNDYING, "holding_totem"), Map.entry(Items.NETHERITE_SWORD, "holding_netherite"),
+			Map.entry(Items.NETHERITE_PICKAXE, "holding_netherite"), Map.entry(Items.NETHERITE_AXE, "holding_netherite"),
+			Map.entry(Items.FISHING_ROD, "holding_fishing_rod"), Map.entry(Items.FILLED_MAP, "holding_map"),
+			Map.entry(Items.COMPASS, "holding_compass"), Map.entry(Items.SPYGLASS, "holding_spyglass"),
+			Map.entry(Items.BRUSH, "holding_brush"));
+	private static final Set<ResourceKey<Biome>> SNOWY = Set.of(Biomes.SNOWY_PLAINS, Biomes.ICE_SPIKES, Biomes.SNOWY_TAIGA,
+			Biomes.SNOWY_SLOPES, Biomes.FROZEN_PEAKS, Biomes.JAGGED_PEAKS, Biomes.GROVE);
 
-	private static final Map<UUID, Long> LAST_QUESTION = new ConcurrentHashMap<>();
+	private static final Map<UUID, Long> LAST_CELEBRATION = new ConcurrentHashMap<>();
+
+	/** What the reply builder needs to know about a question. */
+	private record Ask(String prefix, boolean repeat, String energy, MerlMemory.Visit visit, long now) {}
 
 	private MerlCommand() {}
 
@@ -68,20 +103,74 @@ public final class MerlCommand {
 						.executes(MerlCommand::ask)));
 
 		dispatcher.register(Commands.literal("nicemerl")
-				.requires(Permissions.require(PERMISSION_REINDEX, PermissionLevel.GAMEMASTERS))
-				.then(Commands.literal("reindex").executes(MerlCommand::reindex)));
+				.requires(source -> Permissions.check(source, PERMISSION_TOGGLE, true)
+						|| Permissions.check(source, PERMISSION_REINDEX, PermissionLevel.GAMEMASTERS))
+				.then(Commands.literal("reindex")
+						.requires(Permissions.require(PERMISSION_REINDEX, PermissionLevel.GAMEMASTERS))
+						.executes(MerlCommand::reindex))
+				.then(toggle("comments"))
+				.then(toggle("celebrate")));
+	}
+
+	/** /nicemerl comments|celebrate [on|off]; without on/off it flips the setting. */
+	private static LiteralArgumentBuilder<CommandSourceStack> toggle(String setting) {
+		return Commands.literal(setting)
+				.requires(Permissions.require(PERMISSION_TOGGLE, true))
+				.executes(ctx -> toggle(ctx, setting, null))
+				.then(Commands.literal("on").executes(ctx -> toggle(ctx, setting, true)))
+				.then(Commands.literal("off").executes(ctx -> toggle(ctx, setting, false)));
+	}
+
+	private static int toggle(CommandContext<CommandSourceStack> ctx, String setting, Boolean value) {
+		CommandSourceStack source = ctx.getSource();
+		ServerPlayer player = source.getPlayer();
+		if (player == null) {
+			reply(source, Component.literal("Only players can change this.").withStyle(ChatFormatting.GRAY));
+			return 0;
+		}
+		boolean comments = setting.equals("comments");
+		boolean[] on = new boolean[1];
+		MerlState.update(player.getUUID(), p -> {
+			boolean current = comments ? p.comments : p.celebrate;
+			on[0] = value != null ? value : !current;
+			if (comments) p.comments = on[0];
+			else p.celebrate = on[0];
+		});
+		MerlConfig config = NiceMerl.config();
+		String text = comments
+				? (on[0] ? "Yay! I'll chat about what you're up to again." : "Okay! I'll keep my comments to myself.")
+				: (on[0] ? "Yay! I'll cheer when you get big advancements." : "Okay! I'll cheer for you quietly.");
+		MutableComponent message = Component.literal(text);
+		if (on[0] && !(comments ? config.playerComments : config.celebrate)) {
+			message.append(Component.literal(" (It's turned off on this server right now, though.)").withStyle(ChatFormatting.GRAY));
+		}
+		reply(source, message);
+		return 1;
 	}
 
 	private static int hello(CommandContext<CommandSourceStack> ctx) {
-		MerlConfig config = NiceMerl.config();
 		CommandSourceStack source = ctx.getSource();
-		String greeting = MerlLines.pick(MerlLines.greetingPool(LocalTime.now()), "user", source.getTextName());
+		ServerPlayer player = source.getPlayer();
+		long now = System.currentTimeMillis();
+		MerlMemory.Visit visit = player != null ? MerlMemory.visit(player.getUUID()) : new MerlMemory.Visit();
+		boolean returning = visit.returning(now);
+		visit.seenAt = now;
+		return hello(source, visit, returning, now);
+	}
+
+	private static int hello(CommandSourceStack source, MerlMemory.Visit visit, boolean returning, long now) {
+		MerlConfig config = NiceMerl.config();
+		String pool = returning ? "welcome_back" : MerlLines.greetingPool(LocalTime.now());
+		String greeting = MerlLines.pick(pool, "user", source.getTextName());
 		MutableComponent message = Component.literal(greeting + " I'm NiceMerl! Ask me anything about " + config.communityName
 				+ ", like ").append(example("/merl how do I get a boss key"));
 		if (NiceMerl.mediaWikis().stream().anyMatch(w -> w.baseUrl().contains("minecraft.wiki"))) {
 			message.append(Component.literal(", or about vanilla Minecraft, like ")).append(example("/merl how do I make a nether portal"));
 		}
-		reply(source, message.append(Component.literal(", and I'll find the right wiki page for you!")));
+		message.append(Component.literal(", and I'll find the right wiki page for you!"));
+		String askBack = askBack("greeting", visit, now);
+		if (askBack != null) message.append(Component.literal(" " + askBack));
+		reply(source, message);
 		return 1;
 	}
 
@@ -94,31 +183,50 @@ public final class MerlCommand {
 		CommandSourceStack source = ctx.getSource();
 		MerlConfig config = NiceMerl.config();
 		String question = StringArgumentType.getString(ctx, "question");
-
 		ServerPlayer player = source.getPlayer();
+		long now = System.currentTimeMillis();
+		MerlMemory.Visit visit = player != null ? MerlMemory.visit(player.getUUID()) : new MerlMemory.Visit();
+
 		if (player != null && config.cooldownSeconds > 0
 				&& !Permissions.check(source, PERMISSION_BYPASS_COOLDOWN, PermissionLevel.GAMEMASTERS)) {
-			long now = System.currentTimeMillis();
-			Long last = LAST_QUESTION.get(player.getUUID());
-			if (last != null && now - last < config.cooldownSeconds * 1000L) {
+			if (now - visit.lastMessageAt < config.cooldownSeconds * 1000L) {
 				reply(source, Component.literal(MerlLines.pick("cooldown")).withStyle(ChatFormatting.GRAY));
 				return 0;
 			}
-			LAST_QUESTION.put(player.getUUID(), now);
+			visit.lastMessageAt = now;
 		}
+		boolean returning = visit.returning(now);
+		visit.seenAt = now;
 
 		String talk = MerlLines.smallTalk(question);
+		// Merl only waits one message for an answer to "what are you up to?".
+		boolean awaiting = visit.awaitingReply(now);
+		visit.askedBackAt = 0;
+		if (talk == null && awaiting) {
+			String topic = MerlLines.topic(question);
+			if (topic != null) {
+				reply(source, Component.literal(MerlLines.pick("reply_" + topic)));
+				return 1;
+			}
+		}
+
 		if ("greeting".equals(talk) || (talk == null && SearchIndex.tokenize(question).isEmpty())) {
-			return hello(ctx);
+			return hello(source, visit, returning, now);
 		}
 		if (talk != null) {
-			reply(source, Component.literal(MerlLines.pick(talk, "user", source.getTextName(), "community", config.communityName)));
+			String text = smallTalkLine(talk, source, player, visit, now);
+			String askBack = askBack(talk, visit, now);
+			reply(source, Component.literal(askBack != null ? text + " " + askBack : text));
 			return 1;
 		}
 
+		MerlLines.Split split = MerlLines.splitSmallTalk(question);
+		String search = split.rest();
+		Ask ask = new Ask(split.prefix(), false, MerlLines.energy(question), visit, now);
+
 		List<DatapackSettings.Setting> settings = List.of();
-		if (DatapackSettings.isSettingsQuestion(question) && Permissions.check(source, PERMISSION_SETTINGS, true)) {
-			settings = DatapackSettings.search(source.getServer(), config, question, config.settingsResults);
+		if (DatapackSettings.isSettingsQuestion(search) && Permissions.check(source, PERMISSION_SETTINGS, true)) {
+			settings = DatapackSettings.search(source.getServer(), config, search, config.settingsResults);
 		}
 
 		SearchIndex index = NiceMerl.index();
@@ -129,38 +237,94 @@ public final class MerlCommand {
 		// Keep the reply compact when settings are listed too.
 		int limit = settings.isEmpty() ? config.results : Math.min(2, config.results);
 		SearchIndex.Outcome outcome = index != null
-				? index.find(question, limit, config.excerptLength)
+				? index.find(search, limit, config.excerptLength)
 				: new SearchIndex.Outcome(List.of(), Map.of(), false);
+		// "and in the nether?" right after a question: search both together, if that finds more.
+		String previous = visit.recentQuestion(now);
+		if (index != null && previous != null && MerlLines.isFollowUp(search)) {
+			SearchIndex.Outcome combined = index.find(previous + " " + search, limit, config.excerptLength);
+			if (combined.confidence() >= outcome.confidence()) {
+				search = previous + " " + search;
+				outcome = combined;
+			}
+		}
+		String asked = String.join(" ", SearchIndex.tokenize(search));
+		ask = new Ask(ask.prefix(), visit.isRepeat(asked, now), ask.energy(), visit, now);
+		visit.question = asked;
+		visit.askedAt = now;
 
 		List<VanillaWiki> live = NiceMerl.mediaWikis();
 		// Settings questions are about this server, so they skip the Minecraft Wiki.
 		if (live.isEmpty() || !settings.isEmpty()) {
-			return respond(source, settings, outcome, outcome.results());
+			return respond(source, settings, outcome, outcome.results(), ask);
 		}
 
-		VanillaWiki.Mode mode = VanillaWiki.plan(question, outcome);
+		String query = search;
+		SearchIndex.Outcome eden = outcome;
+		Ask answer = ask;
+		VanillaWiki.Mode mode = VanillaWiki.plan(query, eden);
 		if (mode == VanillaWiki.Mode.SEARCH) {
 			reply(source, Component.literal(MerlLines.pick("checking_vanilla")).withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
 		}
 		MinecraftServer server = source.getServer();
 		NiceMerl.lookupAsync(
-				() -> VanillaWiki.searchAll(live, question, config.mediaWikiResults, mode == VanillaWiki.Mode.CHECK),
-				answer -> server.execute(() -> respond(source, List.of(), outcome,
-						VanillaWiki.combine(question, outcome, answer, config.results))));
+				() -> VanillaWiki.searchAll(live, query, config.mediaWikiResults, mode == VanillaWiki.Mode.CHECK),
+				found -> server.execute(() -> respond(source, List.of(), eden,
+						VanillaWiki.combine(query, eden, found, config.results), answer)));
 		return 1;
 	}
 
+	private static String smallTalkLine(String talk, CommandSourceStack source, ServerPlayer player, MerlMemory.Visit visit, long now) {
+		String page = visit.recentPage(now);
+		if (talk.equals("thanks") && page != null) {
+			return MerlLines.pick("thanks_answered", "page", page);
+		}
+		if (talk.equals("peanut_butter")) {
+			return MerlLines.peanutButter(LocalDate.now());
+		}
+		if (talk.equals("pet_pb")) {
+			long count = MerlState.pet();
+			return MerlLines.petMilestone(count)
+					? MerlLines.pick("pet_pb_milestone", "count", String.format("%,d", count))
+					: MerlLines.pick("pet_pb");
+		}
+		if (talk.equals("idea") && player != null && !MerlLines.chance(RANDOM_IDEA_CHANCE)) {
+			String idea = MerlLines.progressIdea(id -> isDone(player, id));
+			if (idea != null) return idea;
+		}
+		return MerlLines.pick(talk, "user", source.getTextName(), "community", NiceMerl.config().communityName);
+	}
+
+	/** Whether the player has this advancement; null when the server doesn't have it. */
+	private static Boolean isDone(ServerPlayer player, String id) {
+		Identifier key = Identifier.tryParse(id);
+		AdvancementHolder holder = key != null ? player.level().getServer().getAdvancements().get(key) : null;
+		return holder == null ? null : player.getAdvancements().getOrStartProgress(holder).isDone();
+	}
+
+	private static String askBack(String talk, MerlMemory.Visit visit, long now) {
+		String line = MerlLines.askBack(talk);
+		if (line != null) visit.askedBackAt = now;
+		return line;
+	}
+
 	private static int respond(CommandSourceStack source, List<DatapackSettings.Setting> settings,
-			SearchIndex.Outcome outcome, List<SearchIndex.Result> results) {
+			SearchIndex.Outcome outcome, List<SearchIndex.Result> results, Ask ask) {
 		MerlConfig config = NiceMerl.config();
 		if (settings.isEmpty() && results.isEmpty()) {
+			ask.visit().page = "";
 			reply(source, Component.literal(MerlLines.pick("not_found", "community", config.communityName)));
 			return 0;
+		}
+		if (!results.isEmpty()) {
+			ask.visit().page = results.get(0).section().pageTitle();
+			ask.visit().answeredAt = ask.now();
 		}
 
 		MutableComponent message;
 		if (!settings.isEmpty()) {
-			message = Component.literal("Here's how things are set up right now:");
+			String prefix = ask.prefix() != null ? MerlLines.pick(ask.prefix(), "user", source.getTextName()) + " " : "";
+			message = Component.literal(prefix + "Here's how things are set up right now:");
 			for (DatapackSettings.Setting setting : settings) {
 				message.append(Component.literal("\n"));
 				message.append(formatSetting(setting));
@@ -169,14 +333,14 @@ public final class MerlCommand {
 				message.append(Component.literal("\nMore in the wiki:").withStyle(ChatFormatting.GRAY));
 			}
 		} else {
-			message = Component.literal(headline(outcome, results));
+			message = Component.literal(headline(outcome, results, ask, source.getTextName()));
 		}
 		for (SearchIndex.Result result : results) {
 			message.append(Component.literal("\n"));
 			message.append(formatResult(result, config));
 		}
 		String extra = contextLine(source.getPlayer());
-		if (extra == null) extra = MerlLines.aside();
+		if (extra == null) extra = MerlLines.aside(LocalDateTime.now(), ask.energy());
 		if (extra != null) {
 			message.append(Component.literal("\n" + extra).withStyle(Style.EMPTY.withColor(MERL_PINK).withItalic(true)));
 		}
@@ -184,29 +348,90 @@ public final class MerlCommand {
 		return settings.size() + results.size();
 	}
 
-	private static String headline(SearchIndex.Outcome outcome, List<SearchIndex.Result> results) {
+	private static String headline(SearchIndex.Outcome outcome, List<SearchIndex.Result> results, Ask ask, String user) {
 		boolean hasEden = results.stream().anyMatch(r -> !r.section().vanilla());
 		boolean hasVanilla = results.stream().anyMatch(r -> r.section().vanilla());
-		if (hasEden && !outcome.corrections().isEmpty() && !results.get(0).section().vanilla()) {
-			return MerlLines.pick("found_typo", "term", String.join(", ", new LinkedHashSet<>(outcome.corrections().values())));
+		boolean corrected = hasEden && !outcome.corrections().isEmpty() && !results.get(0).section().vanilla();
+		String sure = VanillaWiki.confidence(results, outcome);
+		String core;
+		if (corrected) {
+			core = MerlLines.pick("found_typo", "term", String.join(", ", new LinkedHashSet<>(outcome.corrections().values())));
+		} else if (ask.repeat()) {
+			core = MerlLines.pick("repeat_question");
+		} else if (hasEden && hasVanilla) {
+			core = MerlLines.pick("found_both", "community", NiceMerl.config().communityName);
+		} else if (hasVanilla) {
+			core = MerlLines.pick(sure.equals("sure") ? "found_vanilla" : "found_vanilla_" + sure);
+		} else {
+			core = MerlLines.pick("found_" + sure);
 		}
-		if (hasEden && hasVanilla) {
-			return MerlLines.pick("found_both", "community", NiceMerl.config().communityName);
-		}
-		return MerlLines.pick(hasVanilla ? "found_vanilla" : "found");
+		return MerlLines.headline(core, ask.prefix(), ask.energy(), LocalTime.now().getHour(), user, !corrected);
 	}
 
-	/** Now and then, a word about where the player is or how they're doing. */
+	/**
+	 * Now and then, a word about where the player is, what they're holding or how they're doing.
+	 * Players can turn this off with /nicemerl comments off.
+	 */
 	private static String contextLine(ServerPlayer player) {
-		if (player == null || ThreadLocalRandom.current().nextInt(CONTEXT_CHANCE) != 0) return null;
+		if (player == null || !NiceMerl.config().playerComments || !MerlState.player(player.getUUID()).comments
+				|| !MerlLines.chance(CONTEXT_CHANCE)) {
+			return null;
+		}
+		if (player.getHealth() <= player.getMaxHealth() * 0.3f) return MerlLines.pick("context_hurt");
+
 		ServerLevel level = player.level();
-		List<String> pools = new ArrayList<>();
-		if (player.getHealth() <= player.getMaxHealth() * 0.3f) pools.add("context_hurt");
-		if (level.dimension() == Level.NETHER) pools.add("context_nether");
-		else if (level.dimension() == Level.END) pools.add("context_end");
-		else if (level.isRaining()) pools.add("context_rain");
-		else if (level.isDarkOutside()) pools.add("context_night");
-		return pools.isEmpty() ? null : MerlLines.pick(pools.get(0));
+		List<Supplier<String>> options = new ArrayList<>();
+		if (level.dimension() == Level.NETHER) options.add(() -> MerlLines.pick("context_nether"));
+		else if (level.dimension() == Level.END) options.add(() -> MerlLines.pick("context_end"));
+		else if (level.isRaining()) options.add(() -> MerlLines.pick("context_rain"));
+		else if (level.isDarkOutside()) options.add(() -> MerlLines.pick("context_night"));
+
+		String held = HELD_ITEMS.get(player.getMainHandItem().getItem());
+		if (held != null) options.add(() -> MerlLines.pick(held));
+		if (player.getItemBySlot(EquipmentSlot.CHEST).getItem() == Items.ELYTRA) options.add(() -> MerlLines.pick("wearing_elytra"));
+		String biome = biomePool(level.getBiome(player.blockPosition()));
+		if (biome != null) options.add(() -> MerlLines.pick(biome));
+
+		int deaths = player.getStats().getValue(Stats.CUSTOM.get(Stats.DEATHS));
+		if (deaths >= MANY_DEATHS) options.add(() -> MerlLines.pick("many_deaths", "deaths", Integer.toString(deaths)));
+		int hours = player.getStats().getValue(Stats.CUSTOM.get(Stats.PLAY_TIME)) / 72_000;
+		if (hours >= VETERAN_HOURS) options.add(() -> MerlLines.pick("veteran", "hours", Integer.toString(hours)));
+
+		return options.isEmpty() ? null : options.get(ThreadLocalRandom.current().nextInt(options.size())).get();
+	}
+
+	private static String biomePool(Holder<Biome> biome) {
+		if (biome.is(Biomes.DEEP_DARK)) return "biome_deep_dark";
+		if (biome.is(Biomes.MUSHROOM_FIELDS)) return "biome_mushroom";
+		if (biome.is(Biomes.CHERRY_GROVE)) return "biome_cherry";
+		if (biome.is(Biomes.DESERT)) return "biome_desert";
+		if (biome.is(BiomeTags.IS_OCEAN)) return "biome_ocean";
+		if (biome.is(BiomeTags.IS_JUNGLE)) return "biome_jungle";
+		if (SNOWY.stream().anyMatch(biome::is)) return "biome_snowy";
+		return null;
+	}
+
+	/**
+	 * Called when a player completes an advancement. Merl congratulates them privately on the
+	 * ones listed in the config, unless they turned it off with /nicemerl celebrate off.
+	 */
+	public static void celebrate(ServerPlayer player, AdvancementHolder holder) {
+		MerlConfig config = NiceMerl.config();
+		if (config == null || !config.celebrate || !config.celebrateAdvancements.contains(holder.id().toString())
+				|| !MerlState.player(player.getUUID()).celebrate) {
+			return;
+		}
+		long now = System.currentTimeMillis();
+		Long last = LAST_CELEBRATION.get(player.getUUID());
+		if (last != null && now - last < CELEBRATE_COOLDOWN_MS) return;
+		LAST_CELEBRATION.put(player.getUUID(), now);
+
+		String title = holder.value().display().map(d -> d.title().getString()).orElse(holder.id().getPath());
+		String line = MerlLines.pick("celebrate", "advancement", title, "user", player.getName().getString());
+		player.sendSystemMessage(framed(Component.literal(line).withStyle(Style.EMPTY
+				.withHoverEvent(new HoverEvent.ShowText(Component.literal("Click to turn these off: /nicemerl celebrate off")
+						.withStyle(ChatFormatting.GRAY)))
+				.withClickEvent(new ClickEvent.SuggestCommand("/nicemerl celebrate off")))));
 	}
 
 	private static MutableComponent formatSetting(DatapackSettings.Setting setting) {
@@ -305,10 +530,14 @@ public final class MerlCommand {
 		return out;
 	}
 
-	private static void reply(CommandSourceStack source, Component body) {
+	private static MutableComponent framed(Component body) {
 		MutableComponent message = Component.literal("[NiceMerl] ").withStyle(Style.EMPTY.withColor(MERL_PINK).withBold(true));
 		message.append(Component.empty().withStyle(Style.EMPTY.withBold(false).withColor(ChatFormatting.WHITE)).append(body));
-		source.sendSystemMessage(message);
+		return message;
+	}
+
+	private static void reply(CommandSourceStack source, Component body) {
+		source.sendSystemMessage(framed(body));
 	}
 
 	private static String projectName(String path) {

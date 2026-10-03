@@ -8,5 +8,8 @@
 	],
 	"injectors": {
 		"defaultRequire": 0
-	}
+	},
+	"mixins": [
+		"PlayerAdvancementsMixin"
+	]
 }

@@ -17,5 +17,11 @@ services:
       VANILLA_WIKI: ${VANILLA_WIKI:-true}
       VANILLA_WIKI_URL: ${VANILLA_WIKI_URL:-https://minecraft.wiki}
       TIMEZONE: ${TIMEZONE:-Europe/Berlin}
+    volumes:
+      # Peanut Butter's pet count, kept across updates.
+      - nicemerl-state:/app/state
     mem_limit: 256m
     cpus: 0.5
+
+volumes:
+  nicemerl-state:

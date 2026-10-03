@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 from dotenv import load_dotenv
 
@@ -17,3 +18,5 @@ VANILLA_WIKI = (os.getenv("VANILLA_WIKI") or "true").lower() not in ("0", "false
 VANILLA_WIKI_URL = os.getenv("VANILLA_WIKI_URL", "https://minecraft.wiki").rstrip("/")
 # Time zone for Merl's "good morning" / "good evening" greetings.
 TIMEZONE = os.getenv("TIMEZONE", "Europe/Berlin")
+# Where Merl keeps what should survive a restart (Peanut Butter's pet count). Mount a volume here.
+STATE_DIR = Path(os.getenv("STATE_DIR") or Path(__file__).parent / "state")

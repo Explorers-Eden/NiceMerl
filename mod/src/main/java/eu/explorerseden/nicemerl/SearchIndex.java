@@ -47,6 +47,13 @@ public class SearchIndex {
 	private static final double K1 = 1.5;
 	private static final double B = 0.75;
 	public static final double MIN_SCORE = 2.0;
+	/**
+	 * How sure Merl sounds about the top result: a score this high, or this high with the page title
+	 * asked about, is "sure"; below GUESS_SCORE she's guessing.
+	 */
+	public static final double SURE_SCORE = 12.0;
+	public static final double SURE_TITLE_SCORE = 7.0;
+	public static final double GUESS_SCORE = 4.0;
 	// A query word the index doesn't know can still match through these, at reduced weight.
 	private static final double SYNONYM_WEIGHT = 0.6;
 	private static final double SYNONYM_ONLY_WEIGHT = 0.9;

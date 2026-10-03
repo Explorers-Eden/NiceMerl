@@ -38,6 +38,7 @@ public class NiceMerl implements ModInitializer {
 	@Override
 	public void onInitialize() {
 		config = MerlConfig.load();
+		MerlState.load();
 		mediaWikis = config.mediaWikis().stream()
 				.map(w -> new VanillaWiki(w.name, w.url, config.excerptLength))
 				.toList();
