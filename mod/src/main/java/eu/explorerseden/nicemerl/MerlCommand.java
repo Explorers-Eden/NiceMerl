@@ -239,9 +239,11 @@ public final class MerlCommand {
 		SearchIndex.Outcome outcome = index != null
 				? index.find(search, limit, config.excerptLength)
 				: new SearchIndex.Outcome(List.of(), Map.of(), false);
-		// "and in the nether?" right after a question: search both together, if that finds more.
+		// "and in the nether?" right after a question: if it finds nothing good on its own,
+		// search it together with the previous question.
 		String previous = visit.recentQuestion(now);
-		if (index != null && previous != null && MerlLines.isFollowUp(search)) {
+		boolean weak = outcome.results().isEmpty() || outcome.confidence() < SearchIndex.SURE_TITLE_SCORE;
+		if (index != null && weak && previous != null && MerlLines.isFollowUp(search)) {
 			SearchIndex.Outcome combined = index.find(previous + " " + search, limit, config.excerptLength);
 			if (combined.confidence() >= outcome.confidence()) {
 				search = previous + " " + search;

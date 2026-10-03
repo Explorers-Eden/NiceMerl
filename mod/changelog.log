@@ -1,9 +1,11 @@
 # Minecraft Version(s): 26.3
 ## New: "What should I do next?"
-- Ask `/merl what should I do next` (or *any ideas?*, *what now*, *I'm out of ideas*…) and Merl suggests something to do, from over 600 ideas
+- Ask `/merl what should I do next` (or *any ideas?*, *what now*, *I'm out of ideas*…) and Merl suggests something to do, from over 1,200 ideas
 - In-game, she looks at your advancements first: never been to the Nether? She'll suggest a portal. Have blaze rods but no eye of ender? Time to find a stronghold. Killed the dragon? Go find an elytra!
 
 ## Merl sounds more human
+- **Over 4,500 lines:** twice as many as before, with 240 jokes
+- **Understands you better:** small talk works in many more wordings, with stretched letters and small typos (*"can you tell me a joke please"*, *"thaaanks"*, *"im bored gimme ideas"*), while real questions still go to the wiki
 - **Mixed messages:** *"thanks! how do I get a boss key?"* or *"hi, where are trial chambers"* get a quick reply to the small talk and the answer
 - **She says how sure she is:** a perfect match gets *"Found it!"*, a close one *"I think this is it…"*, a long shot *"This is my best guess:"*
 - **She remembers you for a little while:** she notices when you ask the same thing twice, says *"Welcome back!"* after a few hours away, understands follow-ups like *"and in the nether?"*, and when you say thanks she knows which page helped

@@ -8,7 +8,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY *.py .
 COPY data/ data/
-COPY assets/thumb_*.png assets/
+COPY assets/merl_* assets/thumb_* assets/
 
 # state/ holds Peanut Butter's pet count; mount a volume there to keep it across updates.
 RUN useradd --create-home bot && mkdir state && chown bot state

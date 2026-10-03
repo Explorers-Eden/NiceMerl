@@ -1,0 +1,271 @@
+# One workflow for everything NiceMerl:
+#
+#   Discord bot (bot/)   test the Python code → build the Docker image niceron/nicemerl and push it to Docker Hub
+#   Fabric mod  (mod/)   build the jar        → publish it as a GitHub release (newest per Minecraft version)
+#
+# Each part only runs when its files changed. The mod also depends on bot/data/, because Merl's lines
+# and synonyms are bundled into the jar. Images and releases are only published from main.
+# Every 6 hours the image is rebuilt to pick up base image and dependency security updates.
+# Running it by hand (Actions → NiceMerl → Run workflow) on main does everything: test, image, build and release.
+name: NiceMerl
+
+on:
+  push:
+  pull_request:
+  schedule:
+    # Offset from :00, the most congested slot for scheduled workflows.
+    - cron: "23 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    name: Find out what changed
+    runs-on: ubuntu-24.04
+    outputs:
+      bot: ${{ steps.filter.outputs.bot }}
+      mod: ${{ steps.filter.outputs.mod }}
+    steps:
+      - name: Check out the repository with full history
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Decide which parts need to run
+        id: filter
+        env:
+          EVENT: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          case "$EVENT" in
+            schedule)
+              bot=true; mod=false ;;
+            workflow_dispatch)
+              bot=true; mod=true ;;
+            *)
+              base="$BEFORE"
+              [ "$EVENT" = "pull_request" ] && base="$PR_BASE"
+              if [ -n "$base" ] && git cat-file -e "$base^{commit}" 2>/dev/null; then
+                changed=$(git diff --name-only "$base" "$GITHUB_SHA")
+              else
+                # New branch or rewritten history: treat everything as changed.
+                changed=$(git ls-files)
+              fi
+              echo "Changed files:"; echo "$changed"
+              bot=false; mod=false
+              echo "$changed" | grep -qE '^(bot/|\.github/workflows/)' && bot=true
+              echo "$changed" | grep -qE '^(mod/|bot/data/|\.github/workflows/)' && mod=true
+              ;;
+          esac
+          echo "Bot: $bot, mod: $mod"
+          echo "bot=$bot" >> "$GITHUB_OUTPUT"
+          echo "mod=$mod" >> "$GITHUB_OUTPUT"
+
+  bot-test:
+    name: "Bot: test the Python code"
+    needs: changes
+    if: needs.changes.outputs.bot == 'true'
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: bot
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python 3.12 (same as the Docker image)
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: bot/requirements.txt
+
+      - name: Install the bot's dependencies
+        run: pip install -r requirements.txt
+
+      - name: Compile every Python file
+        run: python -m compileall -q .
+
+      - name: Load Merl's lines and check that every pool the code uses exists
+        run: |
+          python - <<'EOF'
+          import json, re, pathlib
+          import bot, personality  # importing loads lines.json, synonyms.json and every intent pattern
+          pools = personality.POOLS
+          code = "".join(p.read_text() for p in pathlib.Path(".").glob("*.py"))
+          used = set(re.findall(r'pick\(\s*"([a-z_]+)"', code)) | set(personality.PREFIX_POOLS.values())
+          used |= {f"asides_{m}" for m in personality.MOODS} | {f"status_{m}" for m in personality.MOODS}
+          used |= {f"pb_{m}" for m in personality.PB_MOODS} | {f"reply_{t}" for t in personality.TOPICS}
+          used |= {p for p, _, _ in personality.KEYWORD_INTENTS}
+          missing = sorted(p for p in used if p not in pools)
+          empty = sorted(p for p, lines in pools.items() if not lines)
+          assert not missing, f"Pools used in code but missing in lines.json: {missing}"
+          assert not empty, f"Empty pools in lines.json: {empty}"
+          print(f"{len(pools)} pools, {sum(map(len, pools.values()))} lines, all present")
+          EOF
+
+      - name: Check that small talk and questions are told apart
+        run: |
+          python - <<'EOF'
+          import personality as p
+          talk = {"can you tell me a joke please": "joke", "thaaanks merl": "thanks", "im bored gimme ideas": "idea",
+                  "hiii": "greeting", "pet peanut butter": "pet_pb", "bye merl": "goodbye"}
+          questions = ["how do i get a boss key", "tips for the nether", "what should i do with my wither skulls"]
+          for text, pool in talk.items():
+              assert p.small_talk(text) == pool, f"{text!r} should be {pool}, got {p.small_talk(text)}"
+          for text in questions:
+              assert p.small_talk(text) is None, f"{text!r} is a question, not small talk"
+          print("Small talk detection works")
+          EOF
+
+  bot-image:
+    name: "Bot: build and push the Docker image"
+    needs: [changes, bot-test]
+    if: >-
+      needs.changes.outputs.bot == 'true' && github.ref == 'refs/heads/main' &&
+      (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out the repository with full history
+        uses: actions/checkout@v6
+        with:
+          # Full history, so the timestamp below can come from the last bot/ commit.
+          fetch-depth: 0
+
+      # Stamp the image with the time of the last commit that touched bot/ instead of the build
+      # time, so a scheduled rebuild with no real changes produces the identical image digest
+      # and Watchtower doesn't restart the bot for nothing.
+      - name: Use the last bot commit time as the image timestamp
+        run: echo "SOURCE_DATE_EPOCH=$(git log -1 --format=%ct -- bot)" >> "$GITHUB_ENV"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build the image and push it as niceron/nicemerl:latest
+        uses: docker/build-push-action@v7
+        with:
+          context: ./bot
+          file: ./bot/Dockerfile
+          push: true
+          pull: true
+          provenance: false
+          sbom: false
+          # The context is the checked-out folder, so layers are only reused when file contents
+          # are unchanged; that's what keeps no-op rebuilds digest-identical.
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: |
+            niceron/nicemerl:latest
+            niceron/nicemerl:sha-${{ github.sha }}
+
+  mod-build:
+    name: "Mod: build the jar"
+    needs: changes
+    if: needs.changes.outputs.mod == 'true'
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: mod
+    outputs:
+      tag_name: ${{ steps.meta.outputs.tag_name }}
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v6
+
+      - name: Make sure the Gradle wrapper is genuine
+        uses: gradle/actions/wrapper-validation@v6
+
+      - name: Set up Python 3.12 for the release scripts
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Read version and Minecraft version from tools/release_infos.yml
+        id: meta
+        run: |
+          pip install pyyaml
+          python tools/scripts/read-release-metadata.py
+
+      - name: Set up Java 25
+        uses: actions/setup-java@v5
+        with:
+          java-version: "25"
+          distribution: "microsoft"
+
+      - name: Set up Gradle with caching
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Build the mod jar (version ${{ steps.meta.outputs.version_number }})
+        run: ./gradlew build -Pversion=${{ steps.meta.outputs.version_number }}
+
+      - name: Upload the jar as a workflow artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: nice-merl
+          path: mod/build/libs/
+
+  mod-release:
+    name: "Mod: publish the GitHub release"
+    needs: [changes, mod-build]
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    # Never publish two releases at the same time.
+    concurrency:
+      group: mod-release
+      cancel-in-progress: false
+    defaults:
+      run:
+        working-directory: mod
+    steps:
+      - name: Check out the repository (release scripts and changelog)
+        uses: actions/checkout@v6
+
+      - name: Set up Python 3.12 for the release scripts
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Read version, tag and release name from tools/release_infos.yml
+        id: meta
+        run: |
+          pip install pyyaml
+          python tools/scripts/read-release-metadata.py
+
+      - name: Download the jar built by the previous job
+        uses: actions/download-artifact@v7
+        with:
+          name: nice-merl
+          path: mod/build/libs/
+
+      # Pushing without raising the version refreshes the jar of that version's release.
+      - name: Create or update release ${{ steps.meta.outputs.tag_name }} with changelog.log as notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET_SHA: ${{ github.sha }}
+          TAG_NAME: ${{ steps.meta.outputs.tag_name }}
+          RELEASE_NAME: ${{ steps.meta.outputs.release_name }}
+          CHANGELOG_PATH: ${{ steps.meta.outputs.changelog_path }}
+          JAR_NAME: ${{ steps.meta.outputs.jar_name }}
+          BUILT_JAR: ${{ steps.meta.outputs.built_jar }}
+          IS_PRERELEASE: ${{ steps.meta.outputs.is_prerelease }}
+        run: bash tools/scripts/create-or-update-github-release.sh
+
+      - name: Delete older releases for Minecraft ${{ steps.meta.outputs.mc_version }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ steps.meta.outputs.tag_name }}
+          MC_VERSION: ${{ steps.meta.outputs.mc_version }}
+        run: bash tools/scripts/delete-older-releases.sh

@@ -62,7 +62,7 @@ The code lives in [NiceKaleido/NiceMerl](https://github.com/NiceKaleido/NiceMerl
    | `DOCKER_USERNAME` | `niceron` |
    | `DOCKER_PASSWORD` | a Docker Hub **access token** (Docker Hub → Account settings → Personal access tokens, *Read & Write*) |
 
-2. Open the **Actions** tab, select **Build and Push Docker Image**, then **Run workflow**. After 1–2 minutes, `niceron/nicemerl:latest` should appear on Docker Hub.
+2. Open the **Actions** tab, select **NiceMerl**, then **Run workflow** on `main`. It tests the bot, builds the image and also builds and releases the mod. After 1–2 minutes, `niceron/nicemerl:latest` should appear on Docker Hub.
 
 `.env` and `.venv` are in `.gitignore`, so a local token can't be committed by accident.
 
@@ -132,7 +132,7 @@ Post these in the channel:
 | What | How |
 |---|---|
 | Change the bot's code | push changes in `bot/` to `main`. GitHub builds a new image and Watchtower deploys it on its next check (with the website's once-a-day Watchtower schedule, within a day). |
-| Force a rebuild | GitHub **Actions → Build and Push Docker Image → Run workflow** |
+| Force a rebuild | GitHub **Actions → NiceMerl → Run workflow** (on `main`) |
 | Roll back | set the stack image to an older `niceron/nicemerl:sha-<commit>` tag |
 | Change the token/channel | Portainer **Stacks → nicemerl → Environment variables**, then **Update the stack** |
 | Follow the logs | Portainer **Containers → nicemerl → Logs** |

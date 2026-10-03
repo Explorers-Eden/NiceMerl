@@ -14,7 +14,7 @@ import config
 import personality
 from memory import Memory, Visit
 from personality import pick
-from search import Index, Outcome, Result, tokenize
+from search import SURE_TITLE_SCORE, Index, Outcome, Result, tokenize
 from state import State
 from vanilla import VanillaWiki, combine, confidence, plan
 from wiki import fetch_sections
@@ -25,6 +25,9 @@ BOT_NAME = "NiceMerl"
 COMMUNITY = "Explorer's Eden"
 MERL_PINK = 0xF06EAA
 ASSETS = Path(__file__).parent / "assets"
+# Every reply shows one of these in the corner of its embed; add more merl_*/thumb_* images to use them too.
+THUMBNAILS = sorted(p for p in ASSETS.iterdir() if p.name.startswith(("merl_", "thumb_"))
+                    and p.suffix.lower() in (".png", ".jpg", ".jpeg", ".gif", ".webp"))
 FOOTER = "NiceMerl · a fan homage to Merl from Minecraft"
 # Small talk Merl answers with a reaction as well.
 REACTIONS = {"thanks": "💗", "compliment": "💗", "love": "💗", "goodbye": "👋", "peanut_butter": "🐱",
@@ -47,6 +50,7 @@ class NiceMerl(discord.Client):
         self.memory = Memory()
         self.state = State(config.STATE_DIR)
         self.timezone = ZoneInfo(config.TIMEZONE)
+        self.last_thumbnail: Path | None = None
 
     async def setup_hook(self):
         self.refresh_index.change_interval(hours=config.REINDEX_HOURS)
@@ -97,12 +101,12 @@ class NiceMerl(discord.Client):
 
         if content == "!reindex":
             if message.author.guild_permissions.manage_guild:
-                await message.reply(pick("reindex_start"), mention_author=False)
+                await self.send(message, embed=self.text_embed(pick("reindex_start")))
                 async with message.channel.typing():
                     ok = await self.reindex()
                 pages = len({s.path for s in self.index.sections})
-                await message.reply(pick("reindex_done", pages=str(pages)) if ok else pick("reindex_failed"),
-                                    mention_author=False)
+                await self.send(message, embed=self.text_embed(
+                    pick("reindex_done", pages=str(pages)) if ok else pick("reindex_failed")))
             return
 
         started = time.monotonic()
@@ -131,7 +135,7 @@ class NiceMerl(discord.Client):
         if talk == "greeting" or (talk is None and not tokenize(question)):
             if talk or self.user in message.mentions:
                 embed = self.hello_embed(user, returning, self.ask_back("greeting", visit, now))
-                await self.say(message, started, embed=embed, thumbnail="thumb_hello.png")
+                await self.say(message, started, embed=embed)
             return
         if talk:
             text = self.small_talk_line(talk, user, visit, now)
@@ -143,13 +147,15 @@ class NiceMerl(discord.Client):
             return
 
         if not self.index.sections:
-            await message.reply(pick("still_reading"), mention_author=False)
+            await self.send(message, embed=self.text_embed(pick("still_reading")))
             return
 
         prefix, search = personality.split_small_talk(question)
         outcome = self.index.find(search, limit=config.RESULTS)
-        # "and in the nether?" right after a question: search both together, if that finds more.
-        if personality.is_follow_up(search) and (previous := visit.recent_question(now)):
+        # "and in the nether?" right after a question: if it finds nothing good on its own,
+        # search it together with the previous question.
+        weak = not outcome.results or outcome.confidence < SURE_TITLE_SCORE
+        if weak and personality.is_follow_up(search) and (previous := visit.recent_question(now)):
             combined = self.index.find(f"{previous} {search}", limit=config.RESULTS)
             if combined.confidence >= outcome.confidence:
                 search, outcome = f"{previous} {search}", combined
@@ -171,7 +177,7 @@ class NiceMerl(discord.Client):
             await self.say(message, started, embed=embed, results=len(results))
         else:
             visit.page = ""
-            await self.say(message, started, embed=self.not_found_embed(), thumbnail="thumb_idk.png", results=1)
+            await self.say(message, started, embed=self.not_found_embed(), results=1)
 
     def small_talk_line(self, talk: str, user: str, visit: Visit, now: float) -> str:
         if talk == "thanks" and (page := visit.recent_page(now)):
@@ -191,8 +197,8 @@ class NiceMerl(discord.Client):
             visit.asked_back_at = now
         return line
 
-    async def say(self, message: discord.Message, started: float, *, thumbnail: str | None = None,
-                  results: int = 0, **kwargs):
+    async def say(self, message: discord.Message, started: float, *, content: str | None = None,
+                  embed: discord.Embed | None = None, results: int = 0):
         """Replies after a short "typing…" pause, so Merl doesn't answer inhumanly fast."""
         if results:
             delay = min(TYPING_MAX, TYPING_ANSWER + TYPING_PER_RESULT * results)
@@ -202,10 +208,21 @@ class NiceMerl(discord.Client):
         if remaining > 0:
             async with message.channel.typing():
                 await asyncio.sleep(remaining)
-        if thumbnail:
-            kwargs["file"] = discord.File(ASSETS / thumbnail, filename=thumbnail)
-            kwargs["embed"].set_thumbnail(url=f"attachment://{thumbnail}")
-        await message.reply(mention_author=False, **kwargs)
+        await self.send(message, embed=embed or self.text_embed(content or ""))
+
+    async def send(self, message: discord.Message, *, embed: discord.Embed):
+        """Every reply is an embed with a random picture of Merl in the corner."""
+        kwargs = {}
+        if THUMBNAILS:
+            choices = [t for t in THUMBNAILS if t != self.last_thumbnail] or THUMBNAILS
+            image = self.last_thumbnail = random.choice(choices)
+            kwargs["file"] = discord.File(image, filename=image.name)
+            embed.set_thumbnail(url=f"attachment://{image.name}")
+        await message.reply(embed=embed, mention_author=False, **kwargs)
+
+    def text_embed(self, text: str) -> discord.Embed:
+        """A small embed for small talk and status messages."""
+        return self.branded(discord.Embed(description=text[:4096], color=MERL_PINK))
 
     async def react(self, message: discord.Message, emoji: str):
         try:

@@ -39,9 +39,9 @@ Neither uses AI or a paid API, so there are no running costs. Both download the 
 │   ├── changelog.log
 │   └── …
 └── .github/workflows/
-    ├── docker.yml           bot → Docker Hub (on push to bot/, and every 6 h)
-    ├── mod-build.yml        mod → test build (on push to mod/ or bot/data/)
-    └── mod-release.yml      mod → GitHub release after a green build on main, keeps the newest per MC version
+    └── ci.yml               one workflow for everything, each part runs only when its files changed:
+                             bot: test → Docker Hub (from main, and every 6 h)
+                             mod: build → GitHub release (from main), keeps the newest per MC version
 ```
 
 > ⚠️ The mod re-implements the bot's search and personality in Java: [`SearchIndex.java`](mod/src/main/java/eu/explorerseden/nicemerl/SearchIndex.java) mirrors [`search.py`](bot/search.py), [`VanillaWiki.java`](mod/src/main/java/eu/explorerseden/nicemerl/VanillaWiki.java) mirrors [`vanilla.py`](bot/vanilla.py), [`MerlLines.java`](mod/src/main/java/eu/explorerseden/nicemerl/MerlLines.java) mirrors [`personality.py`](bot/personality.py) and [`MerlMemory.java`](mod/src/main/java/eu/explorerseden/nicemerl/MerlMemory.java) mirrors [`memory.py`](bot/memory.py). Changes to stopwords, weights, stemming, scoring or how replies are put together need to be made in both. Both currently return identical scores.
@@ -56,7 +56,9 @@ Every message in the configured channel is treated as a question. NiceMerl repli
 
 - **Vanilla questions** are answered from the Minecraft Wiki, labelled 📗 *Minecraft Wiki*.
 - **Saying hi** (or @-mentioning her) gets a greeting that fits the time of day, using their name.
-- **Small talk:** *thanks*, *bye*, *how are you*, *who are you*, *what can you do*, *tell me a joke*, *give me a tip*, *fun fact*, *what should I do next?* (over 600 ideas), *good bot*, *who is Peanut Butter*, *pet Peanut Butter*, *I died*, *I'm bored*… Over 2,000 lines in all. She answers in character and reacts with 💗, 👋 or 🐱.
+- **Small talk:** *thanks*, *bye*, *how are you*, *who are you*, *what can you do*, *tell me a joke*, *give me a tip*, *fun fact*, *what should I do next?* (over 1,200 ideas), *good bot*, *who is Peanut Butter*, *pet Peanut Butter*, *I died*, *I'm bored*… Over 4,500 lines in all, including 240 jokes. She answers in character and reacts with 💗, 👋 or 🐱.
+- **Forgiving about wording:** stretched letters (*"thaaanks"*), small typos (*"thnaks"*, *"jok pls"*), politeness (*"can you tell me a joke please"*) and loose phrasing (*"im bored gimme ideas"*, *"got any tips for beginners"*) all work. As soon as a message has a real subject in it (*"tips for the nether"*), it's treated as a question.
+- **A picture of Merl on every reply:** each answer is an embed with a random Merl image in the corner, never the same twice in a row.
 - **Mixed messages:** *"thanks! how do I get a boss key?"* gets a quick *"You're welcome!"* and the answer.
 - **She sounds human:**
   - She says how sure she is (*"Found it!"*, *"I think this is it…"*, *"This is my best guess:"*), based on the search score.
@@ -111,13 +113,14 @@ Everything Merl says lives in [`bot/data/lines.json`](bot/data/lines.json):
 - `intents`: small-talk patterns. Each one is matched against the whole message, lowercased, without punctuation and apostrophes. Messages that *start* with a greeting, thanks, sorry, ok or a compliment and go on with a question get a short line from the matching `*_prefix` pool before the answer.
 - `moods` / `pb_moods`: Merl's and Peanut Butter's mood of the day (the same in the bot and the mod), which pick from `asides_<mood>`, `status_<mood>` and `pb_<mood>`.
 - `topics`: words that tell what someone is up to after Merl asked (*"building"* → `reply_build`).
+- `keyword_intents`: small talk in any wording. A message matches an intent when it contains one of its `triggers` and every other word is in `filler` or the intent's `words`. `strip_start`/`strip_end` are removed first (*"can you … please"*).
 - `progress_ideas`: the mod's progress-based ideas. Each step has an `after` advancement that must be done, an `unless` advancement that must not be, and its lines.
 
 Edit it once and both the bot and the next mod build pick it up. In Minecraft chat, emoji outside the basic plane and `*` are stripped automatically.
 
 ### Assets
 
-[`bot/assets/avatar.png`](bot/assets/avatar.png) is the bot avatar; upload it in the Developer Portal. The `thumb_*.png` files are attached to the greeting and "I don't know" replies. The other images are only used in the docs.
+[`bot/assets/avatar.png`](bot/assets/avatar.png) is the bot avatar; upload it in the Developer Portal. Every reply shows a random `merl_*` or `thumb_*` image from this folder in the corner of its embed; drop in more images with those names to add them to the rotation. `avatar.png` is only the bot avatar.
 
 ---
 
@@ -129,7 +132,7 @@ Players type `/merl <question>`, and NiceMerl answers in chat with:
 - the **current data pack settings**, when the question is about settings (*"is pvp enabled?"*, *"keep inventory settings"*, *"blaze settings"*)
 
 She also does small talk (`/merl thanks`, `/merl tell me a joke`, `/merl give me a tip`, `/merl fun fact`, `/merl pet peanut butter`), greets players by name, and has the same human touches as the bot (mixed messages, confidence, short memory, moods, asking back). On top of that, in-game:
-- **`/merl what should I do next`** looks at the player's advancements and suggests the next step (*"You haven't been to the Nether yet!"*, *"Find an End city with a ship and grab the elytra!"*), or one of over 600 ideas.
+- **`/merl what should I do next`** looks at the player's advancements and suggests the next step (*"You haven't been to the Nether yet!"*, *"Find an End city with a ship and grab the elytra!"*), or one of over 1,200 ideas.
 - **She notices what you're doing:** now and then she comments on the dimension, weather or biome, low health, what you're holding (*"Ooh, a mace! Bonk responsibly."*), your elytra, your death count or your play time. Players can turn this off with `/nicemerl comments off`.
 - **She celebrates with you:** big advancements (dragon, elytra, Wither, netherite armor…) get a private congratulation. Players can turn this off with `/nicemerl celebrate off`.
 
@@ -218,7 +221,7 @@ Labels are sent as translation keys with the English fallback, so players with a
 1. In [`mod/tools/release_infos.yml`](mod/tools/release_infos.yml), set `Version number` and `Version subtitle`, and add any new Minecraft version first under `Versions`. Also set `version` in [`mod/gradle.properties`](mod/gradle.properties) to match, for local builds.
 2. Write the release notes in [`mod/changelog.log`](mod/changelog.log).
 3. If the Minecraft version changed, update `minecraft_version`, `fabric_api_version` and `loader_version` in [`mod/gradle.properties`](mod/gradle.properties) (see <https://fabricmc.net/develop>) and `"minecraft"` in `mod/src/main/resources/fabric.mod.json`.
-4. Push to `main`. Once **Mod Build** goes green, **Publish Mod Release** runs by itself. You can also start it by hand under **Actions → Publish Mod Release → Run workflow**.
+4. Push to `main`. Once the **Mod: build the jar** job of the **NiceMerl** workflow goes green, **Mod: publish the GitHub release** runs right after it. You can also start everything by hand under **Actions → NiceMerl → Run workflow**.
 
 > 💡 Every green build of `main` (also from changes to `bot/data/`) publishes. Without a version bump, it refreshes the jar and notes of the current version's release, so raise the version for anything players should notice as a new release.
 

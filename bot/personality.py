@@ -10,7 +10,7 @@ import unicodedata
 from datetime import date, datetime
 from pathlib import Path
 
-from search import tokenize
+from search import edit_distance, tokenize
 
 LINES = json.loads((Path(__file__).parent / "data" / "lines.json").read_text("utf-8"))
 POOLS: dict[str, list[str]] = LINES["pools"]
@@ -18,6 +18,20 @@ INTENTS = [(re.compile(f"(?:{i['pattern']})"), i["pool"]) for i in LINES["intent
 MOODS: list[str] = LINES["moods"]
 PB_MOODS: list[str] = LINES["pb_moods"]
 TOPICS: dict[str, list[str]] = LINES["topics"]
+KEYWORDS = LINES["keyword_intents"]
+STRIP_START = sorted(KEYWORDS["strip_start"], key=len, reverse=True)
+STRIP_END = sorted(KEYWORDS["strip_end"], key=len, reverse=True)
+# (pool, trigger phrases, every word allowed next to them)
+KEYWORD_INTENTS = [
+    (i["pool"], i["triggers"],
+     set(KEYWORDS["filler"]) | set(i["words"]) | {w for t in i["triggers"] for w in t.split()})
+    for i in KEYWORDS["intents"]
+]
+# Words small talk is made of, for fixing typos ("thnaks" -> "thanks").
+SMALL_TALK_WORDS = sorted(
+    {w for _, _, allowed in KEYWORD_INTENTS for w in allowed}
+    | {w for i in LINES["intents"] for w in re.findall(r"[a-z]{4,}", i["pattern"])})
+LONG_RUN = re.compile(r"([a-z])\1{2,}")
 
 # Roughly one answer in this many gets a little aside from Merl or Peanut Butter.
 ASIDE_CHANCE = 12
@@ -96,9 +110,65 @@ def _intent(normalized: str) -> str | None:
 
 def small_talk(text: str) -> str | None:
     """The pool to answer from when the whole message is small talk ("thanks merl!"), else None.
-    "greeting" means the caller picks the greeting for the time of day."""
+    "greeting" means the caller picks the greeting for the time of day.
+    Tries the exact patterns first, then forgiving versions of the message (stretched letters,
+    typos, "can you … please" removed), then keyword intents ("im bored gimme ideas")."""
     normalized = normalize(text)
-    return _intent(normalized) if normalized else None
+    if not normalized:
+        return None
+    variants = _variants(normalized)
+    for variant in variants:
+        if pool := _intent(variant):
+            return pool
+    for variant in variants:
+        if pool := _keyword_intent(variant):
+            return pool
+    return None
+
+
+def _variants(normalized: str) -> list[str]:
+    """ "thaaanks merl lol" -> also "thanks merl lol", "thanks"."""
+    out = [normalized]
+    for collapsed in (LONG_RUN.sub(r"\1", normalized), LONG_RUN.sub(r"\1\1", normalized)):
+        fixed = " ".join(_fix_typo(w) for w in collapsed.split())
+        for v in (collapsed, fixed, _strip(fixed)):
+            if v and v not in out:
+                out.append(v)
+    return out
+
+
+def _fix_typo(word: str) -> str:
+    """A word one typo away from a small-talk word becomes that word."""
+    if len(word) < 3 or word in SMALL_TALK_WORDS:
+        return word
+    for known in SMALL_TALK_WORDS:
+        if len(known) >= 4 and known[0] == word[0] and edit_distance(word, known, 1) <= 1:
+            return known
+    return word
+
+
+def _strip(normalized: str) -> str:
+    """Removes "can you", "please", "merl", "lol"… from the start and end."""
+    text = normalized
+    changed = True
+    while changed and text:
+        changed = False
+        for phrase in STRIP_START:
+            if text.startswith(phrase + " "):
+                text, changed = text[len(phrase) + 1:], True
+        for phrase in STRIP_END:
+            if text.endswith(" " + phrase):
+                text, changed = text[:-len(phrase) - 1], True
+    return text
+
+
+def _keyword_intent(normalized: str) -> str | None:
+    padded = f" {normalized} "
+    words = normalized.split()
+    for pool, triggers, allowed in KEYWORD_INTENTS:
+        if any(f" {t} " in padded for t in triggers) and all(w in allowed for w in words):
+            return pool
+    return None
 
 
 def looks_like_question(rest: str, original: str) -> bool:

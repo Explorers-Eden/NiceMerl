@@ -78,6 +78,16 @@ public final class MerlLines {
 	private static final List<String> PB_MOODS = new ArrayList<>();
 	private static final Map<String, List<String>> TOPICS = new LinkedHashMap<>();
 	private static final List<ProgressIdea> PROGRESS_IDEAS = new ArrayList<>();
+	/** Small talk in any wording: a trigger phrase, and every other word allowed next to it. */
+	private record KeywordIntent(String pool, List<String> triggers, Set<String> allowed) {}
+
+	private static final List<KeywordIntent> KEYWORD_INTENTS = new ArrayList<>();
+	private static final List<String> STRIP_START = new ArrayList<>();
+	private static final List<String> STRIP_END = new ArrayList<>();
+	/** Words small talk is made of, for fixing typos ("thnaks" → "thanks"). */
+	private static final List<String> SMALL_TALK_WORDS = new ArrayList<>();
+	private static final Pattern LONG_RUN = Pattern.compile("([a-z])\\1{2,}");
+	private static final Pattern PATTERN_WORD = Pattern.compile("[a-z]{4,}");
 	private static final Map<String, List<String>> BAGS = new HashMap<>();
 	private static final Map<String, String> LAST = new HashMap<>();
 
@@ -99,6 +109,27 @@ public final class MerlLines {
 					idea.has("unless") ? idea.get("unless").getAsString() : null,
 					strings(idea.get("lines"))));
 		}
+		JsonObject keywords = lines.getAsJsonObject("keyword_intents");
+		List<String> filler = strings(keywords.get("filler"));
+		java.util.TreeSet<String> vocabulary = new java.util.TreeSet<>();
+		for (JsonElement element : keywords.getAsJsonArray("intents")) {
+			JsonObject intent = element.getAsJsonObject();
+			List<String> triggers = strings(intent.get("triggers"));
+			Set<String> allowed = new java.util.HashSet<>(filler);
+			allowed.addAll(strings(intent.get("words")));
+			for (String trigger : triggers) allowed.addAll(Arrays.asList(trigger.split(" ")));
+			KEYWORD_INTENTS.add(new KeywordIntent(intent.get("pool").getAsString(), triggers, Set.copyOf(allowed)));
+			vocabulary.addAll(allowed);
+		}
+		for (Intent intent : INTENTS) {
+			Matcher m = PATTERN_WORD.matcher(intent.pattern().pattern());
+			while (m.find()) vocabulary.add(m.group());
+		}
+		SMALL_TALK_WORDS.addAll(vocabulary);
+		STRIP_START.addAll(strings(keywords.get("strip_start")));
+		STRIP_START.sort(java.util.Comparator.comparingInt(String::length).reversed());
+		STRIP_END.addAll(strings(keywords.get("strip_end")));
+		STRIP_END.sort(java.util.Comparator.comparingInt(String::length).reversed());
 		resource("synonyms.json").entrySet().forEach(e -> {
 			if (!e.getKey().startsWith("_")) SYNONYMS.put(e.getKey(), e.getValue().getAsString());
 		});
@@ -201,7 +232,74 @@ public final class MerlLines {
 	 */
 	public static String smallTalk(String text) {
 		String normalized = normalize(text);
-		return normalized.isEmpty() ? null : intent(normalized);
+		if (normalized.isEmpty()) return null;
+		List<String> variants = variants(normalized);
+		for (String variant : variants) {
+			String pool = intent(variant);
+			if (pool != null) return pool;
+		}
+		for (String variant : variants) {
+			String pool = keywordIntent(variant);
+			if (pool != null) return pool;
+		}
+		return null;
+	}
+
+	/** "thaaanks merl lol" → also "thanks merl lol", "thanks". */
+	private static List<String> variants(String normalized) {
+		List<String> out = new ArrayList<>(List.of(normalized));
+		for (String collapsed : List.of(LONG_RUN.matcher(normalized).replaceAll("$1"), LONG_RUN.matcher(normalized).replaceAll("$1$1"))) {
+			String fixed = String.join(" ", words(collapsed).stream().map(MerlLines::fixTypo).toList());
+			for (String v : List.of(collapsed, fixed, strip(fixed))) {
+				if (!v.isEmpty() && !out.contains(v)) out.add(v);
+			}
+		}
+		return out;
+	}
+
+	/** A word one typo away from a small-talk word becomes that word. */
+	private static String fixTypo(String word) {
+		if (word.length() < 3 || SMALL_TALK_WORDS.contains(word)) return word;
+		for (String known : SMALL_TALK_WORDS) {
+			if (known.length() >= 4 && known.charAt(0) == word.charAt(0) && SearchIndex.editDistance(word, known, 1) <= 1) {
+				return known;
+			}
+		}
+		return word;
+	}
+
+	/** Removes "can you", "please", "merl", "lol"… from the start and end. */
+	private static String strip(String normalized) {
+		String text = normalized;
+		boolean changed = true;
+		while (changed && !text.isEmpty()) {
+			changed = false;
+			for (String phrase : STRIP_START) {
+				if (text.startsWith(phrase + " ")) {
+					text = text.substring(phrase.length() + 1);
+					changed = true;
+				}
+			}
+			for (String phrase : STRIP_END) {
+				if (text.endsWith(" " + phrase)) {
+					text = text.substring(0, text.length() - phrase.length() - 1);
+					changed = true;
+				}
+			}
+		}
+		return text;
+	}
+
+	private static String keywordIntent(String normalized) {
+		String padded = " " + normalized + " ";
+		List<String> words = words(normalized);
+		for (KeywordIntent intent : KEYWORD_INTENTS) {
+			if (intent.triggers().stream().anyMatch(t -> padded.contains(" " + t + " "))
+					&& words.stream().allMatch(intent.allowed()::contains)) {
+				return intent.pool();
+			}
+		}
+		return null;
 	}
 
 	static boolean looksLikeQuestion(String rest, String original) {

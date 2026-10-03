@@ -10,10 +10,11 @@ Players type `/merl` followed by a question, for example `/merl how do I get a b
 Questions about the server's settings, like `/merl is pvp enabled`, also show the current values of the installed data packs. Merl also answers small talk, such as `/merl thanks`, `/merl tell me a joke`, `/merl give me a tip` or `/merl pet peanut butter`.
 
 ## What should I do next?
-Players who don't know what to do can ask `/merl what should I do next`, `/merl any ideas` or `/merl I'm out of ideas`. Merl looks at the player's advancements and suggests a fitting next step, for example building a nether portal, finding a stronghold or looking for an elytra. Now and then, or when no step fits, she picks one of over 600 general ideas instead.
+Players who don't know what to do can ask `/merl what should I do next`, `/merl any ideas` or `/merl I'm out of ideas`. Merl looks at the player's advancements and suggests a fitting next step, for example building a nether portal, finding a stronghold or looking for an elytra. Now and then, or when no step fits, she picks one of over 1,200 general ideas instead.
 
 ## Merl's personality
 Merl tries to sound like a real person rather than a bot:
+- She understands small talk in many wordings, with stretched letters and small typos, like `/merl can you tell me a joke please`, `/merl thaaanks` or `/merl im bored gimme ideas`.
 - Small talk and a question can be combined, like `/merl thanks! how do I get a boss key`. Merl replies to both.
 - She says how sure she is about an answer, from a confident "Found it!" to "This is my best guess".
 - For a few minutes she remembers the last question. She notices when it is asked again, understands follow-ups like `/merl and in the nether?`, and knows which page helped when a player says thanks. After a few hours away, she welcomes players back.
