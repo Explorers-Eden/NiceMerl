@@ -31,7 +31,7 @@ import net.minecraft.server.packs.resources.ResourceManager;
  * every option, so "keepinv.equip_dmg" becomes "Equipment Damage" and "taglist" becomes "Tag List".
  */
 public final class SettingLabels {
-	public static final SettingLabels EMPTY = new SettingLabels(Map.of(), Map.of());
+	public static final SettingLabels EMPTY = new SettingLabels(Map.of(), Map.of(), Set.of());
 
 	private static final Pattern CALL = Pattern.compile(
 			"function ([a-z0-9_.-]+:[a-z0-9_./-]+) with storage ([a-z0-9_.-]+:[a-z0-9_./-]+) ([A-Za-z0-9_.]+)");
@@ -48,10 +48,12 @@ public final class SettingLabels {
 
 	private final Map<String, Label> keys;
 	private final Map<String, Label> values;
+	private final Set<String> percent;
 
-	private SettingLabels(Map<String, Label> keys, Map<String, Label> values) {
+	private SettingLabels(Map<String, Label> keys, Map<String, Label> values, Set<String> percent) {
 		this.keys = keys;
 		this.values = values;
+		this.percent = percent;
 	}
 
 	/** Label for the setting at {@code path} inside {@code storage}, or null. */
@@ -62,6 +64,11 @@ public final class SettingLabels {
 	/** Label for a choice value of that setting, or null. */
 	public Label value(String storage, String path, String value) {
 		return values.get(storage + " " + path + " " + value);
+	}
+
+	/** True when the dialog shows this setting as a percentage. */
+	public boolean percent(String storage, String path) {
+		return percent.contains(storage + " " + path);
 	}
 
 	public int size() {
@@ -97,6 +104,7 @@ public final class SettingLabels {
 
 		Map<String, Label> keys = new HashMap<>();
 		Map<String, Label> values = new HashMap<>();
+		Set<String> percent = new HashSet<>();
 		for (Map.Entry<String, String> dialog : dialogFunctions.entrySet()) {
 			Set<Target> targets = calls.get(dialog.getKey());
 			if (targets == null) continue;
@@ -106,6 +114,9 @@ public final class SettingLabels {
 				for (Target t : targets) {
 					String full = t.storage() + " " + t.path() + "." + key;
 					if (label != null) keys.putIfAbsent(full, label);
+					if (input.has("label_format") && input.get("label_format").toString().contains("percent")) {
+						percent.add(full);
+					}
 					if (input.get("options") instanceof JsonArray options) {
 						for (JsonElement option : options) {
 							if (!(option instanceof JsonObject o) || !o.has("id")) continue;
@@ -116,7 +127,7 @@ public final class SettingLabels {
 				}
 			}
 		}
-		return new SettingLabels(keys, values);
+		return new SettingLabels(keys, values, percent);
 	}
 
 	/** All dialog inputs ({"key": …, "label": …}) found in the function's dialog show commands. */

@@ -127,13 +127,15 @@ Example: `/lp group default permission set nicemerl.settings false` hides settin
 
 ### Data pack settings
 
-Each entry in `settingsSources` points to one compound in command storage. The defaults cover Nice Keep Inventory, Fabled Roots, Nice Mob Manager, Nice Actions and Warping Wonders (all in `eden:settings`), plus Katters Structures (in `kattersstructures:gamerule`):
+Each entry in `settingsSources` points to one compound in command storage. The defaults cover Nice Keep Inventory, Fabled Roots, Nice Mob Manager, Nice Actions, the Nice Admin Tools gamerules and Warping Wonders (all in `eden:settings`), plus Katters Structures (in `kattersstructures:gamerule`):
 
 ```json
 { "storage": "eden:settings", "path": "keepinv", "name": "Nice Keep Inventory" }
 ```
 
 Values are read live each time someone asks.
+
+**New defaults on update:** when a mod update adds default entries, it raises `CURRENT_VERSION` in [`MerlConfig.java`](mod/src/main/java/eu/explorerseden/nicemerl/MerlConfig.java). Config files with an older `configVersion` get the missing entries added once, so anything you removed on purpose stays removed. When you add a default source or ignore key, raise `CURRENT_VERSION` as well.
 
 **Readable names** come from the packs themselves. On startup and after `/reload`, the mod looks for config dialogs: functions that run `dialog show` and are called `with storage <storage> <path>`. From each dialog input it takes the `key`, the label and the option labels. That turns `keepinv.equip_dmg` into *Equipment Damage*, `taglist` into *Tag List*, and `1b` into *Enabled*.
 

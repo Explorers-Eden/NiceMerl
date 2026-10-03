@@ -1,0 +1,12 @@
+{
+	"required": true,
+	"minVersion": "0.8",
+	"package": "eu.explorerseden.nicemerl.mixin",
+	"compatibilityLevel": "JAVA_25",
+	"server": [
+		"JustSyncCommandMixin"
+	],
+	"injectors": {
+		"defaultRequire": 0
+	}
+}

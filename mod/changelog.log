@@ -1,8 +1,9 @@
 # Minecraft Version(s): 26.3
 ## Changes:
-- Initial release
-- `/merl <question>` searches the Explorer's Eden wiki and answers privately in chat, with clickable links to the matching sections
-- Wiki spoilers are hidden and revealed on hover
-- `/nicemerl reindex` (operators) re-reads the wiki right away
+- Questions about chances, rates, limits and the like ("what is the chance for rarity mobs") now show the current data pack setting instead of only wiki links
+- Percent settings are shown as percentages, e.g. `10%` instead of `0.1`
+- Nice Admin Tools gamerules are now included in the settings `/merl` can report on
+- Existing `config/nicemerl.json` files pick up new default settings sources on update; entries you removed stay removed
 
 ## Fixes:
+- `/merl` questions are no longer posted to Discord by Discord: JustSync, which mistook `/merl` for `/me`
