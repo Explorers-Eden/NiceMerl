@@ -6,31 +6,47 @@
 
 *A fan homage to [Merl](https://minecraft.wiki/w/Minecraft_Support_Virtual_Agent), Minecraft's support assistant, now helping out on Explorer's Eden.*
 
-NiceMerl answers questions about the Explorer's Eden projects by searching the [Explorer's Eden wiki](https://wiki.explorerseden.eu). She comes in two forms that share the same search:
+NiceMerl answers questions about the Explorer's Eden projects by searching the [Explorer's Eden wiki](https://wiki.explorerseden.eu), and vanilla Minecraft questions from the [Minecraft Wiki](https://minecraft.wiki). She comes in two forms that share the same search and the same personality:
 
 | | Folder | Where | Runs as |
 |---|---|---|---|
 | 🤖 **Discord bot** | [`bot/`](bot) | one Discord channel | Docker image `niceron/nicemerl`, deployed with Portainer + Watchtower |
 | ⛏️ **Fabric mod** | [`mod/`](mod) | in-game, `/merl <question>` | server-side mod for Minecraft 26.3, published as GitHub releases |
 
-Neither uses AI or a paid API, so there are no running costs. Both download the public wiki pages on startup and every 6 hours, keep a small search index in memory (BM25) and search it locally. If nothing matches, Merl answers *"I don't know."*, just like the [real one](https://minecraft.wiki/w/Minecraft_Support_Virtual_Agent).
+Neither uses AI or a paid API, so there are no running costs. Both download the public wiki pages on startup and every 6 hours, keep a small search index in memory and search it locally. If nothing matches, Merl answers *"I don't know."*, just like the [real one](https://minecraft.wiki/w/Minecraft_Support_Virtual_Agent).
+
+**How the search works:**
+- BM25 ranking, with page titles and paths weighted higher.
+- Typo tolerance (*"enchantmnt"* → *enchantment*, and Merl says so) and prefix matching (`ench`).
+- Player slang from [`bot/data/synonyms.json`](bot/data/synonyms.json) (`tp`, `xp`, `keepinv`, …).
+- Phrase boosts for words that appear next to each other (*nether portal*), and a bonus when a page title is exactly what was asked.
+- A coverage factor, so pages matching *all* of the question win, and changelogs are damped unless the question is about updates.
+
+**Vanilla questions:** these are looked up live through minecraft.wiki's public API. Its own search picks candidate pages, which are then split into sections and ranked with the same search. Merl blends both wikis:
+- Eden questions stay on the Eden wiki.
+- Questions that say *vanilla*/*Minecraft*, or name a Minecraft Wiki page Eden has no page for (*"nether portal"*), answer from the Minecraft Wiki first.
+- When the Eden wiki has nothing good, she checks the Minecraft Wiki.
 
 ```
 .
 ├── bot/                     Discord bot (Python)
+│   ├── data/                Merl's lines + synonyms, shared with the mod
 │   ├── SETUP.md             step-by-step deploy guide
 │   └── …
 ├── mod/                     Fabric mod (Java)
+│   ├── WIKI.md              wiki page for the mod, ready to paste
 │   ├── tools/release_infos.yml
 │   ├── changelog.log
 │   └── …
 └── .github/workflows/
     ├── docker.yml           bot → Docker Hub (on push to bot/, and every 6 h)
-    ├── mod-build.yml        mod → test build (on push to mod/)
-    └── mod-release.yml      mod → GitHub release, keeps the newest per MC version (run by hand)
+    ├── mod-build.yml        mod → test build (on push to mod/ or bot/data/)
+    └── mod-release.yml      mod → GitHub release after a green build on main, keeps the newest per MC version
 ```
 
-> ⚠️ The mod re-implements the bot's search in Java ([`SearchIndex.java`](mod/src/main/java/eu/explorerseden/nicemerl/SearchIndex.java) and [`search.py`](bot/search.py)). Changes to stopwords, weights, stemming or scoring need to be made in both.
+> ⚠️ The mod re-implements the bot's search in Java: [`SearchIndex.java`](mod/src/main/java/eu/explorerseden/nicemerl/SearchIndex.java) mirrors [`search.py`](bot/search.py), and [`VanillaWiki.java`](mod/src/main/java/eu/explorerseden/nicemerl/VanillaWiki.java) mirrors [`vanilla.py`](bot/vanilla.py). Changes to stopwords, weights, stemming or scoring need to be made in both. Both currently return identical scores.
+>
+> Merl's lines ([`lines.json`](bot/data/lines.json)) and the synonyms ([`synonyms.json`](bot/data/synonyms.json)) are **shared**: they live in `bot/data/`, and the mod build bundles them into the jar, so they only need editing once.
 
 ---
 
@@ -38,7 +54,10 @@ Neither uses AI or a paid API, so there are no running costs. Both download the 
 
 Every message in the configured channel is treated as a question. NiceMerl replies with the best-matching wiki pages and deep links to the matching sections. The top result shows the relevant sentences or list in full, which is often the complete answer, and the others show a short excerpt. Wiki spoilers become Discord `||spoilers||`.
 
-- **Saying hi** (or @-mentioning her) gets a wave and a short intro.
+- **Vanilla questions** are answered from the Minecraft Wiki, labelled 📗 *Minecraft Wiki*.
+- **Saying hi** (or @-mentioning her) gets a greeting that fits the time of day, using their name.
+- **Small talk:** *thanks*, *bye*, *how are you*, *who are you*, *what can you do*, *tell me a joke*, *give me a tip*, *fun fact*, *good bot*, *who is Peanut Butter*, *I died*, *I'm bored*… Over 1,000 lines in all. She answers in character and reacts with 💗 or 👋. Only messages that are *all* small talk count: *"thanks, how do I get a boss key?"* is still a question.
+- **She never repeats herself** right away, now and then adds a little aside, and her Discord status changes every 15 minutes (*Petting Peanut Butter*, *Looking out for creepers*, …).
 - **When she can't help**, she answers *"I don't know."* and points people to #user-help.
 - **`!reindex`** (requires *Manage Server*) refreshes the index right away after wiki edits.
 - **Cooldown:** one question per user every 5 seconds.
@@ -71,8 +90,19 @@ To test the search without Discord, run `.venv/bin/python search.py "how do I ge
 | `RESULTS` | `3` | Results per answer |
 | `COOLDOWN_SECONDS` | `5` | Per-user cooldown |
 | `HELP_CHANNEL_ID` | `1245007015865225256` | Channel Merl points people to when she can't help (#user-help); `0` turns it off |
+| `VANILLA_WIKI` | `true` | Answer vanilla questions from the Minecraft Wiki too |
+| `VANILLA_WIKI_URL` | `https://minecraft.wiki` | MediaWiki used for vanilla questions |
+| `TIMEZONE` | `Europe/Berlin` | Time zone for good morning / good evening |
 
-Search tuning (stopwords, title/path weights, minimum score) lives at the top of [`bot/search.py`](bot/search.py).
+Search tuning (stopwords, weights, typo and synonym settings) lives at the top of [`bot/search.py`](bot/search.py), and the vanilla blending (`STRONG_SCORE`, skipped chapters) at the top of [`bot/vanilla.py`](bot/vanilla.py). To test without Discord, run `.venv/bin/python search.py "how do I make a nether portal"`: it prints each source, the corrections and the blend decision.
+
+### Merl's lines
+
+Everything Merl says lives in [`bot/data/lines.json`](bot/data/lines.json):
+- `pools`: lists of lines. Placeholders are `{user}`, `{community}`, `{term}` and `{pages}`.
+- `intents`: small-talk patterns. Each one is matched against the whole message, lowercased, without punctuation and apostrophes.
+
+Edit it once and both the bot and the next mod build pick it up. In Minecraft chat, emoji outside the basic plane and `*` are stripped automatically.
 
 ### Assets
 
@@ -84,7 +114,10 @@ Search tuning (stopwords, title/path weights, minimum score) lives at the top of
 
 Players type `/merl <question>`, and NiceMerl answers in chat with:
 - the best-matching wiki pages, each with a clickable link and a short excerpt
+- **Minecraft Wiki** pages for vanilla questions, marked in green (looked up in the background, so the server never waits)
 - the **current data pack settings**, when the question is about settings (*"is pvp enabled?"*, *"keep inventory settings"*, *"blaze settings"*)
+
+She also does small talk (`/merl thanks`, `/merl tell me a joke`, `/merl give me a tip`, `/merl fun fact`), greets players by name, and now and then comments on where they are (*"You're in the Nether? Stay away from the lava!"*).
 
 Answers are **only visible to the player who asked**. Wiki spoilers are scrambled and revealed on hover. The mod is **server-side only**: players join with an unmodded client.
 
@@ -115,8 +148,8 @@ Example: `/lp group default permission set nicemerl.settings false` hides settin
 
 | Option | Default | What it does |
 |---|---|---|
-| `wikiUrl` | `https://wiki.explorerseden.eu` | Wiki.js wiki to search |
-| `communityName` | `Explorer's Eden` | used in the "I don't know" lines |
+| `wikis` | Explorer's Eden + Minecraft Wiki | wikis to search, see below |
+| `communityName` | `Explorer's Eden` | used in Merl's lines |
 | `reindexHours` | `6` | how often the wiki is re-read |
 | `results` | `3` | wiki pages per answer |
 | `excerptLength` | `160` | excerpt length in characters |
@@ -124,6 +157,23 @@ Example: `/lp group default permission set nicemerl.settings false` hides settin
 | `settingsSources` | the Explorer's Eden packs | which command storages hold settings, see below |
 | `settingsIgnoreKeys` | `*_initial`, `command_template`, `*_template` | setting keys to hide |
 | `settingsResults` | `6` | most settings listed per answer |
+| `mediaWikiResults` | `2` | most pages from `mediawiki` wikis per answer |
+
+### Wikis
+
+`wikis` lists every wiki Merl searches, in two kinds:
+
+```json
+"wikis": [
+  { "name": "Explorer's Eden", "url": "https://wiki.explorerseden.eu", "type": "wikijs" },
+  { "name": "Minecraft Wiki", "url": "https://minecraft.wiki", "type": "mediawiki" }
+]
+```
+
+- **`wikijs`** wikis are downloaded completely (every 6 hours) and searched locally. Add as many as you like. With more than one, results say which wiki they're from. If one can't be reached, its pages from the last download are kept.
+- **`mediawiki`** wikis (any MediaWiki with a public `api.php`, e.g. a mod wiki on wiki.gg) are searched live, with results cached for a day. Merl asks them when the question says *vanilla*/*Minecraft*, when a page there is named after the subject, or when the `wikijs` wikis have nothing good. Remove the Minecraft Wiki entry to turn vanilla answers off.
+
+Config files from 1.1.0 and older are migrated automatically: their `wikiUrl` becomes the first wiki, and the Minecraft Wiki is added after it.
 
 ### Data pack settings
 
@@ -143,10 +193,12 @@ Labels are sent as translation keys with the English fallback, so players with a
 
 ### Releasing
 
-1. In [`mod/tools/release_infos.yml`](mod/tools/release_infos.yml), set `Version number` and `Version subtitle`, and add any new Minecraft version first under `Versions`.
+1. In [`mod/tools/release_infos.yml`](mod/tools/release_infos.yml), set `Version number` and `Version subtitle`, and add any new Minecraft version first under `Versions`. Also set `version` in [`mod/gradle.properties`](mod/gradle.properties) to match, for local builds.
 2. Write the release notes in [`mod/changelog.log`](mod/changelog.log).
 3. If the Minecraft version changed, update `minecraft_version`, `fabric_api_version` and `loader_version` in [`mod/gradle.properties`](mod/gradle.properties) (see <https://fabricmc.net/develop>) and `"minecraft"` in `mod/src/main/resources/fabric.mod.json`.
-4. Push, then on GitHub run **Actions → Publish Mod Release → Run workflow**.
+4. Push to `main`. Once **Mod Build** goes green, **Publish Mod Release** runs by itself. You can also start it by hand under **Actions → Publish Mod Release → Run workflow**.
+
+> 💡 Every green build of `main` (also from changes to `bot/data/`) publishes. Without a version bump, it refreshes the jar and notes of the current version's release, so raise the version for anything players should notice as a new release.
 
 The workflow builds the mod and publishes it as the GitHub release `mod-v<version>-mc<minecraft>` with the file `nice-merl-<version>-mc<minecraft>.jar`, e.g. `mod-v1.0.0-mc26.3`. The changelog becomes the release notes, and re-running the same version updates its release.
 

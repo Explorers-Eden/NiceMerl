@@ -24,6 +24,8 @@ class Section:
     heading: str
     anchor: str
     text: str
+    # From the Minecraft Wiki instead of the community wiki.
+    vanilla: bool = False
 
 
 async def fetch_page_list(session: aiohttp.ClientSession, wiki_url: str) -> list[dict]:
@@ -41,6 +43,11 @@ def extract_sections(html: str, path: str, page_title: str) -> list[Section]:
         return []
     # Text inside <template> is parsed as TemplateString, which get_text() skips.
     content = BeautifulSoup(content.decode_contents(), "html.parser")
+    return split_sections(content, path, page_title)
+
+
+def split_sections(content: BeautifulSoup, path: str, page_title: str, vanilla: bool = False) -> list[Section]:
+    """Splits parsed page content into one Section per h1-h3 heading."""
     for tag in content.find_all(["style", "script"]):
         tag.decompose()
     for tag in content.find_all("a", class_="toc-anchor"):
@@ -63,7 +70,7 @@ def extract_sections(html: str, path: str, page_title: str) -> list[Section]:
     for br in content.find_all("br"):
         br.replace_with(NavigableString("\n"))
 
-    sections = [Section(path, page_title, page_title, "", "")]
+    sections = [Section(path, page_title, page_title, "", "", vanilla)]
     parts: list[str] = []
 
     def flush():
@@ -75,7 +82,7 @@ def extract_sections(html: str, path: str, page_title: str) -> list[Section]:
         if isinstance(node, Tag) and node.name in HEADINGS:
             flush()
             heading = node.get_text(" ", strip=True)
-            sections.append(Section(path, page_title, heading, node.get("id", ""), ""))
+            sections.append(Section(path, page_title, heading, node.get("id", ""), "", vanilla))
         elif isinstance(node, NavigableString) and node.find_parent(HEADINGS) is None:
             parts.append(str(node))
     flush()

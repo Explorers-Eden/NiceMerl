@@ -7,6 +7,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY *.py .
+COPY data/ data/
 COPY assets/thumb_*.png assets/
 
 RUN useradd --create-home bot

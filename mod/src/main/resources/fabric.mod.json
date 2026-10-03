@@ -3,13 +3,13 @@
 	"id": "nicemerl",
 	"version": "${version}",
 	"name": "NiceMerl",
-	"description": "Ask Merl about the wiki in-game with /merl <question>. A fan homage to Merl from Minecraft.",
+	"description": "Ask Merl about your community wiki and vanilla Minecraft in-game with /merl <question>. A fan homage to Merl from Minecraft.",
 	"authors": [
 		"NiceRon"
 	],
 	"contact": {
 		"homepage": "https://explorerseden.eu",
-		"sources": "https://github.com/NiceKaleido/NiceMerl"
+		"sources": "https://github.com/Explorers-Eden/NiceMerl"
 	},
 	"license": "GPL-3.0-only",
 	"icon": "assets/nicemerl/icon.png",

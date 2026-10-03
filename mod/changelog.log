@@ -1,9 +1,31 @@
 # Minecraft Version(s): 26.3
-## Changes:
-- Questions about chances, rates, limits and the like ("what is the chance for rarity mobs") now show the current data pack setting instead of only wiki links
-- Percent settings are shown as percentages, e.g. `10%` instead of `0.1`
-- Nice Admin Tools gamerules are now included in the settings `/merl` can report on
-- Existing `config/nicemerl.json` files pick up new default settings sources on update; entries you removed stay removed
+## New: Vanilla Minecraft answers
+- `/merl` now answers vanilla Minecraft questions too, using the [Minecraft Wiki](https://minecraft.wiki) (*"how do I make a nether portal"*, *"what does the totem do in vanilla"*)
+- Merl blends both wikis: questions about Explorer's Eden stay on the Explorer's Eden wiki, clearly vanilla questions answer from the Minecraft Wiki first, and when our wiki has nothing good she checks the Minecraft Wiki for you
+- Minecraft Wiki results are marked `(Minecraft Wiki)` in green and link straight to the right section
+- Lookups run in the background, so the server never waits on the network
 
-## Fixes:
-- `/merl` questions are no longer posted to Discord by Discord: JustSync, which mistook `/merl` for `/me`
+## New: Multiple wikis
+- The config now takes a list of `wikis` instead of a single `wikiUrl`: add as many Wiki.js wikis (downloaded and searched locally) and MediaWiki wikis (searched live, like the Minecraft Wiki) as you like
+- With several Wiki.js wikis, results say which wiki they're from
+- If one wiki can't be reached during a reindex, its pages from the last successful download are kept
+- Existing `config/nicemerl.json` files are updated automatically: your `wikiUrl` becomes the first wiki, and the Minecraft Wiki is added after it
+
+## Smarter search
+- Typos are understood: *"enchantmnt table"* finds *enchantment*, and Merl tells you what she thinks you meant
+- Player slang and abbreviations work: `tp`, `ench`, `xp`, `keepinv`, `ec`, `pearl`, `villie` and more
+- Word endings are handled better (`bosses`, `torches`, `wolves`, `boxes`)
+- Pages whose title is exactly what you asked about rank higher, and so do words that appear next to each other ("nether portal")
+- Results that cover all words of a question beat ones that only match one word, and weak extra results are left out
+- Changelog pages no longer crowd out the actual pages unless you ask about updates or changes
+- Excerpts show the part of the page that covers the most words of your question
+
+## Merl feels more alive
+- Over 1,000 lines: greetings for morning, afternoon, evening and night, varied answers, cooldown and reindex messages, and no line twice in a row
+- Small talk: thank her, say bye, ask how she's doing, who she is or what she can do, ask for a joke, a tip or a fun fact, ask about Peanut Butter or her favorite mob, block or color, tell her you're bored, hungry or just died, or call her a good bot (or a bad one…)
+- Now and then she comments on where you are (the Nether, the End, rain, night) or how you're doing (low health), or Peanut Butter chimes in
+- Merl greets players by name
+
+## Config
+- `wikiUrl` is replaced by the `wikis` list (migrated automatically, see above)
+- New option `mediaWikiResults`: how many pages from live (MediaWiki) wikis an answer shows, default 2

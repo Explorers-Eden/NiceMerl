@@ -21,13 +21,18 @@ public class MerlConfig {
 	 * Raise this when a default list gains entries, so existing config files pick them up.
 	 * Entries are only added once, so anything a server owner removed stays removed.
 	 */
-	private static final int CURRENT_VERSION = 2;
+	private static final int CURRENT_VERSION = 3;
 
 	/** Which defaults this file has seen. Files from before versioning count as 1. */
 	public int configVersion = CURRENT_VERSION;
 
-	/** Base URL of the Wiki.js wiki to search. */
-	public String wikiUrl = "https://wiki.explorerseden.eu";
+	/**
+	 * Wikis /merl searches. "wikijs" wikis are downloaded and searched locally; "mediawiki" wikis
+	 * (like the Minecraft Wiki) are searched live, for questions the others can't answer well.
+	 */
+	public List<WikiSource> wikis = new ArrayList<>(List.of(
+			new WikiSource("Explorer's Eden", "https://wiki.explorerseden.eu", WikiSource.WIKIJS),
+			new WikiSource("Minecraft Wiki", "https://minecraft.wiki", WikiSource.MEDIAWIKI)));
 	/** Used in Merl's "I don't know" lines. */
 	public String communityName = "Explorer's Eden";
 	/** How often the wiki is downloaded again. */
@@ -51,6 +56,8 @@ public class MerlConfig {
 	public List<String> settingsIgnoreKeys = new ArrayList<>(List.of("*_initial", "command_template", "*_template"));
 	/** Most settings listed per answer. */
 	public int settingsResults = 6;
+	/** Most pages from "mediawiki" wikis (the Minecraft Wiki) per answer. */
+	public int mediaWikiResults = 2;
 
 	public static class SettingsSource {
 		/** Storage id, e.g. "eden:settings". */
@@ -69,10 +76,58 @@ public class MerlConfig {
 		}
 	}
 
+	public static class WikiSource {
+		public static final String WIKIJS = "wikijs";
+		public static final String MEDIAWIKI = "mediawiki";
+
+		/** Name shown to players next to results. */
+		public String name = "";
+		/** Base URL, e.g. "https://wiki.explorerseden.eu". */
+		public String url = "";
+		/** "wikijs" or "mediawiki". */
+		public String type = WIKIJS;
+
+		public WikiSource() {}
+
+		public WikiSource(String name, String url, String type) {
+			this.name = name;
+			this.url = url;
+			this.type = type;
+		}
+
+		public boolean isMediaWiki() {
+			return MEDIAWIKI.equalsIgnoreCase(type);
+		}
+	}
+
+	public List<WikiSource> wikiJsWikis() {
+		return wikis.stream().filter(w -> !w.isMediaWiki()).toList();
+	}
+
+	public List<WikiSource> mediaWikis() {
+		return wikis.stream().filter(WikiSource::isMediaWiki).toList();
+	}
+
+	/** The wiki with this base URL, or null. */
+	public WikiSource wiki(String url) {
+		return wikis.stream().filter(w -> w.url.equals(url)).findFirst().orElse(null);
+	}
+
 	/** Adds default entries that are newer than the file, keeping everything the file already has. */
-	private void addNewDefaults() {
+	private void addNewDefaults(JsonObject json) {
 		if (configVersion >= CURRENT_VERSION) return;
 		MerlConfig defaults = new MerlConfig();
+		if (!json.has("wikis")) {
+			// Before version 3 there was a single "wikiUrl"; keep it as the first wiki.
+			String oldUrl = json.has("wikiUrl") ? json.get("wikiUrl").getAsString() : defaults.wikis.get(0).url;
+			wikis = new ArrayList<>(List.of(new WikiSource(communityName, oldUrl, WikiSource.WIKIJS)));
+			for (WikiSource wiki : defaults.wikis) {
+				if (wiki.isMediaWiki()) {
+					wikis.add(wiki);
+					NiceMerl.LOGGER.info("Added new default wiki {} ({})", wiki.name, wiki.url);
+				}
+			}
+		}
 		for (SettingsSource source : defaults.settingsSources) {
 			boolean present = settingsSources.stream()
 					.anyMatch(s -> s.storage.equals(source.storage) && s.path.equals(source.path));
@@ -96,13 +151,15 @@ public class MerlConfig {
 				if (json != null) {
 					config = GSON.fromJson(json, MerlConfig.class);
 					if (!json.has("configVersion")) config.configVersion = 1;
-					config.addNewDefaults();
+					config.addNewDefaults(json);
 				}
 			} catch (IOException | RuntimeException e) {
 				NiceMerl.LOGGER.error("Could not read {}, using defaults", path, e);
 			}
 		}
-		config.wikiUrl = config.wikiUrl.replaceAll("/+$", "");
+		for (WikiSource wiki : config.wikis) {
+			wiki.url = wiki.url.replaceAll("/+$", "");
+		}
 		// Write back so new options show up in existing config files.
 		try (Writer writer = Files.newBufferedWriter(path)) {
 			GSON.toJson(config, writer);

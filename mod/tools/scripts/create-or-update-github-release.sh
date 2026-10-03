@@ -13,7 +13,7 @@ if gh release view "$TAG_NAME" >/dev/null 2>&1; then
     $PRERELEASE_FLAG
 else
   gh release create "$TAG_NAME" \
-    --target "$GITHUB_SHA" \
+    --target "${TARGET_SHA:-$GITHUB_SHA}" \
     --title "$RELEASE_NAME" \
     --notes-file "$CHANGELOG_PATH" \
     $PRERELEASE_FLAG

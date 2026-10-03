@@ -1,14 +1,18 @@
 # Builds the Fabric mod (mod/) on every push and pull request to catch compile errors early.
+# A successful build of a push to main triggers "Publish Mod Release" (mod-release.yml).
 name: Mod Build
 
 on:
   push:
     paths:
       - "mod/**"
+      # Merl's lines and synonyms are bundled into the mod jar.
+      - "bot/data/**"
       - ".github/workflows/mod-build.yml"
   pull_request:
     paths:
       - "mod/**"
+      - "bot/data/**"
 
 defaults:
   run:

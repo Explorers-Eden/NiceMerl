@@ -28,6 +28,12 @@ processResources {
 	filesMatching("fabric.mod.json") {
 		expand "version": version
 	}
+
+	// Merl's lines and synonyms are shared with the Discord bot, which keeps them in bot/data.
+	from("../bot/data") {
+		include "*.json"
+		into "nicemerl"
+	}
 }
 
 tasks.withType(JavaCompile).configureEach {

@@ -1,10 +1,16 @@
 # Builds the Fabric mod (mod/) and publishes it as a GitHub release.
+# Runs automatically after every successful "Mod Build" of a push to main, or by hand.
+# Pushing without raising the version refreshes the jar of that version's release.
 # Only the newest release per Minecraft version is kept; older ones are deleted.
 # Version, subtitle and Minecraft versions come from mod/tools/release_infos.yml,
 # the release notes from mod/changelog.log.
 name: Publish Mod Release
 
 on:
+  workflow_run:
+    workflows: ["Mod Build"]
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -14,13 +20,25 @@ defaults:
   run:
     working-directory: mod
 
+# Never publish two releases at the same time.
+concurrency:
+  group: mod-release
+  cancel-in-progress: false
+
 jobs:
   build-and-release:
+    # Only after a green build of a push (not a pull request).
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
     runs-on: ubuntu-24.04
+    env:
+      # The commit that was built: the triggering push, or the branch a manual run was started on.
+      TARGET_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ github.ref }}
+          ref: ${{ env.TARGET_SHA }}
 
       - uses: actions/setup-python@v6
         with:

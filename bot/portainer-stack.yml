@@ -14,5 +14,8 @@ services:
       RESULTS: ${RESULTS:-3}
       COOLDOWN_SECONDS: ${COOLDOWN_SECONDS:-5}
       HELP_CHANNEL_ID: ${HELP_CHANNEL_ID:-1245007015865225256}
+      VANILLA_WIKI: ${VANILLA_WIKI:-true}
+      VANILLA_WIKI_URL: ${VANILLA_WIKI_URL:-https://minecraft.wiki}
+      TIMEZONE: ${TIMEZONE:-Europe/Berlin}
     mem_limit: 256m
     cpus: 0.5

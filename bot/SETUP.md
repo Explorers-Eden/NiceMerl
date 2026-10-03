@@ -39,6 +39,7 @@ GitHub also rebuilds the image every 6 hours to pick up security updates for Pyt
      - Send Messages
      - Embed Links
      - Attach Files *(for Merl's pictures)*
+     - Add Reactions *(so she can react 💗 to thank-yous; optional)*
      - Read Message History
    - Copy the generated URL at the bottom, open it in your browser, pick your server and click **Authorize**.
 
@@ -86,6 +87,9 @@ The code lives in [NiceKaleido/NiceMerl](https://github.com/NiceKaleido/NiceMerl
    | `RESULTS` | `3` | Pages shown per answer |
    | `COOLDOWN_SECONDS` | `5` | Minimum time between questions per user |
    | `HELP_CHANNEL_ID` | `1245007015865225256` | Channel Merl points people to when she can't help (#user-help); `0` turns it off |
+   | `VANILLA_WIKI` | `true` | Also answer vanilla Minecraft questions from the Minecraft Wiki; `false` turns it off |
+   | `VANILLA_WIKI_URL` | `https://minecraft.wiki` | MediaWiki used for vanilla questions |
+   | `TIMEZONE` | `Europe/Berlin` | Time zone for Merl's good morning / good evening greetings |
 
 5. Click **Deploy the stack**.
 
@@ -160,6 +164,8 @@ docker compose up -d --build
 - **Portainer can't pull the image:** the image is private and Portainer has no Docker Hub registry login (step 4), or the workflow hasn't run yet.
 - **Code changes don't show up:** check that the workflow run went green in GitHub's Actions tab, then give Watchtower until its next check.
 - **She says "I don't know" to everything right after a restart:** she's still reading the wiki. Give her about 10 seconds.
+- **No Minecraft Wiki answers:** check the logs for `Minecraft Wiki lookup failed`. The server needs internet access to `minecraft.wiki`, and `VANILLA_WIKI` must not be `false`.
+- **Greetings say "good morning" in the evening:** set `TIMEZONE` to your time zone, e.g. `America/New_York`.
 
 <br clear="right">
 

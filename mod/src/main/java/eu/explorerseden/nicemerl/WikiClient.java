@@ -99,7 +99,7 @@ public class WikiClient {
 				return List.of();
 			}
 			Thread.sleep(100);
-			return extractSections(response.body(), page.path(), page.title());
+			return extractSections(response.body(), page.path(), page.title(), wikiUrl);
 		} catch (IOException | IllegalArgumentException e) {
 			NiceMerl.LOGGER.warn("Failed to fetch {}: {}", page.path(), e.getMessage());
 			return List.of();
@@ -115,14 +115,18 @@ public class WikiClient {
 				.header("User-Agent", "NiceMerl-Mod/1.0");
 	}
 
-	static List<Section> extractSections(String html, String path, String pageTitle) {
+	static List<Section> extractSections(String html, String path, String pageTitle, String wikiUrl) {
 		Document doc = Jsoup.parse(html);
 		Element template = doc.selectFirst("template[slot=contents]");
 		if (template == null) {
 			return List.of();
 		}
 		Element content = Jsoup.parseBodyFragment(template.html()).body();
+		return splitSections(content, path, pageTitle, wikiUrl, false);
+	}
 
+	/** Splits parsed page content into one Section per h1-h3 heading. */
+	static List<Section> splitSections(Element content, String path, String pageTitle, String wiki, boolean vanilla) {
 		content.select("style, script, a.toc-anchor").remove();
 		for (Element details : content.select("details")) {
 			details.select("summary").remove();
@@ -156,7 +160,7 @@ public class WikiClient {
 		Runnable flush = () -> {
 			String cleaned = text.toString().replaceAll("[^\\S\\n]+", " ").replaceAll(" ?\\n\\s*", "\n").trim();
 			if (!cleaned.isEmpty() || !current[1].isEmpty()) {
-				sections.add(new Section(path, pageTitle, current[0], current[1], cleaned));
+				sections.add(new Section(path, pageTitle, current[0], current[1], cleaned, wiki, vanilla));
 			}
 			text.setLength(0);
 		};

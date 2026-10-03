@@ -1,12 +1,19 @@
 package eu.explorerseden.nicemerl;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /** A short window of section text around the best query match, as words tagged for formatting. */
 public record Excerpt(List<Word> words, boolean cutStart, boolean cutEnd) {
-	public record Word(String text, boolean hit, boolean spoiler) {}
+	/** @param term the query term this word matched, or null */
+	public record Word(String text, String term, boolean spoiler) {
+		public boolean hit() {
+			return term != null;
+		}
+	}
 
 	public static Excerpt of(String text, Set<String> terms, int length) {
 		List<Word> words = new ArrayList<>();
@@ -18,7 +25,7 @@ public record Excerpt(List<Word> words, boolean cutStart, boolean cutEnd) {
 			} else if (w.equals(Section.SPOILER_END)) {
 				inSpoiler = Math.max(0, inSpoiler - 1);
 			} else {
-				boolean hit = SearchIndex.tokenize(w).stream().anyMatch(terms::contains);
+				String hit = SearchIndex.tokenize(w).stream().filter(terms::contains).findFirst().orElse(null);
 				words.add(new Word(w, hit, inSpoiler > 0));
 			}
 		}
@@ -34,15 +41,33 @@ public record Excerpt(List<Word> words, boolean cutStart, boolean cutEnd) {
 			window++;
 		}
 
-		// Slide it to the position with the most query hits (earliest wins ties).
+		// Slide it to the position covering the most distinct query terms, then the most hits
+		// (earliest wins ties).
+		Map<String, Integer> counts = new HashMap<>();
 		int hits = 0;
-		for (int i = 0; i < window; i++) if (words.get(i).hit()) hits++;
+		for (int i = 0; i < window; i++) {
+			String term = words.get(i).term();
+			if (term != null) {
+				counts.merge(term, 1, Integer::sum);
+				hits++;
+			}
+		}
 		int bestStart = 0;
+		int bestDistinct = counts.size();
 		int bestHits = hits;
 		for (int start = 1; start + window <= words.size(); start++) {
-			if (words.get(start - 1).hit()) hits--;
-			if (words.get(start + window - 1).hit()) hits++;
-			if (hits > bestHits) {
+			String out = words.get(start - 1).term();
+			if (out != null) {
+				hits--;
+				if (counts.merge(out, -1, Integer::sum) == 0) counts.remove(out);
+			}
+			String in = words.get(start + window - 1).term();
+			if (in != null) {
+				hits++;
+				counts.merge(in, 1, Integer::sum);
+			}
+			if (counts.size() > bestDistinct || (counts.size() == bestDistinct && hits > bestHits)) {
+				bestDistinct = counts.size();
 				bestHits = hits;
 				bestStart = start;
 			}
