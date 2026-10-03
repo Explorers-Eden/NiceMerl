@@ -89,6 +89,8 @@ public final class MerlCommand {
 			Biomes.SNOWY_SLOPES, Biomes.FROZEN_PEAKS, Biomes.JAGGED_PEAKS, Biomes.GROVE);
 
 	private static final Map<UUID, Long> LAST_CELEBRATION = new ConcurrentHashMap<>();
+	/** Stands in for the advancement title in a celebration line until the title component goes in. */
+	private static final String TITLE_MARK = "\uE000";
 
 	/** What the reply builder needs to know about a question. */
 	private record Ask(String prefix, boolean repeat, String energy, MerlMemory.Visit visit, long now) {}
@@ -428,9 +430,18 @@ public final class MerlCommand {
 		if (last != null && now - last < CELEBRATE_COOLDOWN_MS) return;
 		LAST_CELEBRATION.put(player.getUUID(), now);
 
-		String title = holder.value().display().map(d -> d.title().getString()).orElse(holder.id().getPath());
-		String line = MerlLines.pick("celebrate", "advancement", title, "user", player.getName().getString());
-		player.sendSystemMessage(framed(Component.literal(line).withStyle(Style.EMPTY
+		// The title goes in as the advancement's own text component, so players see it translated
+		// (or the pack's English fallback) instead of a raw translation key.
+		Component title = holder.value().display().<Component>map(d -> d.title().copy())
+				.orElse(Component.literal(holder.id().getPath()));
+		String line = MerlLines.pick("celebrate", "advancement", TITLE_MARK, "user", player.getName().getString());
+		MutableComponent body = Component.empty();
+		String[] parts = line.split(TITLE_MARK, -1);
+		for (int i = 0; i < parts.length; i++) {
+			if (i > 0) body.append(title.copy().withStyle(Style.EMPTY.withColor(HIT_COLOR)));
+			body.append(Component.literal(parts[i]));
+		}
+		player.sendSystemMessage(framed(body.withStyle(Style.EMPTY
 				.withHoverEvent(new HoverEvent.ShowText(Component.literal("Click to turn these off: /nicemerl celebrate off")
 						.withStyle(ChatFormatting.GRAY)))
 				.withClickEvent(new ClickEvent.SuggestCommand("/nicemerl celebrate off")))));

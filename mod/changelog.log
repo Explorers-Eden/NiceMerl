@@ -15,7 +15,7 @@
 - **Small slips:** very rarely Merl makes a typo and corrects herself
 - **She asks back:** after *"how are you?"* she sometimes asks what you're up to, and reacts to your answer (*"just building"* → *"Ooh, what are you building?"*)
 - **She notices what you're doing:** now and then she comments on what you're holding (mace, trident, totem…), your elytra, the biome you're in, your death count or your play time
-- **She celebrates with you:** Merl congratulates you on big advancements like killing the dragon, finding an elytra or beating the Wither (only you see it)
+- **She celebrates with you:** Merl congratulates you on big advancements like killing the dragon, finding an elytra or beating the Wither, and on the big ones from our packs: the Katters Structures bosses, Mythical, collecting every mob variant, Ten Tales Told and more (only you see it)
 
 ## Commands
 - `/nicemerl comments [on|off]`: turn Merl's comments about where you are and what you're doing on or off, just for you
@@ -25,5 +25,5 @@
 ## Config
 - New option `playerComments` (default `true`): turns Merl's comments off for the whole server
 - New option `celebrate` (default `true`): turns congratulations off for the whole server
-- New option `celebrateAdvancements`: which advancements Merl congratulates players on
+- New option `celebrateAdvancements`: which advancements Merl congratulates players on (vanilla milestones and our packs' bosses, challenges and collections; packs you don't have installed don't matter)
 - Players' choices and Peanut Butter's pet count are saved in `config/nicemerl/state.json`

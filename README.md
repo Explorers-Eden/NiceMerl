@@ -134,7 +134,7 @@ Players type `/merl <question>`, and NiceMerl answers in chat with:
 She also does small talk (`/merl thanks`, `/merl tell me a joke`, `/merl give me a tip`, `/merl fun fact`, `/merl pet peanut butter`), greets players by name, and has the same human touches as the bot (mixed messages, confidence, short memory, moods, asking back). On top of that, in-game:
 - **`/merl what should I do next`** looks at the player's advancements and suggests the next step (*"You haven't been to the Nether yet!"*, *"Find an End city with a ship and grab the elytra!"*), or one of over 1,200 ideas.
 - **She notices what you're doing:** now and then she comments on the dimension, weather or biome, low health, what you're holding (*"Ooh, a mace! Bonk responsibly."*), your elytra, your death count or your play time. Players can turn this off with `/nicemerl comments off`.
-- **She celebrates with you:** big advancements (dragon, elytra, Wither, netherite armor…) get a private congratulation. Players can turn this off with `/nicemerl celebrate off`.
+- **She celebrates with you:** big advancements (dragon, elytra, Wither, netherite armor…) and the Eden packs' big ones (Katters bosses, *Mythical*, all mob variants, *Ten Tales Told*…) get a private congratulation. Players can turn this off with `/nicemerl celebrate off`.
 
 Answers are **only visible to the player who asked**. Wiki spoilers are scrambled and revealed on hover. The mod is **server-side only**: players join with an unmodded client.
 
@@ -180,7 +180,7 @@ Example: `/lp group default permission set nicemerl.settings false` hides settin
 | `mediaWikiResults` | `2` | most pages from `mediawiki` wikis per answer |
 | `playerComments` | `true` | Merl's comments about where players are and what they're doing (each player can also turn them off) |
 | `celebrate` | `true` | congratulations on advancements (each player can also turn them off) |
-| `celebrateAdvancements` | dragon, elytra, Wither, netherite armor, … | which advancements Merl congratulates players on |
+| `celebrateAdvancements` | vanilla milestones (dragon, elytra, Wither…) and the Eden packs' bosses, challenges and collections | which advancements Merl congratulates players on; ids of packs that aren't installed do no harm |
 
 Players' choices and Peanut Butter's pet count are saved in `config/nicemerl/state.json`.
 

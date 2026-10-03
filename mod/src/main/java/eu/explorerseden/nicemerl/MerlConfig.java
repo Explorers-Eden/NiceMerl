@@ -21,7 +21,7 @@ public class MerlConfig {
 	 * Raise this when a default list gains entries, so existing config files pick them up.
 	 * Entries are only added once, so anything a server owner removed stays removed.
 	 */
-	private static final int CURRENT_VERSION = 3;
+	private static final int CURRENT_VERSION = 4;
 
 	/** Which defaults this file has seen. Files from before versioning count as 1. */
 	public int configVersion = CURRENT_VERSION;
@@ -68,13 +68,40 @@ public class MerlConfig {
 	 * Players can turn it off for themselves with /nicemerl celebrate.
 	 */
 	public boolean celebrate = true;
-	/** Advancements Merl congratulates players on. */
+	/**
+	 * Advancements Merl congratulates players on: big vanilla milestones and the Explorer's Eden
+	 * packs' bosses, challenges and collections. Ids of packs that aren't installed never fire.
+	 */
 	public List<String> celebrateAdvancements = new ArrayList<>(List.of(
+			// Vanilla
 			"minecraft:story/enter_the_nether", "minecraft:story/enter_the_end", "minecraft:end/kill_dragon",
 			"minecraft:end/elytra", "minecraft:nether/summon_wither", "minecraft:nether/create_full_beacon",
 			"minecraft:nether/netherite_armor", "minecraft:nether/all_effects", "minecraft:adventure/adventuring_time",
 			"minecraft:adventure/kill_all_mobs", "minecraft:adventure/minecraft_trials_edition",
-			"minecraft:husbandry/bred_all_animals", "minecraft:husbandry/complete_catalogue"));
+			"minecraft:husbandry/bred_all_animals", "minecraft:husbandry/complete_catalogue",
+			// Katters Structures: bosses, boss items and exploring
+			"kattersstructures:dungeon/boss_key", "kattersstructures:dungeon/arachne", "kattersstructures:dungeon/pharaoh",
+			"kattersstructures:dungeon/raj", "kattersstructures:dungeon/rusta", "kattersstructures:dungeon/tenku",
+			"kattersstructures:dungeon/theron", "kattersstructures:crystal_blunt_heavy", "kattersstructures:ambient/villager_all",
+			"kattersstructures:deepblue/deep_blue_portal", "kattersstructures:deepblue/deep_blue_wanderer",
+			"kattersstructures:village/village_all",
+			// Enchantments Encore
+			"eden:adventure/spirit_animal", "eden:adventure/the_rise_and_shine",
+			// Fabled Roots
+			"eden:adventure/arsenal_of_roots", "eden:adventure/full_set_of_roots", "eden:adventure/bards_repertoire",
+			"eden:adventure/call_of_the_races", "eden:adventure/dressed_for_the_job", "eden:adventure/trophy_case",
+			"eden:adventure/home_away_from_home", "eden:adventure/master_cartographer", "eden:adventure/scroll_scholar",
+			"eden:adventure/ten_tales_told",
+			// Nice Actions, Nice Keep Inventory, Nice Mob Manager
+			"eden:adventure/anglers_almanac", "eden:adventure/jack_of_all_trades", "eden:adventure/weapon_master",
+			"eden:adventure/triple_threat", "eden:adventure/legendary_slayer", "eden:adventure/mythical",
+			// Nice Mob Variants
+			"eden:adventure/variant_hunter", "eden:adventure/cattitude", "eden:adventure/good_boys",
+			"eden:adventure/ribbiting_discovery", "eden:adventure/hog_wild", "eden:adventure/udderly_unique",
+			"eden:adventure/fowl_play", "eden:adventure/abyssal_family", "eden:adventure/homestead",
+			// Nice Things
+			"eden:adventure/brewers_tour", "eden:adventure/gallery_opening", "eden:adventure/gourmet",
+			"eden:adventure/outpost_explorer"));
 
 	public static class SettingsSource {
 		/** Storage id, e.g. "eden:settings". */
@@ -155,6 +182,12 @@ public class MerlConfig {
 		}
 		for (String key : defaults.settingsIgnoreKeys) {
 			if (!settingsIgnoreKeys.contains(key)) settingsIgnoreKeys.add(key);
+		}
+		for (String id : defaults.celebrateAdvancements) {
+			if (!celebrateAdvancements.contains(id)) {
+				celebrateAdvancements.add(id);
+				NiceMerl.LOGGER.info("Added new default celebration for {}", id);
+			}
 		}
 		configVersion = CURRENT_VERSION;
 	}

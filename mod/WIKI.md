@@ -57,7 +57,7 @@ The settings of the mod are stored in the config/nicemerl.json file, which is cr
 - **settingsIgnoreKeys**: Setting keys that are never shown
 - **playerComments**: Whether Merl comments on the player's situation at all (default: true)
 - **celebrate**: Whether Merl congratulates players on advancements at all (default: true)
-- **celebrateAdvancements**: The advancements Merl congratulates players on
+- **celebrateAdvancements**: The advancements Merl congratulates players on: big vanilla milestones, and the bosses, challenges and collections of the Explorer's Eden packs. Advancements of packs that aren't installed are simply never completed, so they do no harm
 
 The players' own choices and Peanut Butter's pet count are stored in config/nicemerl/state.json.
 
@@ -69,10 +69,10 @@ This is the config/nicemerl.json file the mod creates on the first start. The co
 
 ```json
 {
-  "configVersion": 3,
+  "configVersion": 4,
   "wikis": [
     {
-      "name": "Explorer's Eden",
+      "name": "Explorer\u0027s Eden",
       "url": "https://wiki.explorerseden.eu",
       "type": "wikijs"
     },
@@ -82,7 +82,7 @@ This is the config/nicemerl.json file the mod creates on the first start. The co
       "type": "mediawiki"
     }
   ],
-  "communityName": "Explorer's Eden",
+  "communityName": "Explorer\u0027s Eden",
   "reindexHours": 6.0,
   "results": 3,
   "excerptLength": 160,
@@ -110,11 +110,6 @@ This is the config/nicemerl.json file the mod creates on the first start. The co
     },
     {
       "storage": "eden:settings",
-      "path": "nice_admin_tools.gamerules",
-      "name": "Nice Admin Tools"
-    },
-    {
-      "storage": "eden:settings",
       "path": "warping_wonders",
       "name": "Warping Wonders"
     },
@@ -122,6 +117,11 @@ This is the config/nicemerl.json file the mod creates on the first start. The co
       "storage": "kattersstructures:gamerule",
       "path": "settings",
       "name": "Katters Structures"
+    },
+    {
+      "storage": "eden:settings",
+      "path": "nice_admin_tools.gamerules",
+      "name": "Nice Admin Tools"
     }
   ],
   "settingsIgnoreKeys": [
@@ -146,7 +146,50 @@ This is the config/nicemerl.json file the mod creates on the first start. The co
     "minecraft:adventure/kill_all_mobs",
     "minecraft:adventure/minecraft_trials_edition",
     "minecraft:husbandry/bred_all_animals",
-    "minecraft:husbandry/complete_catalogue"
+    "minecraft:husbandry/complete_catalogue",
+    "kattersstructures:dungeon/boss_key",
+    "kattersstructures:dungeon/arachne",
+    "kattersstructures:dungeon/pharaoh",
+    "kattersstructures:dungeon/raj",
+    "kattersstructures:dungeon/rusta",
+    "kattersstructures:dungeon/tenku",
+    "kattersstructures:dungeon/theron",
+    "kattersstructures:crystal_blunt_heavy",
+    "kattersstructures:ambient/villager_all",
+    "kattersstructures:deepblue/deep_blue_portal",
+    "kattersstructures:deepblue/deep_blue_wanderer",
+    "kattersstructures:village/village_all",
+    "eden:adventure/spirit_animal",
+    "eden:adventure/the_rise_and_shine",
+    "eden:adventure/arsenal_of_roots",
+    "eden:adventure/full_set_of_roots",
+    "eden:adventure/bards_repertoire",
+    "eden:adventure/call_of_the_races",
+    "eden:adventure/dressed_for_the_job",
+    "eden:adventure/trophy_case",
+    "eden:adventure/home_away_from_home",
+    "eden:adventure/master_cartographer",
+    "eden:adventure/scroll_scholar",
+    "eden:adventure/ten_tales_told",
+    "eden:adventure/anglers_almanac",
+    "eden:adventure/jack_of_all_trades",
+    "eden:adventure/weapon_master",
+    "eden:adventure/triple_threat",
+    "eden:adventure/legendary_slayer",
+    "eden:adventure/mythical",
+    "eden:adventure/variant_hunter",
+    "eden:adventure/cattitude",
+    "eden:adventure/good_boys",
+    "eden:adventure/ribbiting_discovery",
+    "eden:adventure/hog_wild",
+    "eden:adventure/udderly_unique",
+    "eden:adventure/fowl_play",
+    "eden:adventure/abyssal_family",
+    "eden:adventure/homestead",
+    "eden:adventure/brewers_tour",
+    "eden:adventure/gallery_opening",
+    "eden:adventure/gourmet",
+    "eden:adventure/outpost_explorer"
   ]
 }
 ```
