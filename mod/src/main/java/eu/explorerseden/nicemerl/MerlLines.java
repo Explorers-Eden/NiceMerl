@@ -45,12 +45,17 @@ public final class MerlLines {
 	private static final int CLOSER_CHANCE = 4;
 	private static final int SLEEPY_CHANCE = 3;
 	/** After this small talk, Merl sometimes asks what you're up to. */
-	private static final Set<String> ASK_BACK_POOLS = Set.of("how_are_you", "bored", "greeting", "idea");
+	private static final Set<String> ASK_BACK_POOLS = Set.of("how_are_you", "bored", "greeting", "idea", "what_doing",
+			"feeling_good", "feeling_meh");
 	private static final int ASK_BACK_CHANCE = 3;
+	/** After this small talk, Merl sometimes asks how you are, then listens for "good, you?". */
+	private static final Set<String> ASK_FEELING_POOLS = Set.of("how_are_you", "greeting");
+	private static final int ASK_FEELING_CHANCE = 2;
+	private static final int FEELING_MAX_WORDS = 10;
 
 	/** Small talk that can start a question ("thanks! how do I…"), and the short line it gets. */
 	private static final Map<String, String> PREFIX_POOLS = Map.of("greeting", "greeting_prefix", "thanks", "thanks_prefix",
-			"sorry", "sorry_prefix", "ok", "ok_prefix", "compliment", "compliment_prefix");
+			"sorry", "sorry_prefix", "ok", "ok_prefix", "no", "ok_prefix", "compliment", "compliment_prefix");
 	private static final Set<String> QUESTION_WORDS = Set.of("how", "what", "where", "why", "when", "which", "who", "can", "is",
 			"does", "do", "are", "should", "could", "will", "whats", "wheres", "hows", "whos", "whys");
 	/** Words that can come between small talk and the question ("ok so what is…"). */
@@ -62,6 +67,14 @@ public final class MerlLines {
 	private static final Pattern LONG_WORD = Pattern.compile("[A-Za-z]{6,}");
 	private static final Pattern WORD = Pattern.compile("[a-z0-9]+");
 	private static final Pattern COMBINING = Pattern.compile("\\p{M}");
+	private static final Pattern FIRST_WORD = Pattern.compile("[^A-Za-z]*([A-Za-z]+)");
+	private static final Pattern REPEATS = Pattern.compile("(.)\\1+");
+	/** How far down the bag pick() looks for a line that starts differently from the last one. */
+	private static final int START_LOOKAHEAD = 6;
+	/** Line starts that are just a sound or a filler word; an opener in front of one sounds doubled ("Ooh! Oh, found it!"). */
+	private static final Set<String> INTERJECTIONS = java.util.stream.Stream.of("oh", "ah", "aha", "hmm", "hm", "hehe", "haha",
+			"yay", "okay", "ok", "okie", "alright", "right", "well", "so", "wow", "oops", "aww", "hey", "yes", "yep", "mhm", "mm", "eh",
+			"teehee", "whoa", "woohoo", "woo", "yippee", "hooray", "ta").map(MerlLines::start).collect(java.util.stream.Collectors.toUnmodifiableSet());
 
 	private record Intent(Pattern pattern, String pool) {}
 
@@ -70,6 +83,11 @@ public final class MerlLines {
 
 	/** "thanks! how do I…" split into the prefix pool and the question; prefix is null when there is none. */
 	public record Split(String prefix, String rest) {}
+
+	/** How someone says they're doing ("feeling_good"), and whether they asked back ("good, you?"). */
+	public record Feeling(String pool, boolean askedBack) {}
+
+	private record FeelingPhrase(String phrase, String name) {}
 
 	private static final Map<String, List<String>> POOLS = new HashMap<>();
 	private static final List<Intent> INTENTS = new ArrayList<>();
@@ -88,8 +106,12 @@ public final class MerlLines {
 	private static final List<String> SMALL_TALK_WORDS = new ArrayList<>();
 	private static final Pattern LONG_RUN = Pattern.compile("([a-z])\\1{2,}");
 	private static final Pattern PATTERN_WORD = Pattern.compile("[a-z]{4,}");
+	/** Longest first so "not bad" wins over "bad"; ties keep the order in lines.json. */
+	private static final List<FeelingPhrase> FEELING_PHRASES = new ArrayList<>();
+	private static final List<String> FEELING_ASK_BACK = new ArrayList<>();
 	private static final Map<String, List<String>> BAGS = new HashMap<>();
 	private static final Map<String, String> LAST = new HashMap<>();
+	private static String lastStart = "";
 
 	static {
 		JsonObject lines = resource("lines.json");
@@ -130,6 +152,14 @@ public final class MerlLines {
 		STRIP_START.sort(java.util.Comparator.comparingInt(String::length).reversed());
 		STRIP_END.addAll(strings(keywords.get("strip_end")));
 		STRIP_END.sort(java.util.Comparator.comparingInt(String::length).reversed());
+		JsonObject feelings = lines.getAsJsonObject("feelings");
+		JsonObject phrases = feelings.getAsJsonObject("phrases");
+		for (String name : strings(feelings.get("order"))) {
+			for (String phrase : strings(phrases.get(name))) FEELING_PHRASES.add(new FeelingPhrase(phrase, name));
+		}
+		FEELING_PHRASES.sort(java.util.Comparator.comparingInt((FeelingPhrase p) -> p.phrase().split(" ").length).reversed());
+		FEELING_ASK_BACK.addAll(strings(feelings.get("ask_back")));
+		FEELING_ASK_BACK.sort(java.util.Comparator.comparingInt(String::length).reversed());
 		resource("synonyms.json").entrySet().forEach(e -> {
 			if (!e.getKey().startsWith("_")) SYNONYMS.put(e.getKey(), e.getValue().getAsString());
 		});
@@ -161,7 +191,8 @@ public final class MerlLines {
 
 	/**
 	 * A random line from the pool, never the same one twice in a row, with {placeholders} filled in
-	 * from key/value pairs, e.g. {@code pick("thanks", "user", "Steve")}.
+	 * from key/value pairs, e.g. {@code pick("thanks", "user", "Steve")}. It also avoids starting the
+	 * same way as the line Merl said just before, from any pool.
 	 */
 	public static String pick(String pool, String... values) {
 		String line;
@@ -176,13 +207,34 @@ public final class MerlLines {
 				}
 				BAGS.put(pool, bag);
 			}
+			if (bag.size() > 1 && start(bag.get(bag.size() - 1)).equals(lastStart)) {
+				for (int i = bag.size() - 2; i >= Math.max(bag.size() - 1 - START_LOOKAHEAD, 0); i--) {
+					if (!start(bag.get(i)).equals(lastStart)) {
+						Collections.swap(bag, i, bag.size() - 1);
+						break;
+					}
+				}
+			}
 			line = bag.remove(bag.size() - 1);
 			LAST.put(pool, line);
+			lastStart = start(line);
 		}
 		for (int i = 0; i + 1 < values.length; i += 2) {
 			line = line.replace("{" + values[i] + "}", values[i + 1]);
 		}
 		return forChat(line);
+	}
+
+	/** Like pick, but half the time from the pool's twin for today's mood (how_are_you_cozy), if it has one. */
+	public static String moody(String pool, LocalDate day, String... values) {
+		String twin = pool + "_" + mood(day);
+		return pick(POOLS.containsKey(twin) && chance(2) ? twin : pool, values);
+	}
+
+	/** The first word, lowercased with doubled letters squashed, so "Ooh" and "Oh" count as the same start. */
+	static String start(String line) {
+		Matcher m = FIRST_WORD.matcher(line);
+		return m.lookingAt() ? REPEATS.matcher(m.group(1).toLowerCase(Locale.ROOT)).replaceAll("$1") : "";
 	}
 
 	static boolean chance(int n) {
@@ -365,6 +417,27 @@ public final class MerlLines {
 		return null;
 	}
 
+	/**
+	 * How someone says they're doing, after Merl asked: "pretty good, you?" → ("feeling_good", true).
+	 * Null when it doesn't sound like an answer.
+	 */
+	public static Feeling feeling(String text) {
+		String padded = (" " + normalize(text) + " ").replace(" thank you ", " thanks ").replace(" thank u ", " thanks ");
+		boolean askedBack = false;
+		for (String phrase : FEELING_ASK_BACK) {
+			if (padded.contains(" " + phrase + " ")) {
+				padded = padded.replace(" " + phrase + " ", " ");
+				askedBack = true;
+			}
+		}
+		List<String> words = words(padded.trim());
+		if (words.isEmpty() || words.size() > FEELING_MAX_WORDS || words.stream().anyMatch(ASKING_WORDS::contains)) return null;
+		for (FeelingPhrase p : FEELING_PHRASES) {
+			if (padded.contains(" " + p.phrase() + " ")) return new Feeling("feeling_" + p.name(), askedBack);
+		}
+		return null;
+	}
+
 	/** Merl's mood of the day, the same in the bot and the mod. */
 	public static String mood(LocalDate day) {
 		return MOODS.get((int) Math.floorMod(day.toEpochDay(), (long) MOODS.size()));
@@ -393,7 +466,8 @@ public final class MerlLines {
 
 	/**
 	 * Puts an answer's headline together: small-talk prefix, an opener that fits the person's energy
-	 * or the time of day, the line itself, sometimes a closer.
+	 * or the time of day, the line itself, sometimes a closer. No casual opener in front of a line that
+	 * already starts with "Oh"/"Hmm", and no closer after one that ends in ":" or "?".
 	 */
 	public static String headline(String core, String prefix, String energy, int hour, String user, boolean slipOk) {
 		List<String> parts = new ArrayList<>();
@@ -402,19 +476,21 @@ public final class MerlLines {
 			parts.add(core);
 			return String.join(" ", parts);
 		}
+		boolean casual = prefix == null && !INTERJECTIONS.contains(start(core));
 		String opener = null;
 		if (energy.equals("excited")) {
 			opener = pick("excited_opener");
 		} else if (energy.equals("stressed")) {
 			opener = pick("calm_opener");
-		} else if (prefix == null && (hour >= 23 || hour < 5) && chance(SLEEPY_CHANCE)) {
+		} else if (casual && (hour >= 23 || hour < 5) && chance(SLEEPY_CHANCE)) {
 			opener = pick("sleepy_opener");
-		} else if (prefix == null && chance(OPENER_CHANCE)) {
+		} else if (casual && chance(OPENER_CHANCE)) {
 			opener = pick("opener");
 		}
 		if (opener != null) parts.add(opener);
 		parts.add(core);
-		if (opener == null && chance(CLOSER_CHANCE)) parts.add(pick("closer"));
+		String end = core.strip();
+		if (opener == null && !end.endsWith(":") && !end.endsWith("?") && chance(CLOSER_CHANCE)) parts.add(pick("closer"));
 		String text = String.join(" ", parts);
 		if (energy.equals("excited") && text.endsWith("!") && chance(2)) text += "!";
 		return slipOk ? slip(text) : text;
@@ -440,6 +516,12 @@ public final class MerlLines {
 	/** After some small talk, sometimes a question back ("What are you up to today?"), else null. */
 	public static String askBack(String pool) {
 		return ASK_BACK_POOLS.contains(pool) && chance(ASK_BACK_CHANCE) ? pick("ask_back") : null;
+	}
+
+	/** After "how are you?" or a hello, sometimes "And how are you?", unless Merl's line already asks something. */
+	public static String askFeeling(String pool, String line) {
+		return ASK_FEELING_POOLS.contains(pool) && !line.strip().endsWith("?") && chance(ASK_FEELING_CHANCE)
+				? pick("ask_feeling") : null;
 	}
 
 	public static boolean petMilestone(long count) {

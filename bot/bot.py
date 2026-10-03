@@ -31,7 +31,7 @@ THUMBNAILS = sorted(p for p in ASSETS.iterdir() if p.name.startswith(("merl_", "
 FOOTER = "NiceMerl · a fan homage to Merl from Minecraft"
 # Small talk Merl answers with a reaction as well.
 REACTIONS = {"thanks": "💗", "compliment": "💗", "love": "💗", "goodbye": "👋", "peanut_butter": "🐱",
-             "pet_pb": "🐱", "joke": "😄"}
+             "pet_pb": "🐱", "joke": "😄", "hug": "🤗", "cheer": "🎉", "newcomer": "👋", "feeling_bad": "💗"}
 # How long Merl "types" before replying, in seconds. Time spent looking things up counts towards it.
 TYPING_SMALL_TALK = (0.4, 1.2)
 TYPING_ANSWER = 0.8
@@ -127,6 +127,19 @@ class NiceMerl(discord.Client):
         talk = personality.small_talk(question)
         # Merl only waits one message for an answer to "what are you up to?".
         awaiting, visit.asked_back_at = visit.awaiting_reply(now), 0.0
+        # The same for "how are you?": "good, you?" is an answer, not a compliment.
+        awaiting_feeling, visit.asked_feeling_at = visit.awaiting_feeling(now), 0.0
+        if awaiting_feeling and (felt := personality.feeling(question)):
+            pool, asked_back = felt
+            text = pick(pool, user=user)
+            if asked_back:
+                text += " " + personality.moody("about_me", self.now().date(), user=user)
+            elif extra := self.ask_back(pool, visit, now):
+                text += " " + extra
+            await self.say(message, started, content=text)
+            if pool in REACTIONS:
+                await self.react(message, REACTIONS[pool])
+            return
         if talk is None and awaiting:
             if topic := personality.topic(question):
                 await self.say(message, started, content=pick(f"reply_{topic}"))
@@ -134,12 +147,13 @@ class NiceMerl(discord.Client):
 
         if talk == "greeting" or (talk is None and not tokenize(question)):
             if talk or self.user in message.mentions:
-                embed = self.hello_embed(user, returning, self.ask_back("greeting", visit, now))
-                await self.say(message, started, embed=embed)
+                greeting = pick("welcome_back" if returning else personality.greeting_pool(self.now()), user=user)
+                extra = self.ask_back("greeting", visit, now) or self.ask_feeling("greeting", greeting, visit, now)
+                await self.say(message, started, embed=self.hello_embed(greeting, extra))
             return
         if talk:
             text = self.small_talk_line(talk, user, visit, now)
-            if extra := self.ask_back(talk, visit, now):
+            if extra := self.ask_back(talk, visit, now) or self.ask_feeling(talk, text, visit, now):
                 text += " " + extra
             await self.say(message, started, content=text)
             if talk in REACTIONS:
@@ -189,12 +203,19 @@ class NiceMerl(discord.Client):
             if personality.pet_milestone(count):
                 return pick("pet_pb_milestone", count=f"{count:,}")
             return pick("pet_pb")
-        return pick(talk, user=user, community=COMMUNITY)
+        return personality.moody(talk, self.now().date(), user=user, community=COMMUNITY)
 
     def ask_back(self, talk: str, visit: Visit, now: float) -> str | None:
         line = personality.ask_back(talk)
         if line:
             visit.asked_back_at = now
+        return line
+
+    def ask_feeling(self, talk: str, said: str, visit: Visit, now: float) -> str | None:
+        """Sometimes asks how they are. After "how are you?" Merl listens for "good, you?" either way."""
+        line = personality.ask_feeling(talk, said)
+        if line or talk == "how_are_you":
+            visit.asked_feeling_at = now
         return line
 
     async def say(self, message: discord.Message, started: float, *, content: str | None = None,
@@ -289,9 +310,7 @@ class NiceMerl(discord.Client):
             color=MERL_PINK,
         ))
 
-    def hello_embed(self, user: str, returning: bool = False, ask_back: str | None = None) -> discord.Embed:
-        pool = "welcome_back" if returning else personality.greeting_pool(self.now())
-        greeting = pick(pool, user=user)
+    def hello_embed(self, greeting: str, ask_back: str | None = None) -> discord.Embed:
         vanilla = (" I can also look things up in the [Minecraft Wiki](https://minecraft.wiki) "
                    "for vanilla questions." if self.vanilla else "")
         return self.branded(discord.Embed(

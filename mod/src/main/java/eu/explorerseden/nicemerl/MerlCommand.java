@@ -171,6 +171,7 @@ public final class MerlCommand {
 		}
 		message.append(Component.literal(", and I'll find the right wiki page for you!"));
 		String askBack = askBack("greeting", visit, now);
+		if (askBack == null) askBack = askFeeling("greeting", greeting, visit, now);
 		if (askBack != null) message.append(Component.literal(" " + askBack));
 		reply(source, message);
 		return 1;
@@ -204,6 +205,18 @@ public final class MerlCommand {
 		// Merl only waits one message for an answer to "what are you up to?".
 		boolean awaiting = visit.awaitingReply(now);
 		visit.askedBackAt = 0;
+		// The same for "how are you?": "good, you?" is an answer, not a compliment.
+		boolean awaitingFeeling = visit.awaitingFeeling(now);
+		visit.askedFeelingAt = 0;
+		MerlLines.Feeling felt = awaitingFeeling ? MerlLines.feeling(question) : null;
+		if (felt != null) {
+			String text = MerlLines.pick(felt.pool(), "user", source.getTextName());
+			String extra = felt.askedBack()
+					? MerlLines.moody("about_me", LocalDate.now(), "user", source.getTextName())
+					: askBack(felt.pool(), visit, now);
+			reply(source, Component.literal(extra != null ? text + " " + extra : text));
+			return 1;
+		}
 		if (talk == null && awaiting) {
 			String topic = MerlLines.topic(question);
 			if (topic != null) {
@@ -218,6 +231,7 @@ public final class MerlCommand {
 		if (talk != null) {
 			String text = smallTalkLine(talk, source, player, visit, now);
 			String askBack = askBack(talk, visit, now);
+			if (askBack == null) askBack = askFeeling(talk, text, visit, now);
 			reply(source, Component.literal(askBack != null ? text + " " + askBack : text));
 			return 1;
 		}
@@ -296,7 +310,7 @@ public final class MerlCommand {
 			String idea = MerlLines.progressIdea(id -> isDone(player, id));
 			if (idea != null) return idea;
 		}
-		return MerlLines.pick(talk, "user", source.getTextName(), "community", NiceMerl.config().communityName);
+		return MerlLines.moody(talk, LocalDate.now(), "user", source.getTextName(), "community", NiceMerl.config().communityName);
 	}
 
 	/** Whether the player has this advancement; null when the server doesn't have it. */
@@ -309,6 +323,13 @@ public final class MerlCommand {
 	private static String askBack(String talk, MerlMemory.Visit visit, long now) {
 		String line = MerlLines.askBack(talk);
 		if (line != null) visit.askedBackAt = now;
+		return line;
+	}
+
+	/** Sometimes asks how they are. After "how are you?" Merl listens for "good, you?" either way. */
+	private static String askFeeling(String talk, String said, MerlMemory.Visit visit, long now) {
+		String line = MerlLines.askFeeling(talk, said);
+		if (line != null || talk.equals("how_are_you")) visit.askedFeelingAt = now;
 		return line;
 	}
 

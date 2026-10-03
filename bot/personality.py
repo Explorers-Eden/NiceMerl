@@ -32,6 +32,13 @@ SMALL_TALK_WORDS = sorted(
     {w for _, _, allowed in KEYWORD_INTENTS for w in allowed}
     | {w for i in LINES["intents"] for w in re.findall(r"[a-z]{4,}", i["pattern"])})
 LONG_RUN = re.compile(r"([a-z])\1{2,}")
+FEELINGS = LINES["feelings"]
+FEELING_ORDER: list[str] = FEELINGS["order"]
+# (phrase, feeling), longest first so "not bad" wins over "bad"; ties keep the order in lines.json.
+FEELING_PHRASES = sorted(((phrase, name) for name in FEELING_ORDER for phrase in FEELINGS["phrases"][name]),
+                         key=lambda p: -len(p[0].split()))
+FEELING_ASK_BACK = sorted(FEELINGS["ask_back"], key=len, reverse=True)
+FEELING_MAX_WORDS = 10
 
 # Roughly one answer in this many gets a little aside from Merl or Peanut Butter.
 ASIDE_CHANCE = 12
@@ -45,12 +52,15 @@ OPENER_CHANCE = 4
 CLOSER_CHANCE = 4
 SLEEPY_CHANCE = 3
 # After this small talk, Merl sometimes asks what you're up to.
-ASK_BACK_POOLS = {"how_are_you", "bored", "greeting", "idea"}
+ASK_BACK_POOLS = {"how_are_you", "bored", "greeting", "idea", "what_doing", "feeling_good", "feeling_meh"}
 ASK_BACK_CHANCE = 3
+# After this small talk, Merl sometimes asks how you are, then listens for "good, you?".
+ASK_FEELING_POOLS = {"how_are_you", "greeting"}
+ASK_FEELING_CHANCE = 2
 
 # Small talk that can start a question ("thanks! how do I…"), and the short line it gets.
 PREFIX_POOLS = {"greeting": "greeting_prefix", "thanks": "thanks_prefix", "sorry": "sorry_prefix",
-                "ok": "ok_prefix", "compliment": "compliment_prefix"}
+                "ok": "ok_prefix", "no": "ok_prefix", "compliment": "compliment_prefix"}
 QUESTION_WORDS = {"how", "what", "where", "why", "when", "which", "who", "can", "is", "does", "do", "are",
                   "should", "could", "will", "whats", "wheres", "hows", "whos", "whys"}
 FOLLOW_UP_CUES = ("and ", "also ", "what about ", "how about ", "but what about ", "and what about ")
@@ -59,13 +69,32 @@ FILLER_WORDS = {"so", "and", "um", "uh", "btw", "but", "also", "like", "quick", 
 ASKING_WORDS = {"how", "what", "where", "why", "when", "which", "who", "whats", "wheres", "hows"}
 STRESS_WORDS = {"help", "stuck", "urgent", "asap", "broken", "lost", "cant", "confused", "sos", "desperate", "panic"}
 WORD = re.compile(r"[A-Za-z]{6,}")
+FIRST_WORD = re.compile(r"[^A-Za-z]*([A-Za-z]+)")
+REPEATS = re.compile(r"(.)\1+")
+# How far down the bag pick() looks for a line that starts differently from the last one.
+START_LOOKAHEAD = 6
+
+
+def start(line: str) -> str:
+    """The first word, lowercased with doubled letters squashed, so "Ooh" and "Oh" count as the same start."""
+    m = FIRST_WORD.match(line)
+    return REPEATS.sub(r"\1", m.group(1).lower()) if m else ""
+
+
+# Line starts that are just a sound or a filler word; an opener in front of one sounds doubled ("Ooh! Oh, found it!").
+INTERJECTIONS = {start(w) for w in ("oh", "ah", "aha", "hmm", "hm", "hehe", "haha", "yay", "okay", "ok", "okie",
+                                    "alright", "right", "well", "so", "wow", "oops", "aww", "hey", "yes", "yep",
+                                    "mhm", "mm", "eh", "teehee", "whoa", "woohoo", "woo", "yippee", "hooray", "ta")}
 
 _bags: dict[str, list[str]] = {}
 _last: dict[str, str] = {}
+_last_start = ""
 
 
 def pick(pool: str, **values: str) -> str:
-    """A random line from the pool, never the same one twice in a row, with {placeholders} filled in."""
+    """A random line from the pool, never the same one twice in a row, with {placeholders} filled in.
+    It also avoids starting the same way as the line Merl said just before, from any pool."""
+    global _last_start
     lines = POOLS[pool]
     bag = _bags.get(pool)
     if not bag:
@@ -73,11 +102,23 @@ def pick(pool: str, **values: str) -> str:
         if len(bag) > 1 and bag[-1] == _last.get(pool):
             bag[0], bag[-1] = bag[-1], bag[0]
         _bags[pool] = bag
+    if len(bag) > 1 and start(bag[-1]) == _last_start:
+        for i in range(len(bag) - 2, max(len(bag) - 1 - START_LOOKAHEAD, 0) - 1, -1):
+            if start(bag[i]) != _last_start:
+                bag[i], bag[-1] = bag[-1], bag[i]
+                break
     line = bag.pop()
     _last[pool] = line
+    _last_start = start(line)
     for key, value in values.items():
         line = line.replace("{" + key + "}", value)
     return line
+
+
+def moody(pool: str, day: date, **values: str) -> str:
+    """Like pick, but half the time from the pool's twin for today's mood (how_are_you_cozy), if it has one."""
+    twin = f"{pool}_{mood(day)}"
+    return pick(twin if twin in POOLS and chance(2) else pool, **values)
 
 
 def chance(n: int) -> bool:
@@ -225,6 +266,23 @@ def topic(text: str) -> str | None:
     return None
 
 
+def feeling(text: str) -> tuple[str, bool] | None:
+    """How someone says they're doing, after Merl asked: "pretty good, you?" -> ("feeling_good", True),
+    the second part saying whether they asked back. None when it doesn't sound like an answer."""
+    padded = f" {normalize(text)} ".replace(" thank you ", " thanks ").replace(" thank u ", " thanks ")
+    asked_back = False
+    for phrase in FEELING_ASK_BACK:
+        if f" {phrase} " in padded:
+            padded, asked_back = padded.replace(f" {phrase} ", " "), True
+    words = padded.split()
+    if not words or len(words) > FEELING_MAX_WORDS or ASKING_WORDS.intersection(words):
+        return None
+    for phrase, name in FEELING_PHRASES:
+        if f" {phrase} " in padded:
+            return f"feeling_{name}", asked_back
+    return None
+
+
 def _epoch_day(day: date) -> int:
     return (day - date(1970, 1, 1)).days
 
@@ -257,23 +315,25 @@ def slip(text: str) -> str:
 def headline(core: str, *, prefix: str | None = None, energy: str = "normal", hour: int = 12,
              user: str = "", slip_ok: bool = True) -> str:
     """Puts an answer's headline together: small-talk prefix, an opener that fits the
-    person's energy or the time of day, the line itself, sometimes a closer."""
+    person's energy or the time of day, the line itself, sometimes a closer. No casual opener in front
+    of a line that already starts with "Oh"/"Hmm", and no closer after one that ends in ":" or "?"."""
     parts = [pick(prefix, user=user)] if prefix else []
     if energy == "terse":
         return " ".join(parts + [core])
+    casual = not prefix and start(core) not in INTERJECTIONS
     opener = None
     if energy == "excited":
         opener = pick("excited_opener")
     elif energy == "stressed":
         opener = pick("calm_opener")
-    elif not prefix and (hour >= 23 or hour < 5) and chance(SLEEPY_CHANCE):
+    elif casual and (hour >= 23 or hour < 5) and chance(SLEEPY_CHANCE):
         opener = pick("sleepy_opener")
-    elif not prefix and chance(OPENER_CHANCE):
+    elif casual and chance(OPENER_CHANCE):
         opener = pick("opener")
     if opener:
         parts.append(opener)
     parts.append(core)
-    if not opener and chance(CLOSER_CHANCE):
+    if not opener and not core.rstrip().endswith((":", "?")) and chance(CLOSER_CHANCE):
         parts.append(pick("closer"))
     text = " ".join(parts)
     if energy == "excited" and text.endswith("!") and chance(2):
@@ -308,6 +368,13 @@ def status(now: datetime) -> str:
 def ask_back(pool: str) -> str | None:
     """After some small talk, sometimes a question back ("What are you up to today?")."""
     return pick("ask_back") if pool in ASK_BACK_POOLS and chance(ASK_BACK_CHANCE) else None
+
+
+def ask_feeling(pool: str, line: str) -> str | None:
+    """After "how are you?" or a hello, sometimes "And how are you?", unless Merl's line already asks something."""
+    if pool in ASK_FEELING_POOLS and not line.rstrip().endswith("?") and chance(ASK_FEELING_CHANCE):
+        return pick("ask_feeling")
+    return None
 
 
 def pet_milestone(count: int) -> bool:

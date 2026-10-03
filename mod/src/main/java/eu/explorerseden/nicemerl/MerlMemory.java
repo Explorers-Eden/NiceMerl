@@ -30,6 +30,7 @@ public final class MerlMemory {
 		public String page = "";
 		public long answeredAt;
 		public long askedBackAt;
+		public long askedFeelingAt;
 		public long seenAt;
 		/** Last /merl question, for the cooldown. */
 		public long lastMessageAt;
@@ -54,6 +55,10 @@ public final class MerlMemory {
 
 		public boolean awaitingReply(long now) {
 			return now - askedBackAt < ASK_BACK;
+		}
+
+		public boolean awaitingFeeling(long now) {
+			return now - askedFeelingAt < ASK_BACK;
 		}
 	}
 

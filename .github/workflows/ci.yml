@@ -100,6 +100,7 @@ jobs:
           used |= {f"asides_{m}" for m in personality.MOODS} | {f"status_{m}" for m in personality.MOODS}
           used |= {f"pb_{m}" for m in personality.PB_MOODS} | {f"reply_{t}" for t in personality.TOPICS}
           used |= {p for p, _, _ in personality.KEYWORD_INTENTS}
+          used |= {f"feeling_{f}" for f in personality.FEELING_ORDER} | {"about_me"}
           missing = sorted(p for p in used if p not in pools)
           empty = sorted(p for p, lines in pools.items() if not lines)
           assert not missing, f"Pools used in code but missing in lines.json: {missing}"
@@ -112,12 +113,21 @@ jobs:
           python - <<'EOF'
           import personality as p
           talk = {"can you tell me a joke please": "joke", "thaaanks merl": "thanks", "im bored gimme ideas": "idea",
-                  "hiii": "greeting", "pet peanut butter": "pet_pb", "bye merl": "goodbye"}
-          questions = ["how do i get a boss key", "tips for the nether", "what should i do with my wither skulls"]
+                  "hiii": "greeting", "pet peanut butter": "pet_pb", "bye merl": "goodbye", "wyd merl": "what_doing",
+                  "*hugs merl*": "hug", "i beat the ender dragon": "cheer", "im so tired": "tired", "im new here": "newcomer",
+                  "no thanks": "no", "ok": "ok"}
+          questions = ["how do i get a boss key", "tips for the nether", "what should i do with my wither skulls",
+                       "how do i beat the ender dragon", "what song plays in the nether"]
+          # Answers to "how are you?": "not bad" is meh, not bad; a question after it still goes to the wiki.
+          feelings = {"pretty good, you?": ("feeling_good", True), "not bad wbu": ("feeling_meh", True),
+                      "not great tbh": ("feeling_bad", False), "fine thank you": ("feeling_good", False),
+                      "im good how do i get a boss key": None}
           for text, pool in talk.items():
               assert p.small_talk(text) == pool, f"{text!r} should be {pool}, got {p.small_talk(text)}"
           for text in questions:
               assert p.small_talk(text) is None, f"{text!r} is a question, not small talk"
+          for text, felt in feelings.items():
+              assert p.feeling(text) == felt, f"{text!r} should be {felt}, got {p.feeling(text)}"
           print("Small talk detection works")
           EOF
 

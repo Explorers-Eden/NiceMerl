@@ -23,6 +23,7 @@ class Visit:
     page: str = ""            # title of the page Merl answered it with
     answered_at: float = 0.0
     asked_back_at: float = 0.0
+    asked_feeling_at: float = 0.0
     seen_at: float = 0.0
 
     def returning(self, now: float) -> bool:
@@ -39,6 +40,9 @@ class Visit:
 
     def awaiting_reply(self, now: float) -> bool:
         return now - self.asked_back_at < ASK_BACK_SECONDS
+
+    def awaiting_feeling(self, now: float) -> bool:
+        return now - self.asked_feeling_at < ASK_BACK_SECONDS
 
 
 class Memory:
