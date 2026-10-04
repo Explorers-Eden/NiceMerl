@@ -139,7 +139,8 @@ Players type `/merl <question>`, and NiceMerl answers in chat with:
 - the **current data pack settings**, when the question is about settings (*"is pvp enabled?"*, *"keep inventory settings"*, *"blaze settings"*)
 
 She also does small talk (`/merl thanks`, `/merl tell me a joke`, `/merl give me a tip`, `/merl fun fact`, `/merl pet peanut butter`), greets players by name, and has the same human touches as the bot (mixed messages, confidence, short memory, moods, asking back). On top of that, in-game:
-- **Coordinates:** *"where is the closest cherry grove?"* gets the closest one's coordinates, distance and direction, searched like `/locate biome`, off the server thread. Every biome on the server works (vanilla, Terralith, Biomes O' Plenty, the Eden packs' Deep Blue biomes), by name, by id (`terralith:moonlight_grove`), with a pack name (*"bop lavender field"*) or loosely (*"a snowy biome"*). *"Where's a slime chunk?"* finds the closest slime chunk. Click the coordinates to copy them; operators get a `/tp` instead.
+- **Coordinates:** *"where is the closest cherry grove?"* gets the closest one's coordinates, distance and direction, searched like `/locate biome`, off the server thread. Every biome on the server works (vanilla, Terralith, Biomes O' Plenty, the Eden packs' Deep Blue biomes), by name, by id (`terralith:moonlight_grove`), with a pack name (*"bop lavender field"*) or loosely (*"a snowy biome"*). *"Where's a slime chunk?"* finds the closest slime chunk. With [Warping Wonders](https://wiki.explorerseden.eu), *"where's the closest waypoint?"* points to the closest Waypoint Hub the player may use (their own, public ones and locked ones they're trusted on, read from the pack's `eden:database` storage). Click the coordinates to copy them; operators get a `/tp` instead. After the coordinates Merl offers **[Guide me]**: a trail of sparkles toward the target that only that player sees, with the distance on their action bar, until they arrive (`/nicemerl guide stop` ends it).
+- **Name Tag texts:** *"name tag phrases"* lists every text Nice Name Tags reacts to, parsed from its wiki page, each one click to copy; *"name tag to mute a mob"* shows just that one.
 - **`/merl what can I craft`** lists what the player's inventory can make right now (using the recipe book's own check); *"what can I make with this?"* only what uses the held item.
 - **`/merl what should I do next`** looks at the player's advancements and suggests the next step (*"You haven't been to the Nether yet!"*, *"Find an End city with a ship and grab the elytra!"*), or one of over 1,200 ideas.
 - **She notices what you're doing:** now and then she comments on the dimension, weather or biome, low health, what you're holding (*"Ooh, a mace! Bonk responsibly."*), your elytra, your death count or your play time. Players can turn this off with `/nicemerl comments off`.
@@ -157,6 +158,7 @@ Answers are **only visible to the player who asked**. Wiki spoilers are scramble
 | `/merl <question>` | everyone | searches the wiki (and settings) |
 | `/nicemerl comments [on\|off]` | everyone | turns Merl's comments about you on or off, just for you |
 | `/nicemerl celebrate [on\|off]` | everyone | turns Merl's congratulations on or off, just for you |
+| `/nicemerl guide stop` | everyone | stops the sparkle trail |
 | `/nicemerl reindex` | operators | re-reads the wiki right away |
 
 ### Permissions (LuckPerms)
@@ -168,7 +170,7 @@ Answers are **only visible to the player who asked**. Wiki spoilers are scramble
 | `nicemerl.command.reindex` | operators (level 2) |
 | `nicemerl.bypass.cooldown` | operators (level 2) |
 | `nicemerl.settings` | everyone (shows current data pack settings in answers) |
-| `nicemerl.locate` | everyone (biome and slime chunk coordinates) |
+| `nicemerl.locate` | everyone (biome, slime chunk and waypoint coordinates, and the sparkle trail) |
 
 Example: `/lp group default permission set nicemerl.settings false` hides settings from regular players.
 
@@ -192,6 +194,8 @@ Example: `/lp group default permission set nicemerl.settings false` hides settin
 | `celebrate` | `true` | congratulations on advancements (each player can also turn them off) |
 | `locateBiomes` | `true` | coordinates for *"where's the closest …"* biome questions |
 | `locateSlimeChunks` | `true` | slime chunk coordinates; turn off if your world seed is a secret |
+| `locateWaypoints` | `true` | with Warping Wonders: the closest Waypoint Hub the player may use |
+| `particleGuide` | `true` | the **[Guide me]** sparkle trail after coordinates |
 | `craftingHelp` | `true` | *"what can I craft?"* from the player's inventory |
 | `celebrateStatistics` | `true` | congratulations on statistic milestones (blocks mined, distance traveled…); the milestones are in Merl's lines (`stat_milestones`) |
 | `semanticSearch` | `true` | meaning-based search next to the keywords; downloads a small model (about 31 MB, checked against its known checksum) once to `config/nicemerl/model/`. Until then, or if that fails, Merl searches by keywords only |

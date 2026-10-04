@@ -436,12 +436,16 @@ public final class MerlLines {
 	 * For "thanks merl! how do I get a boss key": ("thanks_prefix", "how do i get a boss key").
 	 * (null, text) when the message doesn't start with small talk followed by a question.
 	 */
+	private static final Pattern ONE_WORD_BREAK = Pattern.compile("\\s*\\S+\\s*[!,.:;]");
+
 	public static Split splitSmallTalk(String text) {
 		List<String> words = words(normalize(text));
 		for (int k = words.size() - 1; k > 0; k--) {
 			String pool = intent(String.join(" ", words.subList(0, k)));
 			if (pool == null) continue;
 			String rest = String.join(" ", words.subList(k, words.size()));
+			// "nice mob variants" is a pack's name, not a compliment: one word only counts with a break ("nice! how…").
+			if (pool.equals("compliment") && k == 1 && !ONE_WORD_BREAK.matcher(text).lookingAt()) break;
 			if (PREFIX_POOLS.containsKey(pool) && looksLikeQuestion(rest, text)) {
 				return new Split(PREFIX_POOLS.get(pool), rest);
 			}
@@ -752,4 +756,23 @@ public final class MerlLines {
 		return CRAFT_WITH_HELD.matcher(message.toLowerCase(java.util.Locale.ROOT)).find();
 	}
 
+
+	// Warping Wonders waypoints: "where is the closest waypoint", "nearest waypoint hub", "where's my waypoint".
+	private static final Pattern WAYPOINT = Pattern.compile("\\b(waypoints?|waypoint hubs?)\\b");
+	private static final Pattern WAYPOINT_CUE = Pattern.compile(
+			"\\b(where|wheres|nearest|closest|nearby|near me|how far|coords?|coordinates|which way|direction|find)\\b");
+	/** How-to questions about waypoints go to the wiki. */
+	private static final Pattern WAYPOINT_HOW = Pattern.compile("\\b(how|craft|crafting|recipe|trust|untrust|lock|rename|place|break|color|dye|get|buy|obtain|trade|trading|cartographer|cost|make|work|works)\\b");
+	private static final Pattern WAYPOINT_MINE = Pattern.compile("\\bmy (own )?(waypoints?|waypoint hubs?)\\b");
+
+	/** True for "where is the closest waypoint?" and the like. */
+	public static boolean waypointQuestion(String message) {
+		String text = message.toLowerCase(java.util.Locale.ROOT).replace("'", "");
+		return WAYPOINT.matcher(text).find() && WAYPOINT_CUE.matcher(text).find() && !WAYPOINT_HOW.matcher(text).find();
+	}
+
+	/** "where's my waypoint" means only the player's own. */
+	public static boolean waypointOnlyMine(String message) {
+		return WAYPOINT_MINE.matcher(message.toLowerCase(java.util.Locale.ROOT)).find();
+	}
 }

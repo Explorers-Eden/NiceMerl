@@ -72,6 +72,8 @@ public class NiceMerl implements ModInitializer {
 
 		// Statistic milestones (100,000 blocks mined, …), checked every few minutes.
 		ServerTickEvents.END_SERVER_TICK.register(MerlStats::tick);
+		// Sparkle trails for players Merl is guiding somewhere.
+		ServerTickEvents.END_SERVER_TICK.register(MerlGuide::tick);
 
 		ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
 			if (scheduler != null) {

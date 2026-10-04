@@ -51,6 +51,10 @@ public class MerlConfig {
 	public boolean locateBiomes = true;
 	/** "Where's a slime chunk?" gets the coordinates of the closest one. Turn off if your seed is a secret. */
 	public boolean locateSlimeChunks = true;
+	/** With Warping Wonders: "where's the closest waypoint?" points to the closest Waypoint Hub the player may use. */
+	public boolean locateWaypoints = true;
+	/** After coordinates, Merl offers a trail of sparkles to follow there (only the player sees it). */
+	public boolean particleGuide = true;
 	/** "What can I craft?" lists what the player can make from their inventory right now. */
 	public boolean craftingHelp = true;
 	/** Minimum seconds between questions per player. */

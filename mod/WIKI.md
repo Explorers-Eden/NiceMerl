@@ -10,12 +10,15 @@ Type `/merl` and your question:
 - `/merl how do I make a nether portal`
 - `/merl is pvp enabled` or `/merl keep inventory settings`
 - `/merl where is the closest cherry grove` or `/merl where's a slime chunk`
+- `/merl where is the closest waypoint`, `/merl where's my waypoint` or `/merl where is the castle waypoint` (with Warping Wonders)
+- `/merl name tag phrases` or `/merl name tag to mute a mob`
 - `/merl what can I craft`
 
 Ask in your own words: typos, abbreviations like tp or xp, and other wordings (*"how do I unlock the boss room"*) are fine. Merl answers in one line when she can, then shows up to three wiki pages with a link and a short excerpt. Spoilers stay hidden until you hover over them.
 
 ## More than answers
-- **Coordinates:** ask where the closest biome is (vanilla, Terralith, Biomes O' Plenty or our packs, by name or id like `terralith:moonlight_grove`) or the closest slime chunk, and Merl tells you how far, which way and the exact spot. Click the coordinates to copy them.
+- **Coordinates:** ask where the closest biome is (vanilla, Terralith, Biomes O' Plenty or our packs, by name or id like `terralith:moonlight_grove`) or the closest slime chunk, and Merl tells you how far, which way and the exact spot. With Warping Wonders, she also finds the closest Waypoint Hub you can use, your own, or one by name. Click the coordinates to copy them, or click **[Guide me]** for a trail of sparkles that leads you there.
+- **Name Tag texts:** `/merl name tag phrases` lists every text Nice Name Tags reacts to, each one click to copy.
 - **Crafting:** `/merl what can I craft` lists what your inventory can make right now; `/merl what can I make with this` only what uses the item in your hand.
 - **Ideas:** `/merl what should I do next` suggests a next step based on your advancements, or one of over 4,500 ideas.
 - **Small talk:** jokes, tips, fun facts, stories, `/merl pet peanut butter` and more. Ask for `another one` after a joke.
@@ -28,6 +31,7 @@ Ask in your own words: typos, abbreviations like tp or xp, and other wordings (*
 - `/merl <question>`: Ask Merl anything
 - `/nicemerl comments [on|off]`: Turn her comments on your situation on or off, just for you
 - `/nicemerl celebrate [on|off]`: Turn her congratulations on or off, just for you
+- `/nicemerl guide stop`: Stop the sparkle trail
 - `/nicemerl reindex`: Read the wikis again right away (operators)
 
 # Permissions
@@ -37,7 +41,7 @@ Everything works without a permissions mod. With LuckPerms:
 - **nicemerl.command.reindex**: use `/nicemerl reindex` (operators)
 - **nicemerl.bypass.cooldown**: skip the cooldown between questions (operators)
 - **nicemerl.settings**: see data pack settings in answers (everyone)
-- **nicemerl.locate**: get biome and slime chunk coordinates (everyone)
+- **nicemerl.locate**: get biome, slime chunk and waypoint coordinates, and the sparkle trail (everyone)
 
 # For server admins
 The config is in `config/nicemerl.json`, created on the first start. Restart the server after changing it. The most useful options:
@@ -50,6 +54,8 @@ The config is in `config/nicemerl.json`, created on the first start. Restart the
 - **celebrateAdvancements**: which advancements she congratulates on
 - **celebrateStatistics**: turn statistic milestones off for everyone
 - **locateBiomes** and **locateSlimeChunks**: turn coordinates off for everyone (turn slime chunks off if your seed is a secret)
+- **locateWaypoints**: turn waypoint answers off for everyone
+- **particleGuide**: turn the sparkle trail off for everyone
 - **craftingHelp**: turn "what can I craft?" off for everyone
 - **semanticSearch**: understanding other wordings. Downloads a small file (about 31 MB) once to `config/nicemerl/model/`
 
@@ -80,6 +86,8 @@ This is `config/nicemerl.json` as it's created on the first start. Delete the fi
   "semanticSearch": true,
   "locateBiomes": true,
   "locateSlimeChunks": true,
+  "locateWaypoints": true,
+  "particleGuide": true,
   "craftingHelp": true,
   "cooldownSeconds": 5,
   "settingsSources": [

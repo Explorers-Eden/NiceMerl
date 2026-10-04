@@ -269,6 +269,9 @@ def split_small_talk(text: str) -> tuple[str | None, str]:
         if pool is None:
             continue
         rest = " ".join(words[k:])
+        # "nice mob variants" is a pack's name, not a compliment: one word only counts with a break ("nice! how…").
+        if pool == "compliment" and k == 1 and not re.match(r"\s*\S+\s*[!,.:;]", text):
+            break
         if pool in PREFIX_POOLS and looks_like_question(rest, text):
             return PREFIX_POOLS[pool], rest
         break

@@ -256,6 +256,10 @@ public class SearchIndex {
 		return text.codePointCount(0, text.length()) <= chars ? text : text.substring(0, text.offsetByCodePoints(0, chars));
 	}
 
+	public List<Section> sections() {
+		return sections;
+	}
+
 	public int pageCount() {
 		Set<String> paths = new HashSet<>();
 		for (Section s : sections) paths.add(s.path());

@@ -1,5 +1,5 @@
 {
-  "_comment": "Merl's lines, shared by the Discord bot and the Fabric mod (the mod bundles this file at build time). Placeholders: {user}, {community}, {term}, {pages}, {page}, {word}, {count}, {deaths}, {hours}, {advancement}, {rank}, {biome}, {distance}, {direction}, {dimension}, {y}, {x1}, {z1}, {x2}, {z2}, {item}. Emoji outside the basic plane and * are stripped in Minecraft chat. moods/pb_moods pick today's asides_<mood>, status_<mood> and pb_<mood> pools; any small-talk pool with a <pool>_<mood> twin (how_are_you_cozy) uses it half the time on that day. topics map words to reply_<topic> pools after Merl asks what someone is up to. often_phrases say how often someone talked to Merl in met_yes ({often}: once, a few times, lots). topic_phrases describe a remembered topic in remember_topic ({activity}). progress_ideas are used in-game: the first steps whose 'after' advancement is done and 'unless' is not.",
+  "_comment": "Merl's lines, shared by the Discord bot and the Fabric mod (the mod bundles this file at build time). Placeholders: {user}, {community}, {term}, {pages}, {page}, {word}, {count}, {deaths}, {hours}, {advancement}, {rank}, {biome}, {distance}, {direction}, {dimension}, {y}, {x1}, {z1}, {x2}, {z2}, {item}, {waypoint}, {owner}, {target}. Emoji outside the basic plane and * are stripped in Minecraft chat. moods/pb_moods pick today's asides_<mood>, status_<mood> and pb_<mood> pools; any small-talk pool with a <pool>_<mood> twin (how_are_you_cozy) uses it half the time on that day. topics map words to reply_<topic> pools after Merl asks what someone is up to. often_phrases say how often someone talked to Merl in met_yes ({often}: once, a few times, lots). topic_phrases describe a remembered topic in remember_topic ({activity}). progress_ideas are used in-game: the first steps whose 'after' advancement is done and 'unless' is not.",
   "pools": {
     "greeting_morning": [
       "Good morning, {user}! ☀️",
@@ -21012,6 +21012,86 @@
       "You're not holding anything! Hold the item and ask me again.",
       "Your hands are empty, {user}! Hold the item you're curious about and ask again.",
       "Hold something first, then ask me what you can make with it!"
+    ],
+    "waypoint_found": [
+      "The closest waypoint you can use is {waypoint} by {owner}, about {distance} blocks {direction}:",
+      "Head {direction} for about {distance} blocks to reach {waypoint} ({owner}'s waypoint):",
+      "{waypoint} is your nearest waypoint, {distance} blocks {direction}. It belongs to {owner}:",
+      "Closest waypoint: {waypoint}, about {distance} blocks {direction} of you:",
+      "Found one! {owner}'s {waypoint}, about {distance} blocks {direction}:",
+      "You can warp from {waypoint}, about {distance} blocks to the {direction}:"
+    ],
+    "waypoint_found_mine": [
+      "Your closest waypoint is your own {waypoint}, about {distance} blocks {direction}:",
+      "{waypoint}, one of yours! About {distance} blocks {direction}:",
+      "Head {direction} for about {distance} blocks to your waypoint {waypoint}:",
+      "Your {waypoint} is the closest, {distance} blocks {direction}:"
+    ],
+    "waypoint_none": [
+      "You don't have access to any waypoints yet, {user}. Place your own Waypoint Hub, or ask a friend to trust you on theirs!",
+      "No waypoints for you yet! Craft a Waypoint Hub or find a public one.",
+      "I couldn't find any waypoint you can use. Maybe it's time to build your own Waypoint Hub?"
+    ],
+    "waypoint_none_mine": [
+      "You haven't placed a Waypoint Hub yet, {user}!",
+      "I don't see any waypoints of yours. Place a Waypoint Hub and I'll remember where it is!",
+      "No waypoints of your own yet. Waypoint Hubs can be crafted or bought from cartographers!"
+    ],
+    "waypoint_other_dimension": [
+      "There are no waypoints for you in this dimension. Your {count} waypoints are elsewhere, like {waypoint} in {dimension}.",
+      "None in this dimension, {user}! You can use {waypoint} in {dimension}, though.",
+      "No waypoints here, but there's {waypoint} in {dimension}."
+    ],
+    "waypoint_named_elsewhere": [
+      "{waypoint} is in {dimension}, not here!",
+      "You'll find {waypoint} in {dimension}, {user}.",
+      "{waypoint}? That one's in {dimension}."
+    ],
+    "guide_offer": [
+      "Want me to show you the way?",
+      "Shall I guide you there?",
+      "Need a guide?",
+      "Want me to lead the way?",
+      "I can show you the way, if you like!",
+      "Want a trail to follow?"
+    ],
+    "guide_start": [
+      "Follow the sparkles to {target}!",
+      "Okay! Just follow the sparkles to {target}.",
+      "Off we go to {target}! Follow the trail.",
+      "Follow me, {user}! The sparkles lead to {target}.",
+      "Trail's ready! It points to {target}.",
+      "Let's go to {target}! Peanut Butter is coming too."
+    ],
+    "guide_arrived": [
+      "You made it to {target}!",
+      "Here we are: {target}! Have fun, {user}!",
+      "Ta-da! {target}!",
+      "You've arrived at {target}. Nice walk!",
+      "This is it, {target}! I'll put the sparkles away now.",
+      "We're here! {target}, as promised."
+    ],
+    "guide_stopped": [
+      "Okay, no more sparkles!",
+      "Trail's gone. Ask me again any time!",
+      "Okay, I'll stop guiding you.",
+      "Sparkles off! Good luck finding your way."
+    ],
+    "guide_not_guiding": [
+      "I'm not guiding you anywhere right now!",
+      "There's no trail to stop, {user}.",
+      "No sparkles to put away right now."
+    ],
+    "nametag_all": [
+      "Rename a Name Tag in an Anvil to one of these and use it on a mob. Click one to copy it:",
+      "Here are all the Name Tag texts! Click to copy, rename a Name Tag in an Anvil, and use it on a mob:",
+      "Name Tag magic! Click a text to copy it, then rename a Name Tag with it in an Anvil:",
+      "These are the texts Nice Name Tags knows. Click one to copy it:"
+    ],
+    "nametag_some": [
+      "This is the Name Tag text you want. Click to copy, then rename a Name Tag with it in an Anvil:",
+      "Here you go! Click to copy, rename a Name Tag in an Anvil, and use it on the mob:",
+      "Found it! Click the text to copy it:"
     ]
   },
   "intents": [

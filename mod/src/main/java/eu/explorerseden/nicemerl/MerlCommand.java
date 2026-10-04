@@ -16,6 +16,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
@@ -114,12 +115,49 @@ public final class MerlCommand {
 
 		dispatcher.register(Commands.literal("nicemerl")
 				.requires(source -> Permissions.check(source, PERMISSION_TOGGLE, true)
+						|| Permissions.check(source, MerlLocate.PERMISSION_LOCATE, true)
 						|| Permissions.check(source, PERMISSION_REINDEX, PermissionLevel.GAMEMASTERS))
 				.then(Commands.literal("reindex")
 						.requires(Permissions.require(PERMISSION_REINDEX, PermissionLevel.GAMEMASTERS))
 						.executes(MerlCommand::reindex))
+				.then(Commands.literal("guide")
+						.requires(Permissions.require(MerlLocate.PERMISSION_LOCATE, true))
+						.then(Commands.literal("stop").executes(MerlCommand::stopGuide))
+						.then(Commands.argument("x", IntegerArgumentType.integer())
+								.then(Commands.argument("y", StringArgumentType.word())
+										.then(Commands.argument("z", IntegerArgumentType.integer())
+												.then(Commands.argument("target", StringArgumentType.greedyString())
+														.executes(MerlCommand::guide))))))
 				.then(toggle("comments"))
 				.then(toggle("celebrate")));
+	}
+
+	/** /nicemerl guide x y z target: the [Guide me] button after coordinates. y is "-" when any height will do. */
+	private static int guide(CommandContext<CommandSourceStack> ctx) {
+		CommandSourceStack source = ctx.getSource();
+		ServerPlayer player = source.getPlayer();
+		if (player == null || !NiceMerl.config().particleGuide) return 0;
+		String y = StringArgumentType.getString(ctx, "y");
+		Double height = null;
+		try {
+			if (!y.equals("-")) height = (double) Integer.parseInt(y);
+		} catch (NumberFormatException e) {
+			return 0;
+		}
+		String target = StringArgumentType.getString(ctx, "target");
+		MerlGuide.start(player, IntegerArgumentType.getInteger(ctx, "x"), height, IntegerArgumentType.getInteger(ctx, "z"), target);
+		reply(source, Component.literal(MerlLines.pick("guide_start", "target", target, "user", player.getName().getString()) + " ")
+				.append(Component.literal("[Stop]").withStyle(Style.EMPTY.withColor(ChatFormatting.GRAY)
+						.withClickEvent(new ClickEvent.RunCommand("/nicemerl guide stop"))
+						.withHoverEvent(new HoverEvent.ShowText(Component.literal("Stop the trail"))))));
+		return 1;
+	}
+
+	private static int stopGuide(CommandContext<CommandSourceStack> ctx) {
+		ServerPlayer player = ctx.getSource().getPlayer();
+		if (player == null) return 0;
+		reply(ctx.getSource(), Component.literal(MerlLines.pick(MerlGuide.stop(player) ? "guide_stopped" : "guide_not_guiding")));
+		return 1;
 	}
 
 	/** /nicemerl comments|celebrate [on|off]; without on/off it flips the setting. */
@@ -370,6 +408,16 @@ public final class MerlCommand {
 			return 1;
 		}
 
+		// "name tag phrases": the Nice Name Tags texts from its wiki page, to copy.
+		if (NameTagPhrases.mentionsNameTag(question) && nameTagPhrases(source, question)) {
+			sendNote(source, meeting.note());
+			return 1;
+		}
+		// "where's the closest waypoint?" with Warping Wonders.
+		if (MerlWaypoints.handle(source, player, question, config)) {
+			sendNote(source, meeting.note());
+			return 1;
+		}
 		// "where's the closest cherry grove?" and "where's a slime chunk?" get coordinates.
 		if (MerlLocate.handle(source, question, body -> reply(source, body))) {
 			sendNote(source, meeting.note());
@@ -822,6 +870,40 @@ public final class MerlCommand {
 
 	private static void reply(CommandSourceStack source, Component body) {
 		source.sendSystemMessage(framed(body));
+	}
+
+	/** Lists the Nice Name Tags texts, each one click to copy; false when the wiki doesn't have them. */
+	private static boolean nameTagPhrases(CommandSourceStack source, String question) {
+		SearchIndex index = NiceMerl.index();
+		if (index == null) return false;
+		List<NameTagPhrases.Effect> effects = index.sections().stream()
+				.filter(s -> s.path().equals(NameTagPhrases.PAGE) && s.heading().equals(NameTagPhrases.HEADING))
+				.findFirst().map(s -> NameTagPhrases.parse(s.text())).orElse(List.of());
+		if (effects.isEmpty() || !NameTagPhrases.isQuestion(question) && !NameTagPhrases.specific(effects, question)) return false;
+		List<NameTagPhrases.Effect> shown = NameTagPhrases.matching(effects, question);
+		MutableComponent message = Component.literal(MerlLines.pick(shown.size() < effects.size() ? "nametag_some" : "nametag_all",
+				"user", source.getTextName()));
+		for (NameTagPhrases.Effect effect : shown) {
+			message.append(Component.literal("\n ▸ ").withStyle(ChatFormatting.DARK_GRAY));
+			List<String> texts = effect.distinct();
+			for (int i = 0; i < texts.size(); i++) {
+				String text = texts.get(i);
+				if (i > 0) message.append(Component.literal(", ").withStyle(ChatFormatting.DARK_GRAY));
+				message.append(Component.literal(text).withStyle(Style.EMPTY.withColor(HIT_COLOR).withUnderlined(true)
+						.withClickEvent(new ClickEvent.CopyToClipboard(text))
+						.withHoverEvent(new HoverEvent.ShowText(Component.literal("Click to copy\n").withStyle(ChatFormatting.GRAY)
+								.append(Component.literal(effect.description()).withStyle(ChatFormatting.WHITE))
+								.append(Component.literal("\nAlso works: " + String.join(", ", effect.texts()))
+										.withStyle(ChatFormatting.GRAY))))));
+			}
+			message.append(Component.literal(" " + effect.description()).withStyle(ChatFormatting.GRAY));
+		}
+		reply(source, message);
+		return true;
+	}
+
+	static void replyTo(CommandSourceStack source, Component body) {
+		reply(source, body);
 	}
 
 	private static String projectName(String path) {

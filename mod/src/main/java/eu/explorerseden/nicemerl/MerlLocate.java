@@ -136,7 +136,7 @@ public final class MerlLocate {
 							.filter(p -> p.contains("cave") || p.contains("cavern") || p.contains("deep_dark") || p.contains("underground")).isPresent();
 					reply.accept(found(MerlLines.pick("locate_found", "biome", name(biomeNames, biome), "user", user,
 							"distance", distance(from, pos), "direction", BiomeNames.direction(pos.getX() - from.getX(), pos.getZ() - from.getZ())),
-							pos.getX(), height ? pos.getY() : null, pos.getZ(), teleport));
+							pos.getX(), height ? pos.getY() : null, pos.getZ(), teleport, name(biomeNames, biome)));
 				}));
 		return true;
 	}
@@ -165,11 +165,11 @@ public final class MerlLocate {
 		int x = chunk.getMiddleBlockX(), z = chunk.getMiddleBlockZ();
 		BlockPos middle = new BlockPos(x, from.getY(), z);
 		MutableComponent answer = found(MerlLines.pick(pool, "user", user, "distance", distance(from, middle),
-				"direction", BiomeNames.direction(x - from.getX(), z - from.getZ())), x, null, z, teleport);
+				"direction", BiomeNames.direction(x - from.getX(), z - from.getZ())), x, null, z, teleport, null);
 		return answer.append(Component.literal(" " + MerlLines.pick("slime_hint", "y", String.valueOf(SLIME_MAX_Y),
 				"x1", String.valueOf(chunk.getMinBlockX()), "z1", String.valueOf(chunk.getMinBlockZ()),
 				"x2", String.valueOf(chunk.getMaxBlockX()), "z2", String.valueOf(chunk.getMaxBlockZ())))
-				.withStyle(ChatFormatting.GRAY));
+				.withStyle(ChatFormatting.GRAY)).append(NiceMerl.config().particleGuide ? MerlGuide.offer(x, null, z, "the slime chunk") : Component.empty());
 	}
 
 	/** The slime chunk whose middle is closest to the position, or null if there's none nearby. */
@@ -197,7 +197,7 @@ public final class MerlLocate {
 	}
 
 	/** The line, then the coordinates: click to copy them, or (for operators) to fill in a /tp. */
-	private static MutableComponent found(String line, int x, Integer y, int z, boolean teleport) {
+	static MutableComponent found(String line, int x, Integer y, int z, boolean teleport, String label) {
 		String shown = y != null ? "X " + x + ", Y " + y + ", Z " + z : "X " + x + ", Z " + z;
 		String copy = y != null ? x + " " + y + " " + z : x + " ~ " + z;
 		Style style = Style.EMPTY.withColor(COORDS_COLOR).withUnderlined(true);
@@ -206,10 +206,11 @@ public final class MerlLocate {
 						.withHoverEvent(new HoverEvent.ShowText(Component.literal("Click to teleport there")))
 				: style.withClickEvent(new ClickEvent.CopyToClipboard(copy))
 						.withHoverEvent(new HoverEvent.ShowText(Component.literal("Click to copy")));
-		return Component.literal(line + " ").append(Component.literal(shown).withStyle(style));
+		MutableComponent answer = Component.literal(line + " ").append(Component.literal(shown).withStyle(style));
+		return label != null && NiceMerl.config().particleGuide ? answer.append(MerlGuide.offer(x, y, z, label)) : answer;
 	}
 
-	private static boolean canTeleport(CommandSourceStack source) {
+	static boolean canTeleport(CommandSourceStack source) {
 		return source.getPlayer() != null && Permissions.check(source, "minecraft.command.teleport", PermissionLevel.GAMEMASTERS);
 	}
 

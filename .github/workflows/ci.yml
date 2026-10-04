@@ -148,6 +148,9 @@ jobs:
           assert p.is_clarifying("So Katter is Bosses, the Skyrtle and a Fossil?") and not p.is_clarifying("so how do i get there")
           assert p.met_question("Have you met NotNiceRon yet?") == ("NotNiceRon", True)
           assert p.met_question("do you know how to craft a bed") is None
+          # Pack names starting with "Nice" aren't compliments; "nice! how…" still is.
+          assert p.split_small_talk("nice mob variants cows")[0] is None
+          assert p.split_small_talk("nice! how do i get a boss key")[0] == "compliment_prefix"
           print("Small talk detection works")
           EOF
 
