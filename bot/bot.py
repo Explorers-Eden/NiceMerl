@@ -1,4 +1,5 @@
 import asyncio
+import io
 import logging
 import random
 import re
@@ -7,11 +8,13 @@ from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+import aiohttp
 import discord
 from discord.ext import tasks
 
 import config
 import personality
+import recipes
 import semantic
 from friends import Friend, Friends
 from memory import Memory, Visit
@@ -57,6 +60,10 @@ class NiceMerl(discord.Client):
         self.friends = Friends(config.STATE_DIR)
         self.timezone = ZoneInfo(config.TIMEZONE)
         self.last_thumbnail: Path | None = None
+        # Recipe pictures: our packs' from the website, vanilla ones drawn from the Minecraft Wiki.
+        self.recipes = recipes.Manifest(config.RECIPES_URL)
+        self.drawer = recipes.Drawer()
+        self.http: aiohttp.ClientSession | None = None
 
     async def setup_hook(self):
         self.refresh_index.change_interval(hours=config.REINDEX_HOURS)
@@ -66,6 +73,8 @@ class NiceMerl(discord.Client):
     async def close(self):
         if self.vanilla:
             await self.vanilla.close()
+        if self.http:
+            await self.http.close()
         await super().close()
 
     @tasks.loop(hours=6)
@@ -93,7 +102,33 @@ class NiceMerl(discord.Client):
             log.warning("Reindex returned no sections, keeping the previous index")
             return False
         self.index = Index(sections, embed=self.embed)
+        await self.recipes.refresh(self.session())
         return True
+
+    def session(self) -> aiohttp.ClientSession:
+        if self.http is None or self.http.closed:
+            self.http = aiohttp.ClientSession(headers={"User-Agent": "NiceMerl (Explorer's Eden Discord bot)"})
+        return self.http
+
+    async def recipe_picture(self, question: str, results: list[Result]) -> recipes.Picture | None:
+        """For "how do I craft X?": our packs' recipe picture from the website, else the vanilla crafting
+        grid drawn from the Minecraft Wiki. None when there's no recipe or anything fails."""
+        item = personality.recipe_item(question)
+        if not item:
+            return None
+        exact, loose = self.recipes.find(item)
+        if exact:
+            return recipes.manifest_picture(exact, config.SITE_URL)
+        # Only the page named after the item, so a pack item never gets some vanilla page's recipe.
+        grid = await self.vanilla.recipe_grid(item[:1].upper() + item[1:], item) if self.vanilla else None
+        if grid is None:
+            return recipes.manifest_picture(loose, config.SITE_URL) if loose else None
+        try:
+            png = await self.drawer.draw(self.session(), grid)
+        except Exception:
+            log.warning("Could not draw the recipe for %s", item, exc_info=True)
+            return None
+        return recipes.Picture(f"📜 Recipe: **{grid.title or item.title()}** · Minecraft", png=png)
 
     async def on_ready(self):
         log.info("Logged in as %s, answering in channel %s", self.user, config.CHANNEL_ID)
@@ -259,7 +294,16 @@ class NiceMerl(discord.Client):
             answer = search_answer_line(search, results, self.index) if sure in ("sure", "maybe") else ""
             embed = self.results_embed(results, self.answer_title(
                 results, outcome, prefix=prefix, repeat=repeat, energy=energy, user=user), energy, answer)
-            await self.say(message, started, embed=embed, results=len(results))
+            picture = await self.recipe_picture(question, results)
+            recipe_file = None
+            if picture:
+                embed.description = f"{picture.line}\n\n{embed.description}"[:4096]
+                if picture.png:
+                    recipe_file = discord.File(io.BytesIO(picture.png), filename="recipe.png")
+                    embed.set_image(url="attachment://recipe.png")
+                else:
+                    embed.set_image(url=picture.url)
+            await self.say(message, started, embed=embed, results=len(results), extra_file=recipe_file)
         else:
             visit.page = ""
             await self.say(message, started, embed=self.not_found_embed(), results=1)
@@ -332,7 +376,7 @@ class NiceMerl(discord.Client):
         return line
 
     async def say(self, message: discord.Message, started: float, *, content: str | None = None,
-                  embed: discord.Embed | None = None, results: int = 0):
+                  embed: discord.Embed | None = None, results: int = 0, extra_file: discord.File | None = None):
         """Replies after a short "typing…" pause, so Merl doesn't answer inhumanly fast."""
         if results:
             delay = min(TYPING_MAX, TYPING_ANSWER + TYPING_PER_RESULT * results)
@@ -342,17 +386,17 @@ class NiceMerl(discord.Client):
         if remaining > 0:
             async with message.channel.typing():
                 await asyncio.sleep(remaining)
-        await self.send(message, embed=embed or self.text_embed(content or ""))
+        await self.send(message, embed=embed or self.text_embed(content or ""), extra_file=extra_file)
 
-    async def send(self, message: discord.Message, *, embed: discord.Embed):
-        """Every reply is an embed with a random picture of Merl in the corner."""
-        kwargs = {}
+    async def send(self, message: discord.Message, *, embed: discord.Embed, extra_file: discord.File | None = None):
+        """Every reply is an embed with a random picture of Merl in the corner (and maybe a recipe picture)."""
+        files = [extra_file] if extra_file else []
         if THUMBNAILS:
             choices = [t for t in THUMBNAILS if t != self.last_thumbnail] or THUMBNAILS
             image = self.last_thumbnail = random.choice(choices)
-            kwargs["file"] = discord.File(image, filename=image.name)
+            files.append(discord.File(image, filename=image.name))
             embed.set_thumbnail(url=f"attachment://{image.name}")
-        await message.reply(embed=embed, mention_author=False, **kwargs)
+        await message.reply(embed=embed, mention_author=False, files=files)
 
     def text_embed(self, text: str) -> discord.Embed:
         """A small embed for small talk and status messages."""

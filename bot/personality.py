@@ -260,6 +260,22 @@ def looks_like_question(rest: str, original: str) -> bool:
     return len(tokens) >= 2 or "?" in original or first in QUESTION_WORDS
 
 
+RECIPE = re.compile(
+    r"(how (do|can|would|should) (i|you|we|one) (craft|make)|how to (craft|make)|(whats|what is|show me|give me) the (crafting )?recipe (for|of)"
+    r"|(crafting )?recipe (for|of)|craft(ing)? recipe for) (an? |the |some )?(?P<item>.+?)( in minecraft)?")
+RECIPE_SUFFIX = re.compile(r"(?P<item>.+?) (crafting )?recipe")
+
+
+def recipe_item(text: str) -> str | None:
+    """ "how do I craft a waypoint hub" → "waypoint hub" (same as MerlLines.recipeItem in the mod)."""
+    normalized = normalize(text)
+    m = RECIPE.fullmatch(normalized) or RECIPE_SUFFIX.fullmatch(normalized)
+    if not m:
+        return None
+    item = re.sub(r"^(an?|the|some) ", "", m.group("item")).strip()
+    return item if item and len(item.split()) <= 5 else None
+
+
 def split_small_talk(text: str) -> tuple[str | None, str]:
     """For "thanks merl! how do I get a boss key": ("thanks_prefix", "how do i get a boss key").
     (None, text) when the message doesn't start with small talk followed by a question."""

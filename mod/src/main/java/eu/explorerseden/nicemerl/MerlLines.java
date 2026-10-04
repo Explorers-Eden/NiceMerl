@@ -775,4 +775,131 @@ public final class MerlLines {
 	public static boolean waypointOnlyMine(String message) {
 		return WAYPOINT_MINE.matcher(message.toLowerCase(java.util.Locale.ROOT)).find();
 	}
+
+	// "What's this?": the block or mob in front of the player, or the held item.
+	private static final Pattern WHATS_THIS = Pattern.compile(
+			"(merl )?(what|whats|wat)( is)? (this|that)( thing| block| mob| item| creature| animal| here)?( merl)?"
+			+ "|what am i (looking at|holding)( right now)?( merl)?|(identify|name) (this|that)( thing| mob| block| item)?");
+	private static final Pattern HOLDING = Pattern.compile("\\b(holding|in my hand|item)\\b");
+
+	/** "what is this", "what am I looking at"; null if not, else true when it's about the held item. */
+	public static Boolean whatsThis(String message) {
+		String text = normalize(message).replaceAll("[?!.]+$", "").strip();
+		if (!WHATS_THIS.matcher(text).matches()) return null;
+		return HOLDING.matcher(text).find();
+	}
+
+	// Recipes: "how do I craft a waypoint hub", "recipe for a bed", "bed recipe".
+	private static final Pattern RECIPE = Pattern.compile(
+			"(how (do|can|would|should) (i|you|we|one) (craft|make)|how to (craft|make)|(whats|what is|show me|give me) the (crafting )?recipe (for|of)"
+			+ "|(crafting )?recipe (for|of)|craft(ing)? recipe for) (an? |the |some )?(?<item>.+?)( in minecraft)?");
+	private static final Pattern RECIPE_SUFFIX = Pattern.compile("(?<item>.+?) (crafting )?recipe");
+
+	/** The item a recipe question asks about ("waypoint hub"), or null. */
+	public static String recipeItem(String message) {
+		String text = normalize(message).replaceAll("[?!.]+$", "").strip();
+		Matcher m = RECIPE.matcher(text);
+		if (!m.matches()) m = RECIPE_SUFFIX.matcher(text);
+		if (!m.matches()) return null;
+		String item = m.group("item").replaceAll("^(an?|the|some) ", "").strip();
+		return item.isEmpty() || item.split(" ").length > 5 ? null : item;
+	}
+
+	// "What can I enchant this with?"
+	private static final Pattern ENCHANT_FOR_THIS = Pattern.compile(
+			"\\b(what|which|list|show|all|any)\\b.*\\benchant(ment)?s?\\b.*\\b(this|it|that|my hand|holding)\\b"
+			+ "|\\benchant(ment)?s? (for|on) (this|it|that)\\b|\\bwhat can i enchant (this|it)( with)?\\b");
+
+	public static boolean enchantForThis(String message) {
+		String text = normalize(message);
+		return ENCHANT_FOR_THIS.matcher(text).find() && !text.startsWith("how ");
+	}
+
+	// "Where's my bed?" and "where did I die?"
+	private static final Pattern BED = Pattern.compile(
+			"\\bwhere('?s| is| was)? (my|the) (bed|spawn( ?point)?|respawn( ?point)?|respawn anchor)\\b|\\bwhere (do|will) i (respawn|spawn)\\b");
+	private static final Pattern DEATH = Pattern.compile(
+			"\\bwhere (did|have) i (die|died|just die)\\b|\\bwhere('?s| is| are) my (death( ?point)?|grave|stuff|items|loot|body)\\b"
+			+ "|\\b(last )?death (point|location|spot|coords|coordinates)\\b|\\bwhere i died\\b");
+
+	/** "bed", "death" or null. */
+	public static String homeQuestion(String message) {
+		String text = normalize(message).replace("'", "");
+		// "teleport to my death location" or "how do I find where I died" are about pack features, for the wiki.
+		if (!text.matches("(merl )?(hey )?(where|wheres)\\b.*")) return null;
+		if (DEATH.matcher(text).find()) return "death";
+		if (BED.matcher(text).find()) return "bed";
+		return null;
+	}
+
+	// "What can I smelt / brew with this?"
+	private static final Pattern SMELT = Pattern.compile("\\b(smelt|smelting|cook|cooking|furnace|smoker|blast furnace|campfire|bake)\\b");
+	private static final Pattern BREW = Pattern.compile("\\b(brew|brewing|brewing stand|potions?)\\b");
+	private static final Pattern WITH_THIS = Pattern.compile("\\b(this|it|that|my hand|holding|with what i have)\\b");
+
+	/** "smelt", "brew" or null for "what can I smelt with this", "can I brew this". */
+	public static String smeltOrBrew(String message) {
+		String text = normalize(message);
+		if (!WITH_THIS.matcher(text).find() || text.startsWith("how do") && !text.contains("this")) return null;
+		if (!text.matches(".*\\b(what|which|can|could|is|does)\\b.*")) return null;
+		if (BREW.matcher(text).find()) return "brew";
+		if (SMELT.matcher(text).find()) return "smelt";
+		return null;
+	}
+
+	// Reminders: "remind me in 10 minutes to check the furnace", "remind me to eat in 1h".
+	private static final String DURATION = "(?<amount>\\d+(?:[.,]\\d+)?|an?|one|half an?|a couple of|a few) ?(?<unit>seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h)\\b";
+	private static final Pattern REMIND_IN = Pattern.compile("(merl )?(please )?remind me (in|after) " + DURATION + "(?: (to|about|that|of))? ?(?<text>.*)");
+	private static final Pattern REMIND_TO = Pattern.compile("(merl )?(please )?remind me (to|about|that|of) (?<text>.+?) (in|after) " + DURATION);
+	private static final Pattern REMINDERS_LIST = Pattern.compile("\\b(my|list( my)?|show( my)?|what are my) reminders\\b");
+	private static final Pattern REMINDERS_CANCEL = Pattern.compile("\\b(cancel|clear|delete|remove|stop|forget)( all)?( my)? reminders?\\b");
+
+	/** A reminder request: in how many seconds, and what about ("" if nothing was said). */
+	public record Reminder(long seconds, String text) {}
+
+	/** The reminder in the message, or null. Longer than a day or shorter than 5 seconds doesn't count. */
+	public static Reminder reminder(String message) {
+		String text = message.toLowerCase(Locale.ROOT).strip().replaceAll("[!.]+$", "");
+		Matcher m = REMIND_IN.matcher(text);
+		if (!m.matches()) m = REMIND_TO.matcher(text);
+		if (!m.matches()) return null;
+		String amount = m.group("amount");
+		double count = switch (amount) {
+			case "a", "an", "one" -> 1;
+			case "half a", "half an" -> 0.5;
+			case "a couple of" -> 2;
+			case "a few" -> 3;
+			default -> Double.parseDouble(amount.replace(',', '.'));
+		};
+		String unit = m.group("unit");
+		long seconds = Math.round(count * (unit.startsWith("h") ? 3600 : unit.startsWith("m") ? 60 : 1));
+		if (seconds < 5 || seconds > 86_400) return null;
+		String what = m.group("text") == null ? "" : m.group("text").strip();
+		return new Reminder(seconds, what.replaceAll("^(to|about|that|of) ", ""));
+	}
+
+	/** "list", "cancel" or null for "my reminders", "cancel my reminders". */
+	public static String remindersCommand(String message) {
+		String text = normalize(message);
+		if (REMINDERS_CANCEL.matcher(text).find()) return "cancel";
+		if (REMINDERS_LIST.matcher(text).find()) return "list";
+		return null;
+	}
+
+	// Get Off My Lawn claims: "where is my claim", "nearest claim I'm trusted on", "where is steve's claim".
+	private static final Pattern CLAIM = Pattern.compile("\\bclaims?\\b");
+	private static final Pattern CLAIM_CUE = Pattern.compile("\\b(where|wheres|nearest|closest|nearby|how far|which way|direction|find|coords?|coordinates)\\b");
+	/** How-to questions about claims go to the wiki. */
+	private static final Pattern CLAIM_HOW = Pattern.compile("\\bhow\\b(?! far)|\\b(make|create|craft|crafting|recipe|expand|upgrade|resize|remove|delete|abandon|protect|cost|add|untrust|get|buy|anchors?)\\b");
+	private static final Pattern CLAIM_TRUSTED = Pattern.compile("\\b(trusted|trust|access|allowed|friends?|others?|someone elses|other peoples?)\\b|\\bs claim");
+	private static final Pattern CLAIM_MINE = Pattern.compile("\\bmy (own )?(\\w+ )?claims?\\b");
+
+	/** "mine", "trusted", "any" or null. */
+	public static String claimQuestion(String message) {
+		String text = normalize(message);
+		if (!CLAIM.matcher(text).find() || !CLAIM_CUE.matcher(text).find() || CLAIM_HOW.matcher(text).find()) return null;
+		if (CLAIM_TRUSTED.matcher(text).find()) return "trusted";
+		if (CLAIM_MINE.matcher(text).find()) return "mine";
+		return "any";
+	}
 }

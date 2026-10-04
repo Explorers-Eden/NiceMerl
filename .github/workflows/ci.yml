@@ -197,6 +197,41 @@ jobs:
           print("Search works: projects, question types, interests, meaning and answer lines")
           EOF
 
+      - name: Check recipe pictures (pack recipe matching, vanilla crafting grids)
+        run: |
+          python - <<'EOF'
+          import asyncio, recipes, personality
+          from search import tokenize
+          from PIL import Image
+          # "how do I craft X" → X, like MerlLines.recipeItem in the mod.
+          assert personality.recipe_item("how do I craft a waypoint hub?") == "waypoint hub"
+          assert personality.recipe_item("bed recipe") == "bed" and personality.recipe_item("how do i get a boss key") is None
+          # Pack recipes: exact crafting names first; mini blocks (stonecutter, named like the vanilla block) only loosely.
+          def recipe(name, crafting=True):
+              return recipes.Recipe(name, frozenset(tokenize(name)), "Pack", "https://x/" + name, crafting)
+          m = recipes.Manifest("")
+          m.recipes = [recipe("Acacia Waypoint Hub"), recipe("Portal Horn"), recipe("Crafting Table", crafting=False)]
+          assert [r.name for r in m.find("portal horn")[0]] == ["Portal Horn"]
+          assert not m.find("crafting table")[0] and m.find("crafting table")[1]
+          assert [r.name for r in m.find("waypoint hub")[1]] == ["Acacia Waypoint Hub"]
+          # Vanilla: the crafting grid from Minecraft Wiki markup, drawn with (stubbed) sprites.
+          slot = '<span class="invslot"><span class="invslot-item"><a title="Oak Planks"><img src="/images/Invicon_Oak_Planks.png"></a></span></span>'
+          empty = '<span class="invslot"></span>'
+          row = '<span class="mcui-row">' + slot + slot + empty + '</span>'
+          html = ('<span class="mcui mcui-Crafting_Table"><span class="mcui-input">' + row + row + '<span class="mcui-row">' + empty * 3
+                  + '</span></span><span class="mcui-output"><span class="invslot"><span class="invslot-item"><img src="/images/Invicon_Crafting_Table.png">'
+                  + '</span></span></span></span>')
+          grid = recipes.find_grid(html, "https://minecraft.wiki", "crafting table")
+          assert grid and sum(1 for x in grid.inputs if x) == 4 and grid.title == ""
+          drawer = recipes.Drawer()
+          for url in grid.inputs + [grid.output]:
+              if url:
+                  drawer.sprites[url] = Image.new("RGBA", (recipes.ITEM, recipes.ITEM), (200, 150, 80, 255))
+          png = asyncio.run(drawer.draw(None, grid))
+          assert png.startswith(b"\x89PNG")
+          print("Recipe pictures work: pack recipes, mini blocks, vanilla grids")
+          EOF
+
       - name: Check that the stack in SETUP.md matches portainer-stack.yml
         run: |
           python - <<'EOF'

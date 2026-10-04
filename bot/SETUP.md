@@ -118,6 +118,7 @@ The code lives in [NiceKaleido/NiceMerl](https://github.com/NiceKaleido/NiceMerl
    | `VANILLA_WIKI` | `true` | Also answer vanilla Minecraft questions from the Minecraft Wiki; `false` turns it off |
    | `VANILLA_WIKI_URL` | `https://minecraft.wiki` | MediaWiki used for vanilla questions |
    | `TIMEZONE` | `Europe/Berlin` | Time zone for Merl's good morning / good evening greetings, sleepy nights and her mood of the day |
+| `RECIPES_URL` | the explorerseden.eu recipe list | Where the recipe pictures for our packs come from; empty turns recipe pictures off |
 
 5. Click **Deploy the stack**.
 

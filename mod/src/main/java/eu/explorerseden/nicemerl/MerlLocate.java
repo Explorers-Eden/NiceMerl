@@ -26,6 +26,7 @@ import net.minecraft.network.chat.TextColor;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.PermissionLevel;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.ChunkPos;
@@ -139,6 +140,29 @@ public final class MerlLocate {
 							pos.getX(), height ? pos.getY() : null, pos.getZ(), teleport, name(biomeNames, biome)));
 				}));
 		return true;
+	}
+
+	/** "Where's my bed?" / "where did I die?": the respawn point or last death, with distance and [Guide me]. */
+	static Component home(ServerPlayer player, String kind) {
+		String user = player.getName().getString();
+		net.minecraft.core.GlobalPos target;
+		if (kind.equals("death")) {
+			target = player.getLastDeathLocation().orElse(null);
+			if (target == null) return Component.literal(MerlLines.pick("death_none", "user", user));
+		} else {
+			ServerPlayer.RespawnConfig respawn = player.getRespawnConfig();
+			if (respawn == null) return Component.literal(MerlLines.pick("bed_none", "user", user));
+			target = respawn.respawnData().globalPos();
+		}
+		if (!target.dimension().equals(player.level().dimension())) {
+			return Component.literal(MerlLines.pick(kind + "_other_dimension", "user", user,
+					"dimension", dimensionName(target.dimension().identifier())));
+		}
+		BlockPos pos = target.pos(), from = player.blockPosition();
+		String label = kind.equals("death") ? "where you died" : "your bed";
+		return found(MerlLines.pick(kind + "_found", "user", user, "distance", distance(from, pos),
+				"direction", BiomeNames.direction(pos.getX() - from.getX(), pos.getZ() - from.getZ())),
+				pos.getX(), pos.getY(), pos.getZ(), canTeleport(player.createCommandSourceStack()), label);
 	}
 
 	private static Component slimeChunk(ServerLevel level, BlockPos from, boolean here, String user, boolean teleport) {

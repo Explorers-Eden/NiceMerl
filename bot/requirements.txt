@@ -5,3 +5,5 @@ aiohttp>=3.9,<4
 tzdata>=2024.1
 # Meaning-based search (a 30 MB word-vector model, no AI runtime).
 model2vec>=0.9,<1
+# Drawing vanilla recipe pictures.
+pillow>=10.1,<13

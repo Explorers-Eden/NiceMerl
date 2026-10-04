@@ -29,6 +29,61 @@ public final class MerlCrafting {
 
 	private MerlCrafting() {}
 
+	/** "What can I smelt / brew with this?": furnace-type and brewing recipes that use the held item. */
+	static Component smeltOrBrew(ServerPlayer player, String kind) {
+		return smeltOrBrew(player.getMainHandItem(), player.level(), player.getName().getString(), kind);
+	}
+
+	static Component smeltOrBrew(ItemStack held, net.minecraft.world.level.Level level, String user, String kind) {
+		if (held.isEmpty()) return Component.literal(MerlLines.pick("craft_nothing_held", "user", user));
+		String item = MerlRecipes.readable(held.getHoverName());
+		ContextMap context = SlotDisplayContext.fromLevel(level);
+		Map<String, MutableComponent> lines = new LinkedHashMap<>();
+		Map<String, List<String>> stations = new LinkedHashMap<>();
+		// Splash and lingering versions only matter when holding what makes them.
+		boolean throwable = held.is(net.minecraft.world.item.Items.GUNPOWDER) || held.is(net.minecraft.world.item.Items.DRAGON_BREATH);
+		for (RecipeHolder<?> holder : level.getServer().getRecipeManager().getRecipes()) {
+			if (kind.equals("smelt") && holder.value() instanceof net.minecraft.world.item.crafting.AbstractCookingRecipe cooking) {
+				if (!cooking.input().test(held) || cooking.display().isEmpty()) continue;
+				ItemStack result = cooking.display().get(0).result().resolveForFirstStack(context);
+				if (result.isEmpty()) continue;
+				String type = cooking.getType().toString();
+				String station = type.contains("blasting") ? "Blast Furnace" : type.contains("smoking") ? "Smoker"
+						: type.contains("campfire") ? "Campfire" : "Furnace";
+				String key = MerlRecipes.readable(result.getHoverName());
+				lines.computeIfAbsent(key, k -> Component.literal("\n ▸ ").withStyle(ChatFormatting.DARK_GRAY)
+						.append(result.getHoverName().copy().withStyle(ChatFormatting.YELLOW)));
+				List<String> where = stations.computeIfAbsent(key, k -> new ArrayList<>());
+				if (!where.contains(station)) where.add(station);
+			} else if (kind.equals("brew") && holder.value() instanceof net.minecraft.world.item.crafting.BrewingRecipe brewing) {
+				boolean reagent = brewing.getReagent().test(held), input = brewing.getInput().test(held);
+				if (!reagent && !input) continue;
+				ItemStack result = brewing.getOutput().create();
+				if (!throwable && (result.is(net.minecraft.world.item.Items.SPLASH_POTION) || result.is(net.minecraft.world.item.Items.LINGERING_POTION))) continue;
+				MutableComponent line = Component.literal("\n ▸ ").withStyle(ChatFormatting.DARK_GRAY)
+						.append(result.getHoverName().copy().withStyle(ChatFormatting.YELLOW));
+				ItemStack other = (reagent ? brewing.getInput() : brewing.getReagent()).ingredient().items().findFirst()
+						.map(ItemStack::new).orElse(ItemStack.EMPTY);
+				// A bare potion bottle reads "Uncraftable Potion", so only name other ingredients.
+				boolean potion = other.is(net.minecraft.world.item.Items.POTION) || other.is(net.minecraft.world.item.Items.SPLASH_POTION)
+						|| other.is(net.minecraft.world.item.Items.LINGERING_POTION);
+				if (!other.isEmpty() && !potion) {
+					line.append(Component.literal(reagent ? " (added to " : " (with ").withStyle(ChatFormatting.GRAY))
+							.append(other.getHoverName().copy().withStyle(ChatFormatting.WHITE))
+							.append(Component.literal(")").withStyle(ChatFormatting.GRAY));
+				}
+				lines.putIfAbsent(MerlRecipes.readable(result.getHoverName()) + "|" + MerlRecipes.readable(other.getHoverName()), line);
+			}
+		}
+		stations.forEach((key, where) -> lines.get(key).append(Component.literal(" in a " + (where.size() == 1 ? where.get(0)
+				: String.join(", ", where.subList(0, where.size() - 1)) + " or " + where.get(where.size() - 1))).withStyle(ChatFormatting.GRAY)));
+		if (lines.isEmpty()) return Component.literal(MerlLines.pick(kind + "_none", "item", item, "user", user));
+		MutableComponent message = Component.literal(MerlLines.pick(kind + "_list", "item", item, "user", user));
+		lines.values().stream().limit(12).forEach(message::append);
+		if (lines.size() > 12) message.append(Component.literal("\n and " + (lines.size() - 12) + " more").withStyle(ChatFormatting.GRAY));
+		return message;
+	}
+
 	/** Merl's answer: the things the player can craft now, or why there are none. */
 	static Component answer(ServerPlayer player, String message) {
 		StackedItemContents contents = new StackedItemContents();

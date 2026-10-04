@@ -326,6 +326,17 @@ public final class MerlCommand {
 		visit.seenAt = now;
 		Meeting meeting = meet(player, question, source.getTextName());
 
+		if (player != null && helpers(source, player, question, config)) {
+			sendNote(source, meeting.note());
+			return 1;
+		}
+		// "how do I craft a waypoint hub?": the server's recipe first, then the wiki answer as usual.
+		String recipeItem = config.recipeHelp ? MerlLines.recipeItem(question) : null;
+		if (recipeItem != null) {
+			Component recipe = MerlRecipes.recipe(source.getServer(), recipeItem, source.getTextName());
+			if (recipe != null) reply(source, recipe);
+		}
+
 		// "what can I craft?" looks at the player's inventory.
 		if (player != null && config.craftingHelp && MerlLines.craftingQuestion(question)) {
 			reply(source, MerlCrafting.answer(player, question));
@@ -899,6 +910,61 @@ public final class MerlCommand {
 				.orElseGet(() -> Holder.direct(SoundEvent.createVariableRangeEvent(id)));
 		player.connection.send(new ClientboundSoundPacket(sound, SoundSource.NEUTRAL, player.getX(), player.getY(), player.getZ(),
 				config.messageSoundVolume, config.messageSoundPitch, player.getRandom().nextLong()));
+	}
+
+	/**
+	 * The in-game helpers that answer from the world instead of the wiki: reminders, "what's this?",
+	 * enchantments, smelting and brewing, and "where's my bed / where did I die?". True when one answered.
+	 */
+	private static boolean helpers(CommandSourceStack source, ServerPlayer player, String question, MerlConfig config) {
+		if (config.reminders) {
+			MerlLines.Reminder reminder = MerlLines.reminder(question);
+			if (reminder != null) {
+				reply(source, MerlReminders.add(player, reminder));
+				return true;
+			}
+			String command = MerlLines.remindersCommand(question);
+			if (command != null) {
+				reply(source, MerlReminders.command(player, command));
+				return true;
+			}
+		}
+		Boolean holding = config.whatsThis ? MerlLines.whatsThis(question) : null;
+		if (holding != null) {
+			MerlWhatsThis.Answer answer = MerlWhatsThis.answer(player, holding);
+			MutableComponent message = Component.empty().append(answer.line());
+			SearchIndex index = NiceMerl.index();
+			if (answer.query() != null && index != null) {
+				for (SearchIndex.Result result : index.find(answer.query(), 2, config.excerptLength).results()) {
+					message.append(Component.literal("\n")).append(formatResult(result, config));
+				}
+			}
+			reply(source, message);
+			return true;
+		}
+		if (config.recipeHelp && MerlLines.enchantForThis(question)) {
+			reply(source, MerlRecipes.enchantments(player));
+			return true;
+		}
+		String smelt = config.recipeHelp ? MerlLines.smeltOrBrew(question) : null;
+		if (smelt != null) {
+			reply(source, MerlCrafting.smeltOrBrew(player, smelt));
+			return true;
+		}
+		String claim = config.locateClaims ? MerlLines.claimQuestion(question) : null;
+		if (claim != null && Permissions.check(source, MerlLocate.PERMISSION_LOCATE, true)) {
+			Component answer = MerlClaims.answer(player, claim, question);
+			if (answer != null) {
+				reply(source, answer);
+				return true;
+			}
+		}
+		String home = config.locateHome ? MerlLines.homeQuestion(question) : null;
+		if (home != null && Permissions.check(source, MerlLocate.PERMISSION_LOCATE, true)) {
+			reply(source, MerlLocate.home(player, home));
+			return true;
+		}
+		return false;
 	}
 
 	/** Lists the Nice Name Tags texts, each one click to copy; false when the wiki doesn't have them. */

@@ -60,8 +60,9 @@ Every message in the configured channel is treated as a question. NiceMerl repli
 
 - **Vanilla questions** are answered from the Minecraft Wiki, labelled 📗 *Minecraft Wiki*.
 - **Saying hi** (or @-mentioning her) gets a greeting that fits the time of day, using their name.
-- **Small talk:** *thanks*, *bye*, *how are you*, *who are you*, *what can you do*, *tell me a joke*, *give me a tip*, *fun fact*, *what should I do next?* (over 1,200 ideas), *good bot*, *who is Peanut Butter*, *pet Peanut Butter*, *I died*, *I'm bored*… Over 4,500 lines in all, including 240 jokes. She answers in character and reacts with 💗, 👋 or 🐱.
+- **Small talk:** *thanks*, *bye*, *how are you*, *who are you*, *what can you do*, *tell me a joke*, *give me a tip*, *fun fact*, *what should I do next?* (over 1,200 ideas), *good bot*, *who is Peanut Butter*, *pet Peanut Butter*, *I died*, *I'm bored*… Over 21,000 lines in all, including about 2,200 jokes: classic question-and-punchline ones, plus little stories, dialogues, mob reviews, patch notes, diary entries, signs, shower thoughts and Peanut Butter anecdotes. She answers in character and reacts with 💗, 👋 or 🐱.
 - **Forgiving about wording:** stretched letters (*"thaaanks"*), small typos (*"thnaks"*, *"jok pls"*), politeness (*"can you tell me a joke please"*) and loose phrasing (*"im bored gimme ideas"*, *"got any tips for beginners"*) all work. As soon as a message has a real subject in it (*"tips for the nether"*), it's treated as a question.
+- **Recipe pictures:** *"how do I craft a waypoint hub?"* shows the recipe as a picture: our packs' recipes are the ones the website renders, vanilla recipes are drawn from the Minecraft Wiki's crafting grid in the game's style.
 - **A picture of Merl on every reply:** each answer is an embed with a random Merl image in the corner, never the same twice in a row.
 - **Mixed messages:** *"thanks! how do I get a boss key?"* gets a quick *"You're welcome!"* and the answer.
 - **She sounds human:**
@@ -108,6 +109,8 @@ To measure the answers, run `.venv/bin/python evaluate.py` (add `-v` to list eve
 | `VANILLA_WIKI` | `true` | Answer vanilla questions from the Minecraft Wiki too |
 | `VANILLA_WIKI_URL` | `https://minecraft.wiki` | MediaWiki used for vanilla questions |
 | `TIMEZONE` | `Europe/Berlin` | Time zone for good morning / good evening, sleepy nights and the mood of the day |
+| `RECIPES_URL` | the explorerseden.eu recipe list | Where recipe pictures for our packs come from (the website renders them); empty turns recipe pictures off |
+| `SITE_URL` | `https://explorerseden.eu` | Website linked for "all recipes" |
 | `SEMANTIC_MODEL` | `bot/model` (built into the Docker image) | Folder or Hugging Face name of the meaning-based search model; if it can't be loaded, Merl searches by keywords only |
 | `STATE_DIR` | `bot/state` (`/app/state` in Docker) | Where Peanut Butter's pet count and Merl's memory of people (`friends.json`) are saved. The Docker setups mount the `nicemerl-state` volume here, so it survives updates |
 
@@ -141,6 +144,10 @@ Players type `/merl <question>`, and NiceMerl answers in chat with:
 She also does small talk (`/merl thanks`, `/merl tell me a joke`, `/merl give me a tip`, `/merl fun fact`, `/merl pet peanut butter`), greets players by name, and has the same human touches as the bot (mixed messages, confidence, short memory, moods, asking back). On top of that, in-game:
 - **Coordinates:** *"where is the closest cherry grove?"* gets the closest one's coordinates, distance and direction, searched like `/locate biome`, off the server thread. Every biome on the server works (vanilla, Terralith, Biomes O' Plenty, the Eden packs' Deep Blue biomes), by name, by id (`terralith:moonlight_grove`), with a pack name (*"bop lavender field"*) or loosely (*"a snowy biome"*). *"Where's a slime chunk?"* finds the closest slime chunk. With [Warping Wonders](https://wiki.explorerseden.eu), *"where's the closest waypoint?"* points to the closest Waypoint Hub the player may use (their own, public ones and locked ones they're trusted on, read from the pack's `eden:database` storage). Click the coordinates to copy them; operators get a `/tp` instead. After the coordinates Merl offers **[Guide me]**: a trail of sparkles toward the target that only that player sees, with the distance on their action bar, until they arrive (`/nicemerl guide stop` ends it).
 - **Name Tag texts:** *"name tag phrases"* lists every text Nice Name Tags reacts to, parsed from its wiki page, each one click to copy; *"name tag to mute a mob"* shows just that one.
+- **Real recipes:** *"how do I craft a waypoint hub?"* shows the recipe from the server's own recipe list (our packs' included): ingredients, crafting table or not, the shape on hover, and a **[Recipe picture]** link to the PNG the website renders. *"What can I smelt / brew / enchant this with?"* answers for the held item (enchantments include Enchantments Encore's).
+- **What's this?** *"what is this"* names the block or mob the player looks at (mob variants from data components, like `nice_mob_variants:creamy` → *Creamy Cow (Nice Mob Variants)*), with health and owner, plus its wiki page; *"what am I holding"* does the held item.
+- **Bed, death and claims:** *"where's my bed?"*, *"where did I die?"* and, with [Get Off My Lawn ReServed](https://modrinth.com/mod/goml-reserved), *"where's my claim?"* / *"nearest claim I'm trusted on"* / *"where is Steve's claim"* (GOML is read through reflection, so it stays optional). All with coordinates and **[Guide me]**.
+- **Reminders:** *"remind me in 10 minutes to check the furnace"* (in memory, at most 5 per player and a day ahead; missed ones arrive on the next join).
 - **`/merl what can I craft`** lists what the player's inventory can make right now (using the recipe book's own check); *"what can I make with this?"* only what uses the held item.
 - **`/merl what should I do next`** looks at the player's advancements and suggests the next step (*"You haven't been to the Nether yet!"*, *"Find an End city with a ship and grab the elytra!"*), or one of over 1,200 ideas.
 - **She notices what you're doing:** now and then she comments on the dimension, weather or biome, low health, what you're holding (*"Ooh, a mace! Bonk responsibly."*), your elytra, your death count or your play time. Players can turn this off with `/nicemerl comments off`.
@@ -170,7 +177,7 @@ Answers are **only visible to the player who asked**. Wiki spoilers are scramble
 | `nicemerl.command.reindex` | operators (level 2) |
 | `nicemerl.bypass.cooldown` | operators (level 2) |
 | `nicemerl.settings` | everyone (shows current data pack settings in answers) |
-| `nicemerl.locate` | everyone (biome, slime chunk and waypoint coordinates, and the sparkle trail) |
+| `nicemerl.locate` | everyone (biome, slime chunk, waypoint, claim, bed and death coordinates, and the sparkle trail) |
 
 Example: `/lp group default permission set nicemerl.settings false` hides settings from regular players.
 
@@ -200,6 +207,12 @@ Example: `/lp group default permission set nicemerl.settings false` hides settin
 | `locateSlimeChunks` | `true` | slime chunk coordinates; turn off if your world seed is a secret |
 | `locateWaypoints` | `true` | with Warping Wonders: the closest Waypoint Hub the player may use |
 | `particleGuide` | `true` | the **[Guide me]** sparkle trail after coordinates |
+| `recipeHelp` | `true` | real recipes, smelting, brewing and enchanting answers |
+| `recipesUrl` | the explorerseden.eu recipe list | where [Recipe picture] links come from; empty for none |
+| `whatsThis` | `true` | *"what is this?"* for the block or mob the player looks at |
+| `locateHome` | `true` | *"where's my bed?"* and *"where did I die?"* |
+| `locateClaims` | `true` | with Get Off My Lawn: the player's claims and the ones they're trusted on |
+| `reminders` | `true` | *"remind me in 10 minutes to …"* |
 | `craftingHelp` | `true` | *"what can I craft?"* from the player's inventory |
 | `celebrateStatistics` | `true` | congratulations on statistic milestones (blocks mined, distance traveled…); the milestones are in Merl's lines (`stat_milestones`) |
 | `semanticSearch` | `true` | meaning-based search next to the keywords; downloads a small model (about 31 MB, checked against its known checksum) once to `config/nicemerl/model/`. Until then, or if that fails, Merl searches by keywords only |

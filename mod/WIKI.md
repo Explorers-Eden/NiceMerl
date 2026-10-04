@@ -12,16 +12,22 @@ Type `/merl` and your question:
 - `/merl where is the closest cherry grove` or `/merl where's a slime chunk`
 - `/merl where is the closest waypoint`, `/merl where's my waypoint` or `/merl where is the castle waypoint` (with Warping Wonders)
 - `/merl name tag phrases` or `/merl name tag to mute a mob`
-- `/merl what can I craft`
+- `/merl what can I craft` or `/merl how do I craft a waypoint hub`
+- `/merl what is this` (look at a block or mob)
+- `/merl where's my bed`, `/merl where did I die` or `/merl where's my claim` (with Get Off My Lawn)
+- `/merl remind me in 10 minutes to check the furnace`
 
 Ask in your own words: typos, abbreviations like tp or xp, and other wordings (*"how do I unlock the boss room"*) are fine. Merl answers in one line when she can, then shows up to three wiki pages with a link and a short excerpt. Spoilers stay hidden until you hover over them.
 
 ## More than answers
 - **Coordinates:** ask where the closest biome is (vanilla, Terralith, Biomes O' Plenty or our packs, by name or id like `terralith:moonlight_grove`) or the closest slime chunk, and Merl tells you how far, which way and the exact spot. With Warping Wonders, she also finds the closest Waypoint Hub you can use, your own, or one by name. Click the coordinates to copy them, or click **[Guide me]** for a trail of sparkles that leads you there.
 - **Name Tag texts:** `/merl name tag phrases` lists every text Nice Name Tags reacts to, each one click to copy.
-- **Crafting:** `/merl what can I craft` lists what your inventory can make right now; `/merl what can I make with this` only what uses the item in your hand.
+- **Crafting:** `/merl what can I craft` lists what your inventory can make right now; `/merl what can I make with this` only what uses the item in your hand. `/merl how do I craft …` shows the real recipe (our packs' too) with a link to its picture, and she also answers *"what can I smelt / brew / enchant this with?"* for the item in your hand.
+- **What's this?** Look at a block or mob (or hold an item) and ask `/merl what is this`: she names it, mob variants from our packs included, and shows its wiki page.
+- **Your places:** your bed, where you died (your grave), and with Get Off My Lawn your claims or the ones you're trusted on, with coordinates and **[Guide me]**.
+- **Reminders:** `/merl remind me in 10 minutes to …`, `/merl my reminders`, `/merl cancel my reminders`. Gone after a server restart.
 - **Ideas:** `/merl what should I do next` suggests a next step based on your advancements, or one of over 4,500 ideas.
-- **Small talk:** jokes, tips, fun facts, stories, `/merl pet peanut butter` and more. Ask for `another one` after a joke.
+- **Small talk:** over 2,000 jokes (stories, dialogues, mob reviews and more), tips, fun facts, stories, `/merl pet peanut butter` and more. Ask for `another one` after a joke.
 - **She remembers you:** when you met, what you're up to, which page helped and which packs you ask about most, so her answers fit you better over time. Ask `/merl do you remember me`, or say `/merl forget me` to erase it. She never saves what you write.
 - **She comments now and then** on where you are and what you're doing.
 - **She celebrates with you:** big advancements (and how few players have them), and milestones like 100,000 blocks mined or 1,000 km traveled.
@@ -41,7 +47,7 @@ Everything works without a permissions mod. With LuckPerms:
 - **nicemerl.command.reindex**: use `/nicemerl reindex` (operators)
 - **nicemerl.bypass.cooldown**: skip the cooldown between questions (operators)
 - **nicemerl.settings**: see data pack settings in answers (everyone)
-- **nicemerl.locate**: get biome, slime chunk and waypoint coordinates, and the sparkle trail (everyone)
+- **nicemerl.locate**: get biome, slime chunk, waypoint, claim, bed and death coordinates, and the sparkle trail (everyone)
 
 # For server admins
 The config is in `config/nicemerl.json`, created on the first start. Restart the server after changing it. The most useful options:
@@ -59,6 +65,8 @@ The config is in `config/nicemerl.json`, created on the first start. Restart the
 - **locateWaypoints**: turn waypoint answers off for everyone
 - **particleGuide**: turn the sparkle trail off for everyone
 - **craftingHelp**: turn "what can I craft?" off for everyone
+- **recipeHelp**: turn real recipes, smelting, brewing and enchanting answers off for everyone; **recipesUrl** is where the recipe pictures come from
+- **whatsThis**, **locateHome**, **locateClaims** and **reminders**: turn "what's this?", bed and death, claims, and reminders off for everyone
 - **semanticSearch**: understanding other wordings. Downloads a small file (about 31 MB) once to `config/nicemerl/model/`
 
 What Merl remembers about players is saved in `config/nicemerl/state.json`: about a hundred bytes per player, no messages, and players gone for a year are forgotten.
@@ -95,6 +103,12 @@ This is `config/nicemerl.json` as it's created on the first start. Delete the fi
   "locateSlimeChunks": true,
   "locateWaypoints": true,
   "particleGuide": true,
+  "whatsThis": true,
+  "recipeHelp": true,
+  "recipesUrl": "https://explorerseden.eu/api/generated-data.php?key=recipes-manifest",
+  "locateClaims": true,
+  "locateHome": true,
+  "reminders": true,
   "craftingHelp": true,
   "cooldownSeconds": 5,
   "settingsSources": [

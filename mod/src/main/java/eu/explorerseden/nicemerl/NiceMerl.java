@@ -15,6 +15,7 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,6 +75,10 @@ public class NiceMerl implements ModInitializer {
 		ServerTickEvents.END_SERVER_TICK.register(MerlStats::tick);
 		// Sparkle trails for players Merl is guiding somewhere.
 		ServerTickEvents.END_SERVER_TICK.register(MerlGuide::tick);
+		// Reminders: due ones every second, missed ones when the player comes back.
+		ServerTickEvents.END_SERVER_TICK.register(MerlReminders::tick);
+		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
+				server.execute(() -> MerlReminders.deliver(handler.getPlayer(), System.currentTimeMillis())));
 
 		ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
 			if (scheduler != null) {
@@ -112,6 +117,7 @@ public class NiceMerl implements ModInitializer {
 		}
 		wikiSections = fresh;
 		index = new SearchIndex(all, model);
+		if (config.recipeHelp) MerlRecipes.loadPictures(config.recipesUrl);
 		LOGGER.info("Indexed {} sections from {} pages", all.size(), index.pageCount());
 		return ok;
 	}

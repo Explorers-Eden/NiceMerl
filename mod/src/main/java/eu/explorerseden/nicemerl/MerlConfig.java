@@ -63,6 +63,18 @@ public class MerlConfig {
 	public boolean locateWaypoints = true;
 	/** After coordinates, Merl offers a trail of sparkles to follow there (only the player sees it). */
 	public boolean particleGuide = true;
+	/** "What's this?" names the block or mob the player looks at (mob variants included) and shows its wiki page. */
+	public boolean whatsThis = true;
+	/** Real recipes from the server ("how do I craft …"), "what can I smelt / brew with this?" and "what can I enchant this with?". */
+	public boolean recipeHelp = true;
+	/** The website's recipe list, for [Recipe picture] links. Empty for none. */
+	public String recipesUrl = "https://explorerseden.eu/api/generated-data.php?key=recipes-manifest";
+	/** With Get Off My Lawn: "where's my claim?" points to the closest claim the player owns or is trusted on. */
+	public boolean locateClaims = true;
+	/** "Where's my bed?" and "where did I die?" with coordinates. */
+	public boolean locateHome = true;
+	/** "Remind me in 10 minutes to …" (kept in memory, gone after a restart). */
+	public boolean reminders = true;
 	/** "What can I craft?" lists what the player can make from their inventory right now. */
 	public boolean craftingHelp = true;
 	/** Minimum seconds between questions per player. */

@@ -184,6 +184,27 @@ class VanillaWiki:
         self.pages_cache.put(title, sections)
         return sections
 
+    async def recipe_grid(self, title: str, item: str):
+        """The crafting grid on the page for the item ("Bed"), or None. Never raises."""
+        from recipes import find_grid
+
+        key = f"grid:{title}"
+        cached = self.pages_cache.get(key)
+        if cached is not None:
+            return cached or None
+        try:
+            data = await self._get({"action": "parse", "page": title, "prop": "text", "redirects": "1"})
+            # A redirect to a different thing ("Waypoint Hub" → some other page) isn't this item's recipe.
+            if set(tokenize(data["parse"]["title"])) != set(tokenize(item)):
+                self.pages_cache.put(key, [])
+                return None
+            grid = find_grid(data["parse"]["text"], self.base_url, item)
+        except Exception:
+            log.debug("No crafting grid for %s", title, exc_info=True)
+            return None
+        self.pages_cache.put(key, grid or [])
+        return grid
+
     async def search(self, question: str, limit: int = 2, require_title_match: bool = False) -> tuple[list[Result], bool]:
         """Best minecraft.wiki sections for the question, and whether the top page is named after
         what was asked. Never raises: errors mean no results."""

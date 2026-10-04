@@ -23,3 +23,6 @@ STATE_DIR = Path(os.getenv("STATE_DIR") or Path(__file__).parent / "state")
 # The small meaning-based search model (a folder, or a Hugging Face name). The Docker image has it
 # in /app/model; empty turns meaning-based search off and Merl searches by keywords only.
 SEMANTIC_MODEL = os.getenv("SEMANTIC_MODEL", str(Path(__file__).parent / "model"))
+# The website's list of rendered recipe pictures for our packs; empty turns recipe pictures off.
+RECIPES_URL = os.getenv("RECIPES_URL", "https://explorerseden.eu/api/generated-data.php?key=recipes-manifest")
+SITE_URL = os.getenv("SITE_URL", "https://explorerseden.eu").rstrip("/")

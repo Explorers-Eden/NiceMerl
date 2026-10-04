@@ -1,8 +1,24 @@
 # Minecraft Version(s): 26.3
-## Merl fits in with our packs
-- Merl's messages now look like the ones from our data packs: a colored `▊` bar instead of *[NiceMerl]*, then the message
-- A soft egg *plop* plays with her messages, like in our packs (only you hear it)
+## New: "What's this?"
+- Look at a block or mob and ask `/merl what is this`: Merl names it, mob variants from our packs included (*"That's a Creamy Cow from Nice Mob Variants!"*), with its health, its owner if it's tamed, and the wiki page about it
+- *"What am I holding?"* does the same for the item in your hand
+
+## New: Real recipes
+- *"How do I craft a waypoint hub?"* shows the recipe straight from the server, so our packs' recipes are included: the ingredients, whether it needs a crafting table, and the shape when you hover over it. Click **[Recipe picture]** to open the recipe on explorerseden.eu
+- *"What can I smelt with this?"* and *"what can I brew with this?"* show what the item in your hand turns into, and where (furnace, blast furnace, smoker, campfire or brewing stand)
+- *"What can I enchant this with?"* lists every enchantment that fits the item in your hand, Enchantments Encore's included. Click one to ask Merl about it
+
+## New: Where's my stuff?
+- *"Where's my bed?"* and *"where did I die?"* (or *"where's my grave?"*) give the coordinates, distance and direction, with **[Guide me]**
+- With Get Off My Lawn: *"where's my claim?"*, *"nearest claim I'm trusted on"*, *"where is Steve's claim"* or *"my diamond claim"* point you to the right claim
+
+## New: Reminders
+- *"Remind me in 10 minutes to check the furnace"*: Merl pings you when it's time (with the egg plop). *"My reminders"* lists them, *"cancel my reminders"* clears them
+- Up to 5 at a time, up to a day ahead. If you're offline when it's time, you get it when you're back. Reminders are forgotten when the server restarts
+
+## Over 1,100 new jokes
+- Not just question and punchline anymore: little stories, dialogues, mob reviews, fake patch notes, diary entries, signs, shower thoughts, horoscopes, fortune cookies, Merl's hot takes and lots of Peanut Butter anecdotes. Over 2,000 jokes in all
 
 ## Config
-- New options `messagePrefix` (default `▊ `) and `prefixColor` (default `#F06EAA`, Merl's pink; names like `gold` work too): what her messages start with
-- New options `messageSound` (default `minecraft:entity.chicken.egg`, empty for none), `messageSoundVolume` (`0.6`) and `messageSoundPitch` (`2.0`): the sound with her messages
+- New options (all default `true`): `whatsThis`, `recipeHelp` (recipes, smelting, brewing and enchantments), `locateHome` (bed and death), `locateClaims` (Get Off My Lawn claims) and `reminders`
+- New option `recipesUrl`: where the recipe pictures come from (explorerseden.eu); empty for no picture links
