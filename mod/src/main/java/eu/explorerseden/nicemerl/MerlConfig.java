@@ -33,6 +33,14 @@ public class MerlConfig {
 	public List<WikiSource> wikis = new ArrayList<>(List.of(
 			new WikiSource("Explorer's Eden", "https://wiki.explorerseden.eu", WikiSource.WIKIJS),
 			new WikiSource("Minecraft Wiki", "https://minecraft.wiki", WikiSource.MEDIAWIKI)));
+	/** What Merl's messages start with, like the Explorer's Eden packs' "▊ " bar. */
+	public String messagePrefix = "▊ ";
+	/** The prefix's color: a name like "gold" or "dark_aqua", or a hex color like "#F06EAA" (Merl's pink). */
+	public String prefixColor = "#F06EAA";
+	/** The sound played to the player with Merl's messages, like the packs' egg plop. Empty for none. */
+	public String messageSound = "minecraft:entity.chicken.egg";
+	public float messageSoundVolume = 0.6f;
+	public float messageSoundPitch = 2.0f;
 	/** Used in Merl's "I don't know" lines. */
 	public String communityName = "Explorer's Eden";
 	/** How often the wiki is downloaded again. */

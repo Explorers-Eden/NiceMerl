@@ -26,6 +26,10 @@ import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.Holder;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.protocol.game.ClientboundSoundPacket;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
@@ -764,6 +768,7 @@ public final class MerlCommand {
 				.withHoverEvent(new HoverEvent.ShowText(Component.literal("Click to turn these off: /nicemerl celebrate off")
 						.withStyle(ChatFormatting.GRAY)))
 				.withClickEvent(new ClickEvent.SuggestCommand("/nicemerl celebrate off")))));
+		plop(player);
 	}
 
 	private static MutableComponent formatSetting(DatapackSettings.Setting setting) {
@@ -862,14 +867,38 @@ public final class MerlCommand {
 		return out;
 	}
 
+	/** Merl's messages look like the Explorer's Eden packs': a colored "▊ " bar (from the config), then white text. */
 	private static MutableComponent framed(Component body) {
-		MutableComponent message = Component.literal("[NiceMerl] ").withStyle(Style.EMPTY.withColor(MERL_PINK).withBold(true));
-		message.append(Component.empty().withStyle(Style.EMPTY.withBold(false).withColor(ChatFormatting.WHITE)).append(body));
+		MerlConfig config = NiceMerl.config();
+		TextColor color = TextColor.parseColor(config.prefixColor).result().orElse(MERL_PINK);
+		MutableComponent message = Component.literal(config.messagePrefix).withStyle(Style.EMPTY.withColor(color).withBold(true).withItalic(false));
+		message.append(Component.empty().withStyle(Style.EMPTY.withBold(false).withItalic(false).withColor(ChatFormatting.WHITE)).append(body));
 		return message;
 	}
 
 	private static void reply(CommandSourceStack source, Component body) {
 		source.sendSystemMessage(framed(body));
+		if (source.getPlayer() != null) plop(source.getPlayer());
+	}
+
+	private static final Map<UUID, Long> LAST_SOUND = new ConcurrentHashMap<>();
+	/** Messages sent together ("Let me look…" and the answer) get one sound. */
+	private static final long SOUND_GAP_MS = 400;
+
+	/** The message sound from the config (the packs' egg plop), only for this player. */
+	static void plop(ServerPlayer player) {
+		MerlConfig config = NiceMerl.config();
+		if (config.messageSound == null || config.messageSound.isBlank()) return;
+		long now = System.currentTimeMillis();
+		Long last = LAST_SOUND.put(player.getUUID(), now);
+		if (last != null && now - last < SOUND_GAP_MS) return;
+		Identifier id = Identifier.tryParse(config.messageSound.strip());
+		if (id == null) return;
+		// A sound from a resource pack isn't in the registry, but the client can still play it.
+		Holder<SoundEvent> sound = BuiltInRegistries.SOUND_EVENT.get(id).<Holder<SoundEvent>>map(h -> h)
+				.orElseGet(() -> Holder.direct(SoundEvent.createVariableRangeEvent(id)));
+		player.connection.send(new ClientboundSoundPacket(sound, SoundSource.NEUTRAL, player.getX(), player.getY(), player.getZ(),
+				config.messageSoundVolume, config.messageSoundPitch, player.getRandom().nextLong()));
 	}
 
 	/** Lists the Nice Name Tags texts, each one click to copy; false when the wiki doesn't have them. */

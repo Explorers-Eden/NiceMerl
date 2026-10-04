@@ -47,6 +47,8 @@ Everything works without a permissions mod. With LuckPerms:
 The config is in `config/nicemerl.json`, created on the first start. Restart the server after changing it. The most useful options:
 - **wikis**: the wikis Merl searches. Remove the Minecraft Wiki to turn off vanilla answers
 - **communityName**: your community's name (Explorer's Eden)
+- **messagePrefix** and **prefixColor**: what Merl's messages start with (a pink `▊ `, like our packs' messages); the color can be a name like `gold` or a hex color
+- **messageSound**, **messageSoundVolume** and **messageSoundPitch**: the sound with her messages (the egg plop our packs use); leave the sound empty for none
 - **results**: pages per answer (3)
 - **cooldownSeconds**: wait time between questions (5)
 - **settingsSources**: the data pack storages she reads settings from
@@ -79,6 +81,11 @@ This is `config/nicemerl.json` as it's created on the first start. Delete the fi
       "type": "mediawiki"
     }
   ],
+  "messagePrefix": "▊ ",
+  "prefixColor": "#F06EAA",
+  "messageSound": "minecraft:entity.chicken.egg",
+  "messageSoundVolume": 0.6,
+  "messageSoundPitch": 2.0,
   "communityName": "Explorer's Eden",
   "reindexHours": 6.0,
   "results": 3,

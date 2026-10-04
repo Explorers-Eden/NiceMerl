@@ -1,52 +1,8 @@
 # Minecraft Version(s): 26.3
-## New: Merl finds places for you
-- **Biomes:** *"where's the closest cherry grove?"* gets the coordinates of the closest one, with how far and which way (*"about 1,290 blocks northwest"*). Works with every biome on the server: vanilla, Terralith, Biomes O' Plenty and our packs (Katters Structures' Coralis, Dark Chasm and Deep Blue Plains). Ask by name, by id (*"terralith:moonlight_grove"*), with the pack's name (*"bop lavender field"*) or loosely (*"a snowy biome"*, *"mushroom island"*). Cave biomes come with their height, and biomes from another dimension tell you where to go
-- **Slime chunks:** *"where's a slime chunk?"* finds the closest one, with its corners, and *"is this a slime chunk?"* checks where you're standing
-- **Waypoints:** with Warping Wonders, *"where's the closest waypoint?"* points to the closest Waypoint Hub you can use (your own, public ones, and locked ones you're trusted on). Ask for *"my waypoint"* to see only yours, or name one (*"where is the castle waypoint"*)
-- **Follow the sparkles:** after the coordinates, Merl asks whether she should show you the way. Click **[Guide me]** for a trail of sparkles toward it (only you see it) and the distance on your action bar, until you arrive. `/nicemerl guide stop` ends it
-- Click any coordinates to copy them; operators get a ready-made `/tp` instead
-
-## New: "What can I craft?"
-- Merl looks through your inventory and lists what you can make right now, things you don't have yet first. Hover over a name to see whether it needs a crafting table
-- *"What can I make with this?"* lists only what uses the item in your hand
-
-## New: Name Tag texts
-- *"name tag phrases"* lists every text Nice Name Tags reacts to, straight from the wiki, each one click to copy
-- Ask for one (*"name tag to mute a mob"*, *"name tag villager type"*) to get just that
-
-## New: Statistic milestones
-- Merl congratulates you on milestones: 10,000, 100,000, 500,000 and a million blocks mined (and more), mobs defeated, kilometers traveled, hours played, fish caught, animals bred, villager trades and jumps. Milestones you passed before this update are noted quietly
-- Advancement congratulations say how rare they are (*"You're the very first explorer to do this!"*, *"only the 3rd"*) and cover our packs' big ones: the Katters Structures bosses, Mythical, collecting every mob variant, Ten Tales Told and more
-
-## Smarter answers
-- **Other wordings work:** a small word-vector model helps Merl find pages that say the same thing in other words (*"how do I unlock the boss room"* → Boss Keys)
-- **A one-line answer:** above the pages, Merl quotes the sentence from the wiki that answers your question
-- **The right part of the page:** *"where is …"* jumps to "Where to Find", *"how do I get …"* to crafting and drops, *"what dungeons are there"* to the overview, and *"who is Katter"* to the project's home page
-- **Settings in plain words:** *"can I pvp"*, *"how many homes can I have"*, *"is keep inventory on"* or *"what can I change in Fabled Roots"* find the right settings; a miss lists the packs Merl knows
-- **"it" and "him" work:** *"where do I find him?"* right after an answer about Raj Raksha searches for Raj Raksha
-- **Fewer out-of-place answers:** messages that aren't questions (*"NO! Stop!"*, *"what?"*, *"i like turtles"*) get a reply instead of a random wiki page, a guess shows one page instead of three, and pack names like *"Nice Mob Variants"* are no longer taken as a compliment
-
-## Merl is your companion
-- She remembers when you met, how often you've talked, what you're up to, which page helped and which packs you ask about most, so her answers fit you better over time. She notices your 50th chat and your friendship anniversaries
-- Ask *"do you remember me?"*, or say *"forget me"* to erase it. She never saves what you write; it takes about a hundred bytes per player
-- *"thanks"* and *"that's not what I asked"* teach her what you meant
-
-## Merl sounds more human
-- **Over 20,000 lines:** about ten times as many as before, with nearly 1,000 jokes, 650 tips, 600 fun facts and 4,500 ideas, and two replies in a row never start the same way
-- **Better conversations:** two bits of small talk in one message (*"you're funny! tell me a joke"*), *"another one"* after a joke, *"so it's the bosses?"* after a confusing answer, *"have you met Alex?"* and *"who am I?"*
-- **She asks how you are**, and understands *"good, you?"*, *"not bad"*, *"not great"* or *"tired"*; *"no thanks"* and *"nah"* get their own replies
-- **Understands you better:** small talk works in many more wordings, with stretched letters and small typos (*"thaaanks"*, *"im bored gimme ideas"*), while real questions still go to the wiki
-- **More to talk about:** *"what are you doing?"*, *"I'm tired"*, *"I beat the dragon!"*, hugs, songs, stories, her favorite food and biome, and a warm welcome for *"I'm new here"*. Her mood of the day shows in her answers
-
-## Commands
-- `/nicemerl guide stop`: stop the sparkle trail
+## Merl fits in with our packs
+- Merl's messages now look like the ones from our data packs: a colored `▊` bar instead of *[NiceMerl]*, then the message
+- A soft egg *plop* plays with her messages, like in our packs (only you hear it)
 
 ## Config
-- `locateBiomes`, `locateSlimeChunks` and `locateWaypoints` (default `true`): coordinates for biomes, slime chunks and Warping Wonders waypoints. Turn slime chunks off if your world seed is a secret
-- `particleGuide` (default `true`): the **[Guide me]** sparkle trail
-- `craftingHelp` (default `true`): *"what can I craft?"*
-- `celebrateStatistics` (default `true`): statistic milestones
-- `semanticSearch` (default `true`): understanding other wordings. Downloads the model (about 31 MB) once to `config/nicemerl/model/`, checked against its known checksum; until then, or if that fails, Merl searches by keywords as before
-
-## Permissions
-- New permission node `nicemerl.locate` (default: everyone): biome, slime chunk and waypoint coordinates, and the sparkle trail
+- New options `messagePrefix` (default `▊ `) and `prefixColor` (default `#F06EAA`, Merl's pink; names like `gold` work too): what her messages start with
+- New options `messageSound` (default `minecraft:entity.chicken.egg`, empty for none), `messageSoundVolume` (`0.6`) and `messageSoundPitch` (`2.0`): the sound with her messages

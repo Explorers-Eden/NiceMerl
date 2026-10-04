@@ -182,6 +182,10 @@ Example: `/lp group default permission set nicemerl.settings false` hides settin
 |---|---|---|
 | `wikis` | Explorer's Eden + Minecraft Wiki | wikis to search, see below |
 | `communityName` | `Explorer's Eden` | used in Merl's lines |
+| `messagePrefix` | `▊ ` | what Merl's messages start with, like the Explorer's Eden packs' messages |
+| `prefixColor` | `#F06EAA` | the prefix's color: a name like `gold` or a hex color |
+| `messageSound` | `minecraft:entity.chicken.egg` | sound played to the player with Merl's messages (the packs' egg plop); empty for none |
+| `messageSoundVolume` / `messageSoundPitch` | `0.6` / `2.0` | volume and pitch of that sound |
 | `reindexHours` | `6` | how often the wiki is re-read |
 | `results` | `3` | wiki pages per answer |
 | `excerptLength` | `160` | excerpt length in characters |
