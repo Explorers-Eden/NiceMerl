@@ -93,7 +93,7 @@ The code lives in [NiceKaleido/NiceMerl](https://github.com/NiceKaleido/NiceMerl
 
 5. Click **Deploy the stack**.
 
-> 💾 The stack creates a small `nicemerl-state` volume, where Merl keeps Peanut Butter's pet count across updates. If your stack is older than that, paste the current [`portainer-stack.yml`](portainer-stack.yml) into **Stacks → nicemerl → Editor** and click **Update the stack**. Without the volume, everything still works, but the pet count starts over after each update.
+> 💾 The stack creates a small `nicemerl-state` volume, where Merl keeps Peanut Butter's pet count and what she remembers about people (friends.json, a few dozen bytes per person) across updates. If your stack is older than that, paste the current [`portainer-stack.yml`](portainer-stack.yml) into **Stacks → nicemerl → Editor** and click **Update the stack**. Without the volume, everything still works, but the pet count and Merl's memory of people start over after each update.
 
 > 💡 If the Docker Hub image is **private**, first add Docker Hub under **Registries** in Portainer, and make sure Watchtower has the login too (e.g. by mounting `~/.docker/config.json` into it). A public image needs neither.
 

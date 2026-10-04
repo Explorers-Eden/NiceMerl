@@ -23,6 +23,11 @@ public final class DatapackSettings {
 	private static final Set<String> INTENT = Set.copyOf(SearchIndex.tokenize("""
 			setting settings config configs configured configuration option options enabled disabled
 			current currently value values turned active activated status toggle toggled gamerule gamerules
+			allowed allow permitted rule rules server world setup
+			"""));
+	/** Words that ask about the settings themselves, so a miss is worth telling ("what are the settings for…"). */
+	private static final Set<String> SETTINGS_WORDS = Set.copyOf(SearchIndex.tokenize("""
+			setting settings config configs configured configuration option options gamerule gamerules toggle
 			"""));
 	/**
 	 * Words that ask for a value ("what is the chance for …"). They mark a settings question
@@ -55,12 +60,30 @@ public final class DatapackSettings {
 		return false;
 	}
 
-	/** Returns the settings that best match the question, strongest first. */
-	public static List<Setting> search(MinecraftServer server, MerlConfig config, String question, int limit) {
-		return rank(read(server, config), question, limit);
+	/** "what are the keep inventory settings", "show me the config": a miss gets a list of the known packs. */
+	public static boolean mentionsSettings(String question) {
+		return SearchIndex.tokenize(question).stream().anyMatch(SETTINGS_WORDS::contains);
+	}
+
+	/** Names of the packs that have readable settings, in config order. */
+	public static List<String> packs(MinecraftServer server, MerlConfig config) {
+		return read(server, config).stream().map(Setting::pack).distinct().toList();
+	}
+
+	/**
+	 * Returns the settings that best match the question, strongest first. {@code strict} is for
+	 * questions that don't sound like settings questions ("can I pvp", "keep inventory"): then a
+	 * setting only counts when the question names it, or names its pack.
+	 */
+	public static List<Setting> search(MinecraftServer server, MerlConfig config, String question, int limit, boolean strict) {
+		return rank(read(server, config), question, limit, strict);
 	}
 
 	static List<Setting> rank(List<Setting> settings, String question, int limit) {
+		return rank(settings, question, limit, false);
+	}
+
+	static List<Setting> rank(List<Setting> settings, String question, int limit, boolean strict) {
 		if (settings.isEmpty()) return List.of();
 
 		// Only the subject of the question counts ("pvp", "grave type"), not words like
@@ -80,6 +103,16 @@ public final class DatapackSettings {
 		}
 		Set<String> terms = new HashSet<>(SearchIndex.tokenize(query.toString()));
 
+		// A question that only names a pack ("keep inventory settings") gets that pack's settings.
+		Named named = new Named(settings);
+		Set<String> asked = new HashSet<>(SearchIndex.tokenize(String.join(" ", subject)));
+		for (String pack : settings.stream().map(Setting::pack).distinct().toList()) {
+			List<String> packTerms = named.packTerms(pack);
+			if (!packTerms.isEmpty() && asked.equals(new HashSet<>(packTerms))) {
+				return settings.stream().filter(st -> st.pack().equals(pack)).limit(limit).toList();
+			}
+		}
+
 		List<Section> docs = new ArrayList<>();
 		List<Set<String>> docTerms = new ArrayList<>();
 		for (int i = 0; i < settings.size(); i++) {
@@ -96,6 +129,11 @@ public final class DatapackSettings {
 		}
 		// Settings are a small collection where pack names repeat a lot, so any match counts.
 		List<SearchIndex.Result> results = new SearchIndex(docs).search(query.toString(), Integer.MAX_VALUE, 0, 0, false);
+		if (strict) {
+			results = results.stream()
+					.filter(r -> named.named(settings.get(Integer.parseInt(r.section().anchor())), terms))
+					.toList();
+		}
 		if (results.isEmpty()) return List.of();
 
 		// Settings matching more of the question's words win ("rarity mob chance" should list the
@@ -122,6 +160,39 @@ public final class DatapackSettings {
 			matches.add(settings.get(Integer.parseInt(r.section().anchor())));
 		}
 		return matches;
+	}
+
+	/**
+	 * Whether a question names a setting: all words of its name ("Blaze › Spawn Chance"), a name that is a
+	 * single word no other setting uses ("PvP"), or the distinctive words of its pack ("Keep Inventory").
+	 */
+	private static final class Named {
+		private final Map<String, Integer> labelUse = new java.util.HashMap<>();
+		private final Map<String, Integer> packUse = new java.util.HashMap<>();
+
+		Named(List<Setting> settings) {
+			for (Setting s : settings) {
+				for (String t : new HashSet<>(SearchIndex.tokenize(s.label()))) labelUse.merge(t, 1, Integer::sum);
+			}
+			for (String pack : settings.stream().map(Setting::pack).distinct().toList()) {
+				for (String t : new HashSet<>(SearchIndex.tokenize(pack))) packUse.merge(t, 1, Integer::sum);
+			}
+		}
+
+		boolean named(Setting s, Set<String> terms) {
+			List<String> label = SearchIndex.tokenize(s.label());
+			if (!label.isEmpty() && terms.containsAll(label)
+					&& (new HashSet<>(label).size() > 1 || labelUse.getOrDefault(label.get(0), 0) == 1)) {
+				return true;
+			}
+			List<String> pack = packTerms(s.pack());
+			return !pack.isEmpty() && terms.containsAll(pack);
+		}
+
+		/** The words of a pack name that identify it; words shared by several packs ("Nice") don't. */
+		List<String> packTerms(String pack) {
+			return SearchIndex.tokenize(pack).stream().filter(t -> packUse.getOrDefault(t, 0) == 1).toList();
+		}
 	}
 
 	static List<Setting> read(MinecraftServer server, MerlConfig config) {

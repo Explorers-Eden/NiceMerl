@@ -7,10 +7,10 @@ The mod is currently published only on GitHub. It requires Minecraft 26.3, Fabri
 # Usage
 Players type `/merl` followed by a question, for example `/merl how do I get a boss key` or `/merl how do I make a nether portal`. Merl answers with up to three wiki pages, each with a clickable link and a short excerpt. Short questions work best, typos and common abbreviations like tp or xp are understood, and spoilers from the wiki are hidden until hovered over.
 
-Questions about the server's settings, like `/merl is pvp enabled`, also show the current values of the installed data packs. Merl also answers small talk, such as `/merl thanks`, `/merl tell me a joke`, `/merl give me a tip` or `/merl pet peanut butter`.
+Questions about the server's settings also show the current values of the installed data packs. They don't need special wording: `/merl is pvp enabled`, `/merl can I pvp`, `/merl grave type` or `/merl keep inventory settings` all work, as long as the question names the setting or the pack. When a settings question doesn't match any setting, Merl lists the packs she knows the settings of. Merl also answers small talk, such as `/merl thanks`, `/merl tell me a joke`, `/merl give me a tip` or `/merl pet peanut butter`.
 
 ## What should I do next?
-Players who don't know what to do can ask `/merl what should I do next`, `/merl any ideas` or `/merl I'm out of ideas`. Merl looks at the player's advancements and suggests a fitting next step, for example building a nether portal, finding a stronghold or looking for an elytra. Now and then, or when no step fits, she picks one of over 1,200 general ideas instead.
+Players who don't know what to do can ask `/merl what should I do next`, `/merl any ideas` or `/merl I'm out of ideas`. Merl looks at the player's advancements and suggests a fitting next step, for example building a nether portal, finding a stronghold or looking for an elytra. Now and then, or when no step fits, she picks one of over 4,500 general ideas instead.
 
 ## Merl's personality
 Merl tries to sound like a real person rather than a bot:
@@ -19,9 +19,11 @@ Merl tries to sound like a real person rather than a bot:
 - She says how sure she is about an answer, from a confident "Found it!" to "This is my best guess".
 - For a few minutes she remembers the last question. She notices when it is asked again, understands follow-ups like `/merl and in the nether?`, and knows which page helped when a player says thanks. After a few hours away, she welcomes players back.
 - She reacts to the way a question is asked: excited for capital letters, calm for "help, I'm stuck", short for one-word questions.
+- She doesn't answer everything with a wiki page. Messages that aren't questions, like "stop", "what?" or "i like turtles", get a fitting reply instead, unless a page is clearly about them. When an answer was wrong, players can say so ("that's not what I asked") and she suggests how to ask better.
 - She has a mood of the day, gets sleepy late at night, and her cat Peanut Butter has moods as well. Every pet Peanut Butter gets is counted.
 - After small talk, she sometimes asks what the player is up to and reacts to the answer.
 - Now and then she comments on the player's situation: the dimension, the biome, the weather, low health, the item in their hand, an elytra, their number of deaths or their play time.
+- She remembers players, like a friend would. She knows when you first met, how often you've talked, what you told her you were up to and which page last helped. When you come back after a while, she asks about it: "How's the build coming along?" or "Did the Boss Keys page help?". She mentions round numbers of chats and friendship anniversaries, greets regulars like old friends, and answers `/merl do you remember me`. `/merl forget me` erases everything she remembers about you. She never stores what you write.
 - When a player completes a big advancement, like killing the Ender Dragon or finding an elytra, Merl congratulates them. Only that player sees it.
 
 Players can turn the comments and the congratulations off for themselves, see below.
@@ -59,7 +61,7 @@ The settings of the mod are stored in the config/nicemerl.json file, which is cr
 - **celebrate**: Whether Merl congratulates players on advancements at all (default: true)
 - **celebrateAdvancements**: The advancements Merl congratulates players on: big vanilla milestones, and the bosses, challenges and collections of the Explorer's Eden packs. Advancements of packs that aren't installed are simply never completed, so they do no harm
 
-The players' own choices and Peanut Butter's pet count are stored in config/nicemerl/state.json.
+The players' own choices, what Merl remembers about them and Peanut Butter's pet count are stored in config/nicemerl/state.json. It stays small: about a hundred bytes per player, no messages, and players not seen for a year are forgotten.
 
 ## Wikis
 Each entry in the wikis list has a name shown to players, a url and a type. Wikis of the type wikijs are downloaded completely and searched on the server. Wikis of the type mediawiki, like the Minecraft Wiki, are only asked when needed. By default, the Explorer's Eden wiki and the Minecraft Wiki are included. Removing the Minecraft Wiki entry turns off answers to vanilla questions.

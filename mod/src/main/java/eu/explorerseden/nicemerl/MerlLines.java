@@ -52,6 +52,25 @@ public final class MerlLines {
 	private static final Set<String> ASK_FEELING_POOLS = Set.of("how_are_you", "greeting");
 	private static final int ASK_FEELING_CHANCE = 2;
 	private static final int FEELING_MAX_WORDS = 10;
+	/** A message this short that names a page title is a topic search ("boss keys"), even if it's not a question. */
+	private static final int TOPIC_WORDS = 2;
+
+	/** Friendship: after this many chats Merl greets you like an old friend now and then. */
+	public static final int FRIEND_CHATS = 50;
+	public static final int FRIEND_GREETING_CHANCE = 3;
+	/** How long (days) Merl asks about what you said you're up to, or about the page that last helped. */
+	private static final int TOPIC_FOLLOW_UP_DAYS = 14;
+	private static final int PAGE_FOLLOW_UP_DAYS = 7;
+	/** Days since you met that Merl mentions; after a year, every year. */
+	private static final int[] ANNIVERSARIES = {7, 30, 100, 365};
+	/** Numbers of chats Merl mentions; after that, every thousand. */
+	private static final int[] CHAT_MILESTONES = {10, 25, 50, 100, 250, 500};
+	/** Small talk after which a cheerful "that was our 50th chat!" would be out of place; it waits for the next chat. */
+	public static final Set<String> QUIET_TALK = Set.of("stop", "forget_me", "insult", "wrong", "comfort", "sorry", "confused",
+			"goodbye", "tired");
+
+	/** A friendship line (or null), plus the chat milestone and anniversary to remember as mentioned. */
+	public record Note(String line, int noted, int anniversary) {}
 
 	/** Small talk that can start a question ("thanks! how do I…"), and the short line it gets. */
 	private static final Map<String, String> PREFIX_POOLS = Map.of("greeting", "greeting_prefix", "thanks", "thanks_prefix",
@@ -64,6 +83,17 @@ public final class MerlLines {
 	private static final List<String> FOLLOW_UP_CUES = List.of("and ", "also ", "what about ", "how about ", "but what about ", "and what about ");
 	private static final Set<String> STRESS_WORDS = Set.of("help", "stuck", "urgent", "asap", "broken", "lost", "cant", "confused",
 			"sos", "desperate", "panic");
+	/**
+	 * Words that show someone wants information. Without one (or a "?"), a weak wiki match is more likely
+	 * a misread comment ("NO! Stop!") than a question, so Merl asks what they mean instead.
+	 */
+	private static final Set<String> INFO_WORDS = java.util.stream.Stream.concat(QUESTION_WORDS.stream(), java.util.stream.Stream.of(
+			"find", "show", "explain", "info", "information", "recipe", "craft", "crafting", "get", "obtain", "make",
+			"build", "spawn", "spawns", "location", "locate", "about", "guide", "tutorial", "help", "need", "looking",
+			"search", "learn", "page", "setting", "settings", "config", "enabled", "disabled", "allowed", "chance",
+			"drop", "drops", "use", "work", "works", "tame", "breed", "summon", "beat", "kill", "defeat", "enchant",
+			"brew", "trade", "farm", "upgrade", "repair", "unlock", "requirements", "difference", "best", "tell"))
+			.collect(java.util.stream.Collectors.toUnmodifiableSet());
 	private static final Pattern LONG_WORD = Pattern.compile("[A-Za-z]{6,}");
 	private static final Pattern WORD = Pattern.compile("[a-z0-9]+");
 	private static final Pattern COMBINING = Pattern.compile("\\p{M}");
@@ -95,6 +125,8 @@ public final class MerlLines {
 	private static final List<String> MOODS = new ArrayList<>();
 	private static final List<String> PB_MOODS = new ArrayList<>();
 	private static final Map<String, List<String>> TOPICS = new LinkedHashMap<>();
+	/** How a remembered topic is said in remember_topic: "build" → "building". */
+	private static final Map<String, String> TOPIC_PHRASES = new HashMap<>();
 	private static final List<ProgressIdea> PROGRESS_IDEAS = new ArrayList<>();
 	/** Small talk in any wording: a trigger phrase, and every other word allowed next to it. */
 	private record KeywordIntent(String pool, List<String> triggers, Set<String> allowed) {}
@@ -124,6 +156,7 @@ public final class MerlLines {
 		MOODS.addAll(strings(lines.get("moods")));
 		PB_MOODS.addAll(strings(lines.get("pb_moods")));
 		lines.getAsJsonObject("topics").entrySet().forEach(e -> TOPICS.put(e.getKey(), strings(e.getValue())));
+		lines.getAsJsonObject("topic_phrases").entrySet().forEach(e -> TOPIC_PHRASES.put(e.getKey(), e.getValue().getAsString()));
 		for (JsonElement element : lines.getAsJsonArray("progress_ideas")) {
 			JsonObject idea = element.getAsJsonObject();
 			PROGRESS_IDEAS.add(new ProgressIdea(
@@ -379,6 +412,21 @@ public final class MerlLines {
 		return new Split(null, text);
 	}
 
+	/** "how do I…", "where are trial chambers?", "show me the boss key page" rather than "NO! Stop!". */
+	public static boolean seeksInfo(String text) {
+		return text.contains("?") || words(normalize(text)).stream().anyMatch(INFO_WORDS::contains);
+	}
+
+	/**
+	 * For a message that isn't a question: is the top page clearly what it's about? Yes when Merl is sure
+	 * ({@code sure} is "sure", "maybe" or "guess"), or when the page is named after it and the message is
+	 * just a topic ("turtles", "boss keys").
+	 */
+	public static boolean clearlyAbout(String sure, boolean titleMatch, String text) {
+		if (sure == null) return false;
+		return sure.equals("sure") || (titleMatch && (sure.equals("maybe") || words(normalize(text)).size() <= TOPIC_WORDS));
+	}
+
 	/** "and in the nether?", "what about the boss one" */
 	public static boolean isFollowUp(String text) {
 		String normalized = normalize(text) + " ";
@@ -522,6 +570,38 @@ public final class MerlLines {
 	public static String askFeeling(String pool, String line) {
 		return ASK_FEELING_POOLS.contains(pool) && !line.strip().endsWith("?") && chance(ASK_FEELING_CHANCE)
 				? pick("ask_feeling") : null;
+	}
+
+	/** When you come back: a question about what you were up to, or about the page that last helped. */
+	public static String followUp(String topic, int topicDay, String page, int pageDay, int today) {
+		if (topic != null && today - topicDay <= TOPIC_FOLLOW_UP_DAYS && POOLS.containsKey("followup_" + topic)) {
+			return pick("followup_" + topic);
+		}
+		if (page != null && today - pageDay <= PAGE_FOLLOW_UP_DAYS) return pick("followup_page", "page", page);
+		return null;
+	}
+
+	/** A line for a round number of chats or a friendship anniversary not mentioned yet. */
+	public static Note friendshipNote(int chats, int noted, int days, int lastAnniversary, String user) {
+		int milestone = chats / 1000 * 1000;
+		for (int m : CHAT_MILESTONES) if (m <= chats) milestone = Math.max(milestone, m);
+		if (milestone > noted) {
+			return new Note(pick("friend_milestone", "count", Integer.toString(milestone), "user", user), milestone, lastAnniversary);
+		}
+		int anniversary = days / 365 * 365;
+		for (int a : ANNIVERSARIES) if (a <= days) anniversary = Math.max(anniversary, a);
+		if (anniversary > lastAnniversary) {
+			return new Note(pick("friend_anniversary", "days", Integer.toString(anniversary), "user", user), noted, anniversary);
+		}
+		return new Note(null, noted, lastAnniversary);
+	}
+
+	/** "do you remember me?" */
+	public static String rememberMe(int chats, int days, String topic, String user) {
+		if (chats <= 1) return pick("remember_me_new", "user", user);
+		String line = pick("remember_me", "count", Integer.toString(chats), "days", Integer.toString(days), "user", user);
+		String activity = topic != null ? TOPIC_PHRASES.get(topic) : null;
+		return activity != null ? line + " " + pick("remember_topic", "activity", activity) : line;
 	}
 
 	public static boolean petMilestone(long count) {

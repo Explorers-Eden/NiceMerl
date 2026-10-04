@@ -66,6 +66,8 @@ public final class MerlCommand {
 	public static final String PERMISSION_REINDEX = "nicemerl.command.reindex";
 	public static final String PERMISSION_BYPASS_COOLDOWN = "nicemerl.bypass.cooldown";
 	public static final String PERMISSION_SETTINGS = "nicemerl.settings";
+	/** Players with up to this many chats get Merl's introduction with a plain /merl or a hello. */
+	private static final int INTRO_CHATS = 5;
 
 	private static final TextColor MERL_PINK = TextColor.fromRgb(0xF06EAA);
 	private static final TextColor HIT_COLOR = TextColor.fromRgb(0xFFD966);
@@ -93,7 +95,12 @@ public final class MerlCommand {
 	private static final String TITLE_MARK = "\uE000";
 
 	/** What the reply builder needs to know about a question. */
-	private record Ask(String prefix, boolean repeat, String energy, MerlMemory.Visit visit, long now) {}
+	/**
+	 * @param asking phrased as a question (or a follow-up to one); otherwise only a confident match is shown
+	 * @param knownPacks when the player asked about settings and none matched: the packs Merl knows settings of
+	 */
+	private record Ask(String prefix, boolean repeat, String energy, MerlMemory.Visit visit, long now,
+			boolean asking, List<String> knownPacks, String question, String note) {}
 
 	private MerlCommand() {}
 
@@ -155,26 +162,82 @@ public final class MerlCommand {
 		ServerPlayer player = source.getPlayer();
 		long now = System.currentTimeMillis();
 		MerlMemory.Visit visit = player != null ? MerlMemory.visit(player.getUUID()) : new MerlMemory.Visit();
-		boolean returning = visit.returning(now);
 		visit.seenAt = now;
-		return hello(source, visit, returning, now);
+		return hello(source, visit, meet(player, null, source.getTextName()), now);
 	}
 
-	private static int hello(CommandSourceStack source, MerlMemory.Visit visit, boolean returning, long now) {
+	/**
+	 * Hello for someone new (with an introduction), someone back after a while (with a question about
+	 * what they were up to), or an old friend.
+	 */
+	private static int hello(CommandSourceStack source, MerlMemory.Visit visit, Meeting meeting, long now) {
 		MerlConfig config = NiceMerl.config();
-		String pool = returning ? "welcome_back" : MerlLines.greetingPool(LocalTime.now());
-		String greeting = MerlLines.pick(pool, "user", source.getTextName());
-		MutableComponent message = Component.literal(greeting + " I'm NiceMerl! Ask me anything about " + config.communityName
-				+ ", like ").append(example("/merl how do I get a boss key"));
-		if (NiceMerl.mediaWikis().stream().anyMatch(w -> w.baseUrl().contains("minecraft.wiki"))) {
-			message.append(Component.literal(", or about vanilla Minecraft, like ")).append(example("/merl how do I make a nether portal"));
+		ServerPlayer player = source.getPlayer();
+		MerlState.Player friend = player != null ? MerlState.player(player.getUUID()) : new MerlState.Player();
+		String user = source.getTextName();
+		String greeting;
+		String follow = null;
+		if (meeting.first()) {
+			greeting = MerlLines.pick("first_meeting", "user", user);
+		} else if (meeting.returning()) {
+			greeting = MerlLines.pick("welcome_back", "user", user);
+			follow = MerlLines.followUp(friend.topic, friend.topicDay == null ? 0 : friend.topicDay, friend.page,
+					friend.pageDay == null ? 0 : friend.pageDay, meeting.today());
+		} else if (friend.chatCount() > MerlLines.FRIEND_CHATS && MerlLines.chance(MerlLines.FRIEND_GREETING_CHANCE)) {
+			greeting = MerlLines.pick("greeting_friend", "user", user);
+		} else {
+			greeting = MerlLines.pick(MerlLines.greetingPool(LocalTime.now()), "user", user);
 		}
-		message.append(Component.literal(", and I'll find the right wiki page for you!"));
-		String askBack = askBack("greeting", visit, now);
-		if (askBack == null) askBack = askFeeling("greeting", greeting, visit, now);
-		if (askBack != null) message.append(Component.literal(" " + askBack));
+		MutableComponent message = Component.literal(greeting);
+		// Regulars know what Merl does; only newer players get the introduction.
+		if (friend.chatCount() <= INTRO_CHATS) {
+			message.append(Component.literal(" Ask me anything about " + config.communityName + ", like "))
+					.append(example("/merl how do I get a boss key"));
+			if (NiceMerl.mediaWikis().stream().anyMatch(w -> w.baseUrl().contains("minecraft.wiki"))) {
+				message.append(Component.literal(", or about vanilla Minecraft, like ")).append(example("/merl how do I make a nether portal"));
+			}
+			message.append(Component.literal(", and I'll find the right wiki page for you!"));
+		}
+		String extra = follow;
+		if (extra == null) extra = askBack("greeting", visit, now);
+		if (extra == null) extra = askFeeling("greeting", greeting, visit, now);
+		if (extra != null) message.append(Component.literal(" " + extra));
 		reply(source, message);
+		sendNote(source, meeting.note());
 		return 1;
+	}
+
+	/** What this chat means for the friendship: first one, back after a while, and maybe a milestone line. */
+	private record Meeting(boolean first, boolean returning, String note, int today) {}
+
+	/** Counts a chat with the player and remembers when it was. {@code question} is null for a plain /merl. */
+	private static Meeting meet(ServerPlayer player, String question, String user) {
+		int today = (int) LocalDate.now().toEpochDay();
+		if (player == null) return new Meeting(false, false, null, today);
+		long minute = System.currentTimeMillis() / 60_000;
+		MerlState.Player before = MerlState.player(player.getUUID());
+		boolean first = before.chatCount() == 0;
+		boolean returning = before.returning(minute);
+		String talk = question != null ? MerlLines.smallTalk(question) : null;
+		boolean quiet = talk != null && MerlLines.QUIET_TALK.contains(talk);
+		String[] note = {null};
+		MerlState.update(player.getUUID(), p -> {
+			if (p.met == null) p.met = today;
+			p.chats = p.chatCount() + 1;
+			p.seen = minute;
+			if (quiet) return;
+			MerlLines.Note n = MerlLines.friendshipNote(p.chats, p.noted == null ? 0 : p.noted, today - p.met,
+					p.anniversary == null ? 0 : p.anniversary, user);
+			note[0] = n.line();
+			if (n.noted() > 0) p.noted = n.noted();
+			if (n.anniversary() > 0) p.anniversary = n.anniversary();
+		});
+		return new Meeting(first, returning, note[0], today);
+	}
+
+	/** "Oh! That was our 50th chat." comes as a little extra message after the answer. */
+	private static void sendNote(CommandSourceStack source, String note) {
+		if (note != null) reply(source, Component.literal(note).withStyle(Style.EMPTY.withColor(MERL_PINK)));
 	}
 
 	private static MutableComponent example(String command) {
@@ -198,8 +261,8 @@ public final class MerlCommand {
 			}
 			visit.lastMessageAt = now;
 		}
-		boolean returning = visit.returning(now);
 		visit.seenAt = now;
+		Meeting meeting = meet(player, question, source.getTextName());
 
 		String talk = MerlLines.smallTalk(question);
 		// Merl only waits one message for an answer to "what are you up to?".
@@ -215,35 +278,50 @@ public final class MerlCommand {
 					? MerlLines.moody("about_me", LocalDate.now(), "user", source.getTextName())
 					: askBack(felt.pool(), visit, now);
 			reply(source, Component.literal(extra != null ? text + " " + extra : text));
+			sendNote(source, meeting.note());
 			return 1;
 		}
 		if (talk == null && awaiting) {
 			String topic = MerlLines.topic(question);
 			if (topic != null) {
+				if (player != null) MerlState.update(player.getUUID(), p -> {
+					p.topic = topic;
+					p.topicDay = meeting.today();
+				});
 				reply(source, Component.literal(MerlLines.pick("reply_" + topic)));
+				sendNote(source, meeting.note());
 				return 1;
 			}
 		}
 
 		if ("greeting".equals(talk) || (talk == null && SearchIndex.tokenize(question).isEmpty())) {
-			return hello(source, visit, returning, now);
+			return hello(source, visit, meeting, now);
 		}
 		if (talk != null) {
-			String text = smallTalkLine(talk, source, player, visit, now);
+			String text = smallTalkLine(talk, source, player, visit, now, meeting);
 			String askBack = askBack(talk, visit, now);
 			if (askBack == null) askBack = askFeeling(talk, text, visit, now);
 			reply(source, Component.literal(askBack != null ? text + " " + askBack : text));
+			sendNote(source, meeting.note());
 			return 1;
 		}
 
 		MerlLines.Split split = MerlLines.splitSmallTalk(question);
 		String search = split.rest();
-		Ask ask = new Ask(split.prefix(), false, MerlLines.energy(question), visit, now);
+		boolean asking = split.prefix() != null || MerlLines.seeksInfo(question) || MerlLines.isFollowUp(search);
 
+		// Every question is checked against the settings: loosely when it sounds like a settings question
+		// ("is pvp enabled"), otherwise only when it names a setting or pack outright ("can I pvp").
 		List<DatapackSettings.Setting> settings = List.of();
-		if (DatapackSettings.isSettingsQuestion(search) && Permissions.check(source, PERMISSION_SETTINGS, true)) {
-			settings = DatapackSettings.search(source.getServer(), config, search, config.settingsResults);
+		List<String> knownPacks = List.of();
+		if (Permissions.check(source, PERMISSION_SETTINGS, true)) {
+			boolean loose = DatapackSettings.isSettingsQuestion(search);
+			settings = DatapackSettings.search(source.getServer(), config, search, config.settingsResults, !loose);
+			if (settings.isEmpty() && DatapackSettings.mentionsSettings(search)) {
+				knownPacks = DatapackSettings.packs(source.getServer(), config);
+			}
 		}
+		Ask ask = new Ask(split.prefix(), false, MerlLines.energy(question), visit, now, asking, knownPacks, question, meeting.note());
 
 		SearchIndex index = NiceMerl.index();
 		if (index == null && settings.isEmpty()) {
@@ -267,13 +345,13 @@ public final class MerlCommand {
 			}
 		}
 		String asked = String.join(" ", SearchIndex.tokenize(search));
-		ask = new Ask(ask.prefix(), visit.isRepeat(asked, now), ask.energy(), visit, now);
+		ask = new Ask(ask.prefix(), visit.isRepeat(asked, now), ask.energy(), visit, now, ask.asking(), ask.knownPacks(), ask.question(), ask.note());
 		visit.question = asked;
 		visit.askedAt = now;
 
 		List<VanillaWiki> live = NiceMerl.mediaWikis();
 		// Settings questions are about this server, so they skip the Minecraft Wiki.
-		if (live.isEmpty() || !settings.isEmpty()) {
+		if (live.isEmpty() || !settings.isEmpty() || !knownPacks.isEmpty()) {
 			return respond(source, settings, outcome, outcome.results(), ask);
 		}
 
@@ -292,7 +370,16 @@ public final class MerlCommand {
 		return 1;
 	}
 
-	private static String smallTalkLine(String talk, CommandSourceStack source, ServerPlayer player, MerlMemory.Visit visit, long now) {
+	private static String smallTalkLine(String talk, CommandSourceStack source, ServerPlayer player, MerlMemory.Visit visit, long now,
+			Meeting meeting) {
+		if (talk.equals("remember_me") && player != null) {
+			MerlState.Player friend = MerlState.player(player.getUUID());
+			return MerlLines.rememberMe(friend.chatCount(), meeting.today() - friend.metDay(), friend.topic, source.getTextName());
+		}
+		if (talk.equals("forget_me") && player != null) {
+			MerlState.forget(player.getUUID());
+			return MerlLines.pick("forget_done", "user", source.getTextName());
+		}
 		String page = visit.recentPage(now);
 		if (talk.equals("thanks") && page != null) {
 			return MerlLines.pick("thanks_answered", "page", page);
@@ -335,7 +422,25 @@ public final class MerlCommand {
 
 	private static int respond(CommandSourceStack source, List<DatapackSettings.Setting> settings,
 			SearchIndex.Outcome outcome, List<SearchIndex.Result> results, Ask ask) {
+		int shown = answer(source, settings, outcome, results, ask);
+		sendNote(source, ask.note());
+		return shown;
+	}
+
+	private static int answer(CommandSourceStack source, List<DatapackSettings.Setting> settings,
+			SearchIndex.Outcome outcome, List<SearchIndex.Result> results, Ask ask) {
 		MerlConfig config = NiceMerl.config();
+		if (settings.isEmpty() && !ask.knownPacks().isEmpty()) {
+			return settingsOverview(source, results, ask, config);
+		}
+		boolean confident = !results.isEmpty() && MerlLines.clearlyAbout(VanillaWiki.confidence(results, outcome),
+				results.get(0).titleMatch(), ask.question());
+		if (settings.isEmpty() && !ask.asking() && !confident) {
+			// "NO! Stop!" or "i like turtles": no question, and no page that's clearly about it.
+			reply(source, Component.literal(MerlLines.pick("unclear", "user", source.getTextName())).append(
+					Component.literal(" Try ").withStyle(ChatFormatting.GRAY)).append(example("/merl how do I get a boss key")));
+			return 0;
+		}
 		if (settings.isEmpty() && results.isEmpty()) {
 			ask.visit().page = "";
 			reply(source, Component.literal(MerlLines.pick("not_found", "community", config.communityName)));
@@ -344,6 +449,11 @@ public final class MerlCommand {
 		if (!results.isEmpty()) {
 			ask.visit().page = results.get(0).section().pageTitle();
 			ask.visit().answeredAt = ask.now();
+			ServerPlayer player = source.getPlayer();
+			if (player != null) {
+				int today = (int) LocalDate.now().toEpochDay();
+				MerlState.update(player.getUUID(), p -> p.remember(ask.visit().page, today));
+			}
 		}
 
 		MutableComponent message;
@@ -371,6 +481,22 @@ public final class MerlCommand {
 		}
 		reply(source, message);
 		return settings.size() + results.size();
+	}
+
+	/** A settings question that matched no setting: which packs Merl can answer about, plus any wiki pages. */
+	private static int settingsOverview(CommandSourceStack source, List<SearchIndex.Result> results, Ask ask, MerlConfig config) {
+		String prefix = ask.prefix() != null ? MerlLines.pick(ask.prefix(), "user", source.getTextName()) + " " : "";
+		MutableComponent message = Component.literal(prefix + "I couldn't find that setting. I know the settings of "
+				+ String.join(", ", ask.knownPacks()) + ". Name the setting, like ").append(example("/merl is pvp enabled"));
+		if (!results.isEmpty()) {
+			message.append(Component.literal("\nMaybe the wiki helps:").withStyle(ChatFormatting.GRAY));
+			for (SearchIndex.Result result : results) {
+				message.append(Component.literal("\n"));
+				message.append(formatResult(result, config));
+			}
+		}
+		reply(source, message);
+		return results.size();
 	}
 
 	private static String headline(SearchIndex.Outcome outcome, List<SearchIndex.Result> results, Ask ask, String user) {

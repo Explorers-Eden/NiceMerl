@@ -18,6 +18,7 @@ INTENTS = [(re.compile(f"(?:{i['pattern']})"), i["pool"]) for i in LINES["intent
 MOODS: list[str] = LINES["moods"]
 PB_MOODS: list[str] = LINES["pb_moods"]
 TOPICS: dict[str, list[str]] = LINES["topics"]
+TOPIC_PHRASES: dict[str, str] = LINES["topic_phrases"]
 KEYWORDS = LINES["keyword_intents"]
 STRIP_START = sorted(KEYWORDS["strip_start"], key=len, reverse=True)
 STRIP_END = sorted(KEYWORDS["strip_end"], key=len, reverse=True)
@@ -58,6 +59,21 @@ ASK_BACK_CHANCE = 3
 ASK_FEELING_POOLS = {"how_are_you", "greeting"}
 ASK_FEELING_CHANCE = 2
 
+# Friendship: after this many chats Merl greets you like an old friend now and then.
+FRIEND_CHATS = 50
+FRIEND_GREETING_CHANCE = 3
+# People with up to this many chats get Merl's introduction with a hello; regulars know what she does.
+INTRO_CHATS = 5
+# How long Merl asks about what you said you're up to, or about the page that last helped.
+TOPIC_FOLLOW_UP_DAYS = 14
+PAGE_FOLLOW_UP_DAYS = 7
+# Days since you met that Merl mentions; after a year, every year.
+ANNIVERSARIES = (7, 30, 100, 365)
+# Numbers of chats Merl mentions; after that, every thousand.
+CHAT_MILESTONES = (10, 25, 50, 100, 250, 500)
+# Small talk after which a cheerful "that was our 50th chat!" would be out of place; it waits for the next chat.
+QUIET_TALK = {"stop", "forget_me", "insult", "wrong", "comfort", "sorry", "confused", "goodbye", "tired"}
+
 # Small talk that can start a question ("thanks! how do I…"), and the short line it gets.
 PREFIX_POOLS = {"greeting": "greeting_prefix", "thanks": "thanks_prefix", "sorry": "sorry_prefix",
                 "ok": "ok_prefix", "no": "ok_prefix", "compliment": "compliment_prefix"}
@@ -68,7 +84,17 @@ FOLLOW_UP_CUES = ("and ", "also ", "what about ", "how about ", "but what about 
 FILLER_WORDS = {"so", "and", "um", "uh", "btw", "but", "also", "like", "quick", "question"}
 ASKING_WORDS = {"how", "what", "where", "why", "when", "which", "who", "whats", "wheres", "hows"}
 STRESS_WORDS = {"help", "stuck", "urgent", "asap", "broken", "lost", "cant", "confused", "sos", "desperate", "panic"}
+# Words that show someone wants information. Without one (or a "?"), a weak wiki match is more likely
+# a misread comment ("NO! Stop!") than a question, so Merl asks what they mean instead.
+INFO_WORDS = QUESTION_WORDS | {
+    "find", "show", "explain", "info", "information", "recipe", "craft", "crafting", "get", "obtain", "make",
+    "build", "spawn", "spawns", "location", "locate", "about", "guide", "tutorial", "help", "need", "looking",
+    "search", "learn", "page", "setting", "settings", "config", "enabled", "disabled", "allowed", "chance",
+    "drop", "drops", "use", "work", "works", "tame", "breed", "summon", "beat", "kill", "defeat", "enchant",
+    "brew", "trade", "farm", "upgrade", "repair", "unlock", "requirements", "difference", "best", "tell"}
 WORD = re.compile(r"[A-Za-z]{6,}")
+# A message this short that names a page title is a topic search ("boss keys"), even if it's not a question.
+TOPIC_WORDS = 2
 FIRST_WORD = re.compile(r"[^A-Za-z]*([A-Za-z]+)")
 REPEATS = re.compile(r"(.)\1+")
 # How far down the bag pick() looks for a line that starts differently from the last one.
@@ -235,6 +261,19 @@ def split_small_talk(text: str) -> tuple[str | None, str]:
     return None, text
 
 
+def seeks_info(text: str) -> bool:
+    """ "how do I…", "where are trial chambers?", "show me the boss key page" rather than "NO! Stop!"."""
+    return "?" in text or bool(INFO_WORDS.intersection(normalize(text).split()))
+
+
+def clearly_about(sure: str | None, title_match: bool, text: str) -> bool:
+    """For a message that isn't a question: is the top page clearly what it's about? Yes when Merl is
+    sure, or when the page is named after it and the message is just a topic ("turtles", "boss keys")."""
+    if not sure:
+        return False
+    return sure == "sure" or (title_match and (sure == "maybe" or len(normalize(text).split()) <= TOPIC_WORDS))
+
+
 def is_follow_up(text: str) -> bool:
     """ "and in the nether?", "what about the boss one" """
     normalized = normalize(text) + " "
@@ -283,17 +322,17 @@ def feeling(text: str) -> tuple[str, bool] | None:
     return None
 
 
-def _epoch_day(day: date) -> int:
+def epoch_day(day: date) -> int:
     return (day - date(1970, 1, 1)).days
 
 
 def mood(day: date) -> str:
     """Merl's mood of the day, the same in the bot and the mod."""
-    return MOODS[_epoch_day(day) % len(MOODS)]
+    return MOODS[epoch_day(day) % len(MOODS)]
 
 
 def pb_mood(day: date) -> str:
-    return PB_MOODS[(_epoch_day(day) * 7 + 3) % len(PB_MOODS)]
+    return PB_MOODS[(epoch_day(day) * 7 + 3) % len(PB_MOODS)]
 
 
 def slip(text: str) -> str:
@@ -379,3 +418,35 @@ def ask_feeling(pool: str, line: str) -> str | None:
 
 def pet_milestone(count: int) -> bool:
     return count in (10, 50, 100, 250, 500) or (count > 0 and count % 1000 == 0)
+
+
+def follow_up(topic: str, topic_day: int, page: str, page_day: int, today: int) -> str | None:
+    """When you come back: a question about what you were up to, or about the page that last helped."""
+    if topic and today - topic_day <= TOPIC_FOLLOW_UP_DAYS and f"followup_{topic}" in POOLS:
+        return pick(f"followup_{topic}")
+    if page and today - page_day <= PAGE_FOLLOW_UP_DAYS:
+        return pick("followup_page", page=page)
+    return None
+
+
+def friendship_note(chats: int, noted: int, days: int, last_anniversary: int,
+                    user: str) -> tuple[str | None, int, int]:
+    """A line for a round number of chats or a friendship anniversary not mentioned yet, else None;
+    plus the chat milestone and anniversary to remember as mentioned."""
+    milestone = max([m for m in CHAT_MILESTONES if m <= chats] + [chats // 1000 * 1000])
+    if milestone > noted:
+        return pick("friend_milestone", count=str(milestone), user=user), milestone, last_anniversary
+    anniversary = max([a for a in ANNIVERSARIES if a <= days] + [days // 365 * 365])
+    if anniversary > last_anniversary:
+        return pick("friend_anniversary", days=str(anniversary), user=user), noted, anniversary
+    return None, noted, last_anniversary
+
+
+def remember_me(chats: int, days: int, topic: str, user: str) -> str:
+    """ "do you remember me?" """
+    if chats <= 1:
+        return pick("remember_me_new", user=user)
+    line = pick("remember_me", count=str(chats), days=str(days), user=user)
+    if topic in TOPIC_PHRASES:
+        line += " " + pick("remember_topic", activity=TOPIC_PHRASES[topic])
+    return line

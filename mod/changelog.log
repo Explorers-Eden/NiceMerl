@@ -6,6 +6,9 @@
 ## Merl sounds more human
 - **Over 20,000 lines:** about ten times as many as before, with nearly 1,000 jokes, 650 tips, 600 fun facts and 4,500 ideas
 - **She doesn't repeat herself:** two replies in a row never start the same way, and she won't stack an opener on a line that already starts with *"Oh"* or *"Hmm"*
+- **She's your companion now:** Merl remembers you: when you met, how often you've talked, what you're up to and which page last helped. Come back after a while and she asks how the build is going or whether that page helped; she notices your 50th chat and your friendship anniversaries, and greets regulars like old friends. Ask *"do you remember me?"*, or say *"forget me"* to erase it. No messages are stored, and it takes about a hundred bytes per player
+- **Fewer out-of-place answers:** messages that aren't questions (*"NO! Stop!"*, *"what?"*, *"i like turtles"*) get a reply instead of a random wiki page, and *"that's not what I asked"* gets help asking better
+- **Settings questions in plain words:** *"can I pvp"*, *"grave type"* or *"keep inventory settings"* now show the settings too, not only questions with words like *"enabled"*; a miss lists the packs Merl knows
 - **"No" is not "OK":** *"no thanks"* or *"nah"* get their own replies instead of a cheerful *"Yay!"*
 - **Understands you better:** small talk works in many more wordings, with stretched letters and small typos (*"can you tell me a joke please"*, *"thaaanks"*, *"im bored gimme ideas"*), while real questions still go to the wiki
 - **Mixed messages:** *"thanks! how do I get a boss key?"* or *"hi, where are trial chambers"* get a quick reply to the small talk and the answer

@@ -13,8 +13,7 @@ public final class MerlMemory {
 	private static final long FOLLOW_UP = 5 * 60_000L;
 	private static final long THANKS = 5 * 60_000L;
 	private static final long ASK_BACK = 5 * 60_000L;
-	/** "Welcome back!" after this long away, but not after so long that it's a first visit again. */
-	private static final long WELCOME_BACK_AFTER = 3 * 3_600_000L;
+	/** People not seen for this long are dropped when the map gets full. */
 	private static final long WELCOME_BACK_UNTIL = 30 * 86_400_000L;
 	private static final int MAX_PLAYERS = 5000;
 
@@ -34,10 +33,6 @@ public final class MerlMemory {
 		public long seenAt;
 		/** Last /merl question, for the cooldown. */
 		public long lastMessageAt;
-
-		public boolean returning(long now) {
-			return seenAt != 0 && now - seenAt >= WELCOME_BACK_AFTER && now - seenAt <= WELCOME_BACK_UNTIL;
-		}
 
 		public boolean isRepeat(String asked, long now) {
 			return !asked.isEmpty() && asked.equals(question) && now - askedAt < REPEAT;

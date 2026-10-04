@@ -102,7 +102,7 @@ To test the search without Discord, run `.venv/bin/python search.py "how do I ge
 | `VANILLA_WIKI` | `true` | Answer vanilla questions from the Minecraft Wiki too |
 | `VANILLA_WIKI_URL` | `https://minecraft.wiki` | MediaWiki used for vanilla questions |
 | `TIMEZONE` | `Europe/Berlin` | Time zone for good morning / good evening, sleepy nights and the mood of the day |
-| `STATE_DIR` | `bot/state` (`/app/state` in Docker) | Where Peanut Butter's pet count is saved. The Docker setups mount the `nicemerl-state` volume here, so it survives updates |
+| `STATE_DIR` | `bot/state` (`/app/state` in Docker) | Where Peanut Butter's pet count and Merl's memory of people (`friends.json`) are saved. The Docker setups mount the `nicemerl-state` volume here, so it survives updates |
 
 Search tuning (stopwords, weights, typo and synonym settings) lives at the top of [`bot/search.py`](bot/search.py), and the vanilla blending (`STRONG_SCORE`, skipped chapters) at the top of [`bot/vanilla.py`](bot/vanilla.py). To test without Discord, run `.venv/bin/python search.py "how do I make a nether portal"`: it prints each source, the corrections and the blend decision.
 
@@ -182,7 +182,7 @@ Example: `/lp group default permission set nicemerl.settings false` hides settin
 | `celebrate` | `true` | congratulations on advancements (each player can also turn them off) |
 | `celebrateAdvancements` | vanilla milestones (dragon, elytra, Wither…) and the Eden packs' bosses, challenges and collections | which advancements Merl congratulates players on; ids of packs that aren't installed do no harm |
 
-Players' choices and Peanut Butter's pet count are saved in `config/nicemerl/state.json`.
+Players' choices, what Merl remembers about them and Peanut Butter's pet count are saved in `config/nicemerl/state.json`.
 
 ### Wikis
 

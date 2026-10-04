@@ -1,4 +1,5 @@
 """What Merl remembers about each person for a little while: kept in memory only, never on disk.
+The long-term part (when you met, what you're up to) is in friends.py.
 
 Mirrored in the mod's MerlMemory.java.
 """
@@ -25,9 +26,6 @@ class Visit:
     asked_back_at: float = 0.0
     asked_feeling_at: float = 0.0
     seen_at: float = 0.0
-
-    def returning(self, now: float) -> bool:
-        return bool(self.seen_at) and WELCOME_BACK_AFTER <= now - self.seen_at <= WELCOME_BACK_UNTIL
 
     def is_repeat(self, question: str, now: float) -> bool:
         return bool(question) and question == self.question and now - self.asked_at < REPEAT_SECONDS

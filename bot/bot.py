@@ -12,6 +12,7 @@ from discord.ext import tasks
 
 import config
 import personality
+from friends import Friend, Friends
 from memory import Memory, Visit
 from personality import pick
 from search import SURE_TITLE_SCORE, Index, Outcome, Result, tokenize
@@ -49,6 +50,7 @@ class NiceMerl(discord.Client):
         self.last_question: dict[int, float] = {}
         self.memory = Memory()
         self.state = State(config.STATE_DIR)
+        self.friends = Friends(config.STATE_DIR)
         self.timezone = ZoneInfo(config.TIMEZONE)
         self.last_thumbnail: Path | None = None
 
@@ -118,12 +120,24 @@ class NiceMerl(discord.Client):
         user = message.author.display_name
         visit = self.memory.visit(message.author.id)
         now = time.time()
-        returning = visit.returning(now)
         visit.seen_at = now
-        await self.answer(message, question, user, visit, now, returning, started)
+        today = personality.epoch_day(self.now().date())
+        friend = self.friends.get(message.author.id)
+        first, returning = friend.chats == 0, friend.returning(int(now // 60))
+        friend.met, friend.chats, friend.seen = friend.met or today, friend.chats + 1, int(now // 60)
+        note = None
+        if personality.small_talk(question) not in personality.QUIET_TALK:
+            note, friend.noted, friend.anniversary = personality.friendship_note(
+                friend.chats, friend.noted, today - friend.met, friend.anniversary, user)
+        await self.answer(message, question, user, visit, friend, today, first, returning, started)
+        self.friends.save(message.author.id, friend, today)
+        if note and not friend.forgotten:
+            # "Oh! That was our 50th chat." comes as a little extra message after the answer.
+            await self.say(message, time.monotonic(), content=note)
 
-    async def answer(self, message: discord.Message, question: str, user: str, visit: Visit,
-                     now: float, returning: bool, started: float):
+    async def answer(self, message: discord.Message, question: str, user: str, visit: Visit, friend: Friend,
+                     today: int, first: bool, returning: bool, started: float):
+        now = time.time()
         talk = personality.small_talk(question)
         # Merl only waits one message for an answer to "what are you up to?".
         awaiting, visit.asked_back_at = visit.awaiting_reply(now), 0.0
@@ -142,17 +156,19 @@ class NiceMerl(discord.Client):
             return
         if talk is None and awaiting:
             if topic := personality.topic(question):
+                friend.topic, friend.topic_day = topic, today
                 await self.say(message, started, content=pick(f"reply_{topic}"))
                 return
 
         if talk == "greeting" or (talk is None and not tokenize(question)):
             if talk or self.user in message.mentions:
-                greeting = pick("welcome_back" if returning else personality.greeting_pool(self.now()), user=user)
-                extra = self.ask_back("greeting", visit, now) or self.ask_feeling("greeting", greeting, visit, now)
-                await self.say(message, started, embed=self.hello_embed(greeting, extra))
+                greeting, extra = self.greeting(user, friend, today, first, returning)
+                extra = extra or self.ask_back("greeting", visit, now) or self.ask_feeling("greeting", greeting, visit, now)
+                intro = friend.chats <= personality.INTRO_CHATS
+                await self.say(message, started, embed=self.hello_embed(greeting, extra, intro))
             return
         if talk:
-            text = self.small_talk_line(talk, user, visit, now)
+            text = self.small_talk_line(talk, user, visit, friend, today, now)
             if extra := self.ask_back(talk, visit, now) or self.ask_feeling(talk, text, visit, now):
                 text += " " + extra
             await self.say(message, started, content=text)
@@ -168,6 +184,8 @@ class NiceMerl(discord.Client):
         outcome = self.index.find(search, limit=config.RESULTS)
         # "and in the nether?" right after a question: if it finds nothing good on its own,
         # search it together with the previous question.
+        # Something phrased as a question, or a follow-up to one; otherwise only a confident match counts.
+        asking = bool(prefix) or personality.seeks_info(question) or personality.is_follow_up(search)
         weak = not outcome.results or outcome.confidence < SURE_TITLE_SCORE
         if weak and personality.is_follow_up(search) and (previous := visit.recent_question(now)):
             combined = self.index.find(f"{previous} {search}", limit=config.RESULTS)
@@ -180,11 +198,18 @@ class NiceMerl(discord.Client):
                     search, limit=2, require_title_match=plan(search, outcome) == "check")
             results = combine(search, outcome, found, titled, config.RESULTS)
 
+        if not asking and not personality.clearly_about(confidence(results, outcome) if results else None,
+                                                        bool(results) and results[0].title_match, question):
+            # "NO! Stop!" or "i like turtles": no question, and no page that's clearly about it.
+            await self.say(message, started, embed=self.unclear_embed(user))
+            return
+
         asked = " ".join(tokenize(search))
         repeat = visit.is_repeat(asked, now)
         visit.question, visit.asked_at = asked, now
         if results:
             visit.page, visit.answered_at = results[0].section.page_title, now
+            friend.page, friend.page_day = visit.page, today
             energy = personality.energy(question)
             embed = self.results_embed(results, self.answer_title(
                 results, outcome, prefix=prefix, repeat=repeat, energy=energy, user=user), energy)
@@ -193,7 +218,24 @@ class NiceMerl(discord.Client):
             visit.page = ""
             await self.say(message, started, embed=self.not_found_embed(), results=1)
 
-    def small_talk_line(self, talk: str, user: str, visit: Visit, now: float) -> str:
+    def greeting(self, user: str, friend: Friend, today: int, first: bool, returning: bool) -> tuple[str, str | None]:
+        """Hello for someone new, an old friend, or someone back after a while (with a question about
+        what they were up to); the second part is that question, if any."""
+        if first:
+            return pick("first_meeting", user=user), None
+        if returning:
+            return pick("welcome_back", user=user), personality.follow_up(
+                friend.topic, friend.topic_day, friend.page, friend.page_day, today)
+        if friend.chats > personality.FRIEND_CHATS and personality.chance(personality.FRIEND_GREETING_CHANCE):
+            return pick("greeting_friend", user=user), None
+        return pick(personality.greeting_pool(self.now()), user=user), None
+
+    def small_talk_line(self, talk: str, user: str, visit: Visit, friend: Friend, today: int, now: float) -> str:
+        if talk == "remember_me":
+            return personality.remember_me(friend.chats, today - friend.met, friend.topic, user)
+        if talk == "forget_me":
+            friend.forgotten = True
+            return pick("forget_done", user=user)
         if talk == "thanks" and (page := visit.recent_page(now)):
             return pick("thanks_answered", page=page)
         if talk == "peanut_butter":
@@ -298,6 +340,12 @@ class NiceMerl(discord.Client):
             color=MERL_PINK,
         ))
 
+    def unclear_embed(self, user: str) -> discord.Embed:
+        return self.branded(discord.Embed(
+            description=f"{pick('unclear', user=user)}\n\n-# Try: *how do I get a boss key?* or *give me a tip*",
+            color=MERL_PINK,
+        ))
+
     def not_found_embed(self) -> discord.Embed:
         return self.branded(discord.Embed(
             title=pick("not_found", community=COMMUNITY),
@@ -310,13 +358,17 @@ class NiceMerl(discord.Client):
             color=MERL_PINK,
         ))
 
-    def hello_embed(self, greeting: str, ask_back: str | None = None) -> discord.Embed:
+    def hello_embed(self, greeting: str, ask_back: str | None = None, intro: bool = True) -> discord.Embed:
+        """A hello, with an introduction of what Merl does for newer people."""
+        title = (f"{greeting} {ask_back}" if ask_back else greeting)[:256]
+        if not intro:
+            return self.branded(discord.Embed(title=title, color=MERL_PINK))
         vanilla = (" I can also look things up in the [Minecraft Wiki](https://minecraft.wiki) "
                    "for vanilla questions." if self.vanilla else "")
         return self.branded(discord.Embed(
-            title=(f"{greeting} {ask_back}" if ask_back else greeting)[:256],
+            title=title,
             description=(
-                "I'm NiceMerl! Ask me anything about the Explorer's Eden projects, like structures, "
+                "Ask me anything about the Explorer's Eden projects, like structures, "
                 "enchantments, mob variants or warping, and I'll find the right page in the "
                 f"[wiki]({config.WIKI_URL}) for you!{vanilla}\n\n"
                 + (f"If I can't help, post your question in {help_channel()} and someone else will.\n\n"

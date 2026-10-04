@@ -10,7 +10,7 @@ COPY *.py .
 COPY data/ data/
 COPY assets/merl_* assets/thumb_* assets/
 
-# state/ holds Peanut Butter's pet count; mount a volume there to keep it across updates.
+# state/ holds Peanut Butter's pet count and friends.json (what Merl remembers about people); mount a volume there to keep it across updates.
 RUN useradd --create-home bot && mkdir state && chown bot state
 USER bot
 

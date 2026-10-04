@@ -18,7 +18,7 @@ services:
       VANILLA_WIKI_URL: ${VANILLA_WIKI_URL:-https://minecraft.wiki}
       TIMEZONE: ${TIMEZONE:-Europe/Berlin}
     volumes:
-      # Peanut Butter's pet count, kept across updates.
+      # Peanut Butter's pet count and what Merl remembers about people, kept across updates.
       - nicemerl-state:/app/state
     mem_limit: 256m
     cpus: 0.5
