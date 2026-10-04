@@ -13,10 +13,14 @@ NiceMerl answers questions about the Explorer's Eden projects by searching the [
 | 🤖 **Discord bot** | [`bot/`](bot) | one Discord channel | Docker image `niceron/nicemerl`, deployed with Portainer + Watchtower |
 | ⛏️ **Fabric mod** | [`mod/`](mod) | in-game, `/merl <question>` | server-side mod for Minecraft 26.3, published as GitHub releases |
 
-Neither uses AI or a paid API, so there are no running costs. Both download the public wiki pages on startup and every 6 hours, keep a small search index in memory and search it locally. If nothing matches, Merl answers *"I don't know."*, just like the [real one](https://minecraft.wiki/w/Minecraft_Support_Virtual_Agent).
+Neither uses a chatbot AI or a paid API, so there are no running costs. Both download the public wiki pages on startup and every 6 hours, keep a small search index in memory and search it locally. If nothing matches, Merl answers *"I don't know."*, just like the [real one](https://minecraft.wiki/w/Minecraft_Support_Virtual_Agent).
 
 **How the search works:**
-- BM25 ranking, with page titles and paths weighted higher.
+- BM25 ranking, with page titles and paths weighted higher, plus each page's wiki description and tags.
+- Meaning-based search next to the keywords: a tiny word-vector model ([Model2Vec potion-base-8M](https://huggingface.co/minishlab/potion-base-8M), about 30 MB) finds pages that say the same thing in other words (*"unlock the boss room"* → Boss Keys). It only compares texts and never writes any. It only steps in when the keywords aren't sure, and a page found only by meaning never sounds sure. Without the model, Merl searches by keywords alone.
+- The kind of question picks the section: *where* → "Where to Find", *how do I get* → crafting and drops, *what … are there* → overview pages. A question naming a project (*"who is Katter"*) gets its home page.
+- She learns what each person usually asks about (their top projects, no messages) and leans toward those pages when a question fits several.
+- A short answer line on top: the sentence from the found pages that answers the question best, copied word for word from the wiki (never from spoilers).
 - Typo tolerance (*"enchantmnt"* → *enchantment*, and Merl says so) and prefix matching (`ench`).
 - Player slang from [`bot/data/synonyms.json`](bot/data/synonyms.json) (`tp`, `xp`, `keepinv`, …).
 - Phrase boosts for words that appear next to each other (*nether portal*), and a bonus when a page title is exactly what was asked.
@@ -44,7 +48,7 @@ Neither uses AI or a paid API, so there are no running costs. Both download the 
                              mod: build → GitHub release (from main), keeps the newest per MC version
 ```
 
-> ⚠️ The mod re-implements the bot's search and personality in Java: [`SearchIndex.java`](mod/src/main/java/eu/explorerseden/nicemerl/SearchIndex.java) mirrors [`search.py`](bot/search.py), [`VanillaWiki.java`](mod/src/main/java/eu/explorerseden/nicemerl/VanillaWiki.java) mirrors [`vanilla.py`](bot/vanilla.py), [`MerlLines.java`](mod/src/main/java/eu/explorerseden/nicemerl/MerlLines.java) mirrors [`personality.py`](bot/personality.py) and [`MerlMemory.java`](mod/src/main/java/eu/explorerseden/nicemerl/MerlMemory.java) mirrors [`memory.py`](bot/memory.py). Changes to stopwords, weights, stemming, scoring or how replies are put together need to be made in both. Both currently return identical scores.
+> ⚠️ The mod re-implements the bot's search and personality in Java: [`SearchIndex.java`](mod/src/main/java/eu/explorerseden/nicemerl/SearchIndex.java) mirrors [`search.py`](bot/search.py), [`VanillaWiki.java`](mod/src/main/java/eu/explorerseden/nicemerl/VanillaWiki.java) mirrors [`vanilla.py`](bot/vanilla.py), [`MerlLines.java`](mod/src/main/java/eu/explorerseden/nicemerl/MerlLines.java) mirrors [`personality.py`](bot/personality.py) and [`MerlMemory.java`](mod/src/main/java/eu/explorerseden/nicemerl/MerlMemory.java) mirrors [`memory.py`](bot/memory.py) and [`SemanticModel.java`](mod/src/main/java/eu/explorerseden/nicemerl/SemanticModel.java) mirrors [`semantic.py`](bot/semantic.py) (same vectors, checked to the last digit). Changes to stopwords, weights, stemming, scoring or how replies are put together need to be made in both. Both currently return identical scores.
 >
 > Merl's lines ([`lines.json`](bot/data/lines.json)) and the synonyms ([`synonyms.json`](bot/data/synonyms.json)) are **shared**: they live in `bot/data/`, and the mod build bundles them into the jar, so they only need editing once.
 
@@ -86,7 +90,9 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 .venv/bin/python bot.py
 ```
 
-To test the search without Discord, run `.venv/bin/python search.py "how do I get a boss key"`.
+To test the search without Discord, run `.venv/bin/python search.py "how do I get a boss key"`. The meaning-based search model is downloaded from Hugging Face on the first start (the Docker image has it built in).
+
+To measure the answers, run `.venv/bin/python evaluate.py` (add `-v` to list every miss). It asks 332 test questions from [`bot/eval/questions.json`](bot/eval/questions.json) and checks chatter, small talk, follow-ups and context too; `mod/eval/run.sh` does the same for the mod after a build, plus 109 settings questions. Both currently score the same: 91% right on the first page, 95% within the first three.
 
 ### Configuration
 
@@ -102,6 +108,7 @@ To test the search without Discord, run `.venv/bin/python search.py "how do I ge
 | `VANILLA_WIKI` | `true` | Answer vanilla questions from the Minecraft Wiki too |
 | `VANILLA_WIKI_URL` | `https://minecraft.wiki` | MediaWiki used for vanilla questions |
 | `TIMEZONE` | `Europe/Berlin` | Time zone for good morning / good evening, sleepy nights and the mood of the day |
+| `SEMANTIC_MODEL` | `bot/model` (built into the Docker image) | Folder or Hugging Face name of the meaning-based search model; if it can't be loaded, Merl searches by keywords only |
 | `STATE_DIR` | `bot/state` (`/app/state` in Docker) | Where Peanut Butter's pet count and Merl's memory of people (`friends.json`) are saved. The Docker setups mount the `nicemerl-state` volume here, so it survives updates |
 
 Search tuning (stopwords, weights, typo and synonym settings) lives at the top of [`bot/search.py`](bot/search.py), and the vanilla blending (`STRONG_SCORE`, skipped chapters) at the top of [`bot/vanilla.py`](bot/vanilla.py). To test without Discord, run `.venv/bin/python search.py "how do I make a nether portal"`: it prints each source, the corrections and the blend decision.
@@ -134,7 +141,7 @@ Players type `/merl <question>`, and NiceMerl answers in chat with:
 She also does small talk (`/merl thanks`, `/merl tell me a joke`, `/merl give me a tip`, `/merl fun fact`, `/merl pet peanut butter`), greets players by name, and has the same human touches as the bot (mixed messages, confidence, short memory, moods, asking back). On top of that, in-game:
 - **`/merl what should I do next`** looks at the player's advancements and suggests the next step (*"You haven't been to the Nether yet!"*, *"Find an End city with a ship and grab the elytra!"*), or one of over 1,200 ideas.
 - **She notices what you're doing:** now and then she comments on the dimension, weather or biome, low health, what you're holding (*"Ooh, a mace! Bonk responsibly."*), your elytra, your death count or your play time. Players can turn this off with `/nicemerl comments off`.
-- **She celebrates with you:** big advancements (dragon, elytra, Wither, netherite armor…) and the Eden packs' big ones (Katters bosses, *Mythical*, all mob variants, *Ten Tales Told*…) get a private congratulation. Players can turn this off with `/nicemerl celebrate off`.
+- **She celebrates with you:** big advancements (dragon, elytra, Wither, netherite armor…) and the Eden packs' big ones (Katters bosses, *Mythical*, all mob variants, *Ten Tales Told*…) get a private congratulation, with how rare it is (*"You're the very first!"*, *"only the 3rd explorer to do this"*). So do statistic milestones: 100,000, 500,000 and a million blocks mined, mobs defeated, kilometers traveled, hours played, fish caught, animals bred, villager trades and jumps. Players can turn this off with `/nicemerl celebrate off`.
 
 Answers are **only visible to the player who asked**. Wiki spoilers are scrambled and revealed on hover. The mod is **server-side only**: players join with an unmodded client.
 
@@ -180,6 +187,8 @@ Example: `/lp group default permission set nicemerl.settings false` hides settin
 | `mediaWikiResults` | `2` | most pages from `mediawiki` wikis per answer |
 | `playerComments` | `true` | Merl's comments about where players are and what they're doing (each player can also turn them off) |
 | `celebrate` | `true` | congratulations on advancements (each player can also turn them off) |
+| `celebrateStatistics` | `true` | congratulations on statistic milestones (blocks mined, distance traveled…); the milestones are in Merl's lines (`stat_milestones`) |
+| `semanticSearch` | `true` | meaning-based search next to the keywords; downloads a small model (about 31 MB, checked against its known checksum) once to `config/nicemerl/model/`. Until then, or if that fails, Merl searches by keywords only |
 | `celebrateAdvancements` | vanilla milestones (dragon, elytra, Wither…) and the Eden packs' bosses, challenges and collections | which advancements Merl congratulates players on; ids of packs that aren't installed do no harm |
 
 Players' choices, what Merl remembers about them and Peanut Butter's pet count are saved in `config/nicemerl/state.json`.

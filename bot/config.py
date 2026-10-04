@@ -20,3 +20,6 @@ VANILLA_WIKI_URL = os.getenv("VANILLA_WIKI_URL", "https://minecraft.wiki").rstri
 TIMEZONE = os.getenv("TIMEZONE", "Europe/Berlin")
 # Where Merl keeps what should survive a restart (Peanut Butter's pet count, friends.json). Mount a volume here.
 STATE_DIR = Path(os.getenv("STATE_DIR") or Path(__file__).parent / "state")
+# The small meaning-based search model (a folder, or a Hugging Face name). The Docker image has it
+# in /app/model; empty turns meaning-based search off and Merl searches by keywords only.
+SEMANTIC_MODEL = os.getenv("SEMANTIC_MODEL", str(Path(__file__).parent / "model"))

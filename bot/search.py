@@ -58,17 +58,50 @@ BIGRAM_WEIGHT = 1.5
 # The whole page title / heading appears in the question.
 TITLE_MATCH_BONUS = 2.0
 HEADING_MATCH_BONUS = 1.0
-# Sections whose heading is one of the caller's hint words, e.g. "Crafting" for "how do I make…".
+# Sections whose heading is one of the hint words, e.g. "Crafting" for "how do I make…".
 HEADING_HINT_BONUS = 2.5
+# The page's description and tags from the wiki count like a little extra text.
+META_WEIGHT = 1
+# A project's home page when the question only names the project ("who is katter").
+PROJECT_BONUS = 3.0
+# Hybrid search: keyword and meaning-based rankings merged by Reciprocal Rank Fusion. A page counts
+# 1 / (RRF_K + its rank) per ranking it's in; the meaning ranking counts SEMANTIC_WEIGHT as much.
+RRF_K = 10
+SEMANTIC_WEIGHT = 0.6
+SEMANTIC_CANDIDATES = 10
+# Sections less similar than this to the question don't count as found by meaning.
+SEMANTIC_MIN = 0.40
+# A page found only by meaning gets this times its similarity as score, so it's never "sure".
+SEMANTIC_SCORE = 9.0
+# How much of a section is embedded (title, heading, description and the start of its text).
+SEMANTIC_TEXT_CHARS = 400
+# A person's usual projects (from past questions) tip close calls their way, never more than this.
+INTEREST_BONUS = 2.5
+# Page titles that say nothing; such pages are titled after their project instead.
+GENERIC_TITLES = {"main", "home"}
 # Changelogs mention everything, so they only win when the question is about changes.
-CHANGELOG_FACTOR = 0.75
+CHANGELOG_FACTOR = 0.5
 CHANGELOG_WORDS = {"changelog", "change", "update", "patch", "new", "added", "release"}
 # Results scoring below this share of the best result are dropped.
 RELATIVE_CUTOFF = 0.35
 EXCERPT_LEN = 220
+# The answer line: one sentence from the top pages, covering at least this share of the question's words.
+ANSWER_CHARS = 300
+ANSWER_MIN_CHARS = 20
+ANSWER_PAGES = 2
+ANSWER_COVERAGE = 0.5
+ANSWER_HINT_WEIGHT = 2.5
+ANSWER_HIT_WEIGHT = 1.5
+ANSWER_RANK_PENALTY = 2.0
+# With the meaning model: how much a sentence's similarity to the question counts, and how similar a
+# sentence must be to count without sharing the question's words.
+ANSWER_SEMANTIC_WEIGHT = 0.0
+ANSWER_SEMANTIC_MIN = 0.7
 # The top result gets whole sentences / list lines up to this many characters.
 LONG_EXCERPT_LEN = 450
 LONG_EXCERPT_LINES = 8
+LIST_QUESTION = re.compile(r"\b(what|which)\b.*\bare there\b|\blist of\b|\ball (the )?[a-z]+s\b|\bevery\b|"
+                           r"\b(types|kinds|sorts) of\b|\boverview\b|\b(variants|types|kinds)\b")
 SENTENCE_END = re.compile(r"(?<=[.!?])\s+(?=[A-Z0-9\"'(\[])")
 
 
@@ -104,6 +137,32 @@ def tokenize(text: str) -> list[str]:
     return [term for _, term in words(text)]
 
 
+def hint_terms(text: str) -> set[str]:
+    """Every word stemmed, stopwords included, for matching headings like "Where to Find"."""
+    return {stem(w) for w in re.findall(r"[a-z0-9]+", _fold(text))}
+
+
+# Which section headings answer which kind of question.
+WHERE_WORDS = {"where", "find", "location", "locate", "located", "spawn", "spawns", "found", "generate"}
+WHERE_HINTS = hint_terms("where find location locations spawning spawn generation biomes found")
+OBTAIN_WORDS = {"get", "obtain", "craft", "make", "recipe", "drop", "drops", "loot", "build", "create"}
+OBTAIN_HINTS = hint_terms("obtaining crafting recipe loot drops obtain craft sources trading")
+LIST_HINTS = hint_terms("overview list all")
+
+
+def question_hints(question: str) -> set[str]:
+    """Heading words that fit the kind of question: "where…" → location, "how do I get…" → obtaining."""
+    asked = set(re.findall(r"[a-z]+", _fold(question)))
+    hints = set()
+    if asked & WHERE_WORDS:
+        hints |= WHERE_HINTS
+    if asked & OBTAIN_WORDS:
+        hints |= OBTAIN_HINTS
+    if LIST_QUESTION.search(_fold(question)):
+        hints |= LIST_HINTS
+    return hints
+
+
 def _bigrams(tokens: list[str]) -> list[str]:
     return [f"{a} {b}" for a, b in zip(tokens, tokens[1:])]
 
@@ -133,6 +192,8 @@ class Result:
     excerpt: str
     # The page title or heading is exactly what was asked about.
     title_match: bool = False
+    # How many of the question's words the section contains.
+    matched: int = 0
 
 
 @dataclass
@@ -158,10 +219,14 @@ class Outcome:
 
 class Index:
     def __init__(self, sections: list[Section], priors: dict[str, float] | None = None,
-                 heading_hints: set[str] | None = None):
+                 heading_hints: set[str] | None = None, embed=None):
         """priors: optional per-page bonus (by path), e.g. the source's own search rank.
-        heading_hints: terms that make a section heading a likely answer, e.g. {"craft", "obtain"}."""
+        heading_hints: terms that make a section heading a likely answer, e.g. {"craft", "obtain"}.
+        embed: a semantic.Embedder for meaning-based search next to the keywords, or None."""
         self.sections = sections
+        self.embed = embed
+        self.vectors = embed([f"{s.page_title}. {s.heading}. {s.meta}. {s.text[:SEMANTIC_TEXT_CHARS]}"
+                              for s in sections]) if embed and sections else None
         self.priors = priors or {}
         self.heading_hints = heading_hints or set()
         self.docs: list[Counter] = []
@@ -169,6 +234,8 @@ class Index:
         self.lengths: list[int] = []
         self.title_terms: list[set[str]] = []
         self.heading_terms: list[set[str]] = []
+        self.hint_targets: list[set[str]] = []
+        self.project_terms: list[set[str]] = []
         surface: dict[str, Counter] = {}
         df: Counter = Counter()
         bdf: Counter = Counter()
@@ -179,13 +246,23 @@ class Index:
             text_tokens = [term for _, term in text_words]
             title_tokens = tokenize(f"{s.page_title} {s.heading}")
             path_words = s.path.replace("/", " ").replace("_", " ")
-            tokens = text_tokens + title_tokens * TITLE_WEIGHT + tokenize(path_words) * PATH_WEIGHT
+            tokens = (text_tokens + title_tokens * TITLE_WEIGHT + tokenize(path_words) * PATH_WEIGHT
+                      + tokenize(s.meta) * META_WEIGHT)
             counts = Counter(tokens)
             pairs = Counter(_bigrams(text_tokens) + _bigrams(title_tokens) * TITLE_WEIGHT)
             self.docs.append(counts)
             self.bigrams.append(pairs)
             self.lengths.append(len(tokens))
-            self.title_terms.append(set(tokenize(s.page_title)))
+            # A project's home page ("Main") is about the project ("Katters Structures").
+            project = set(tokenize(s.path.split("/")[0].replace("_", " ")))
+            home = s.path.endswith("/home") or s.page_title.lower() in GENERIC_TITLES
+            title = set(tokenize(s.page_title)) - GENERIC_TITLES
+            self.title_terms.append(title | project if home else title)
+            self.project_terms.append(project if home and not s.vanilla else set())
+            # Headings answer kinds of questions ("Where to Find"); overview pages answer "what … are there".
+            # A project's home page lists what the project has ("cat variants" → the Cat list on Nice Mob Variants).
+            self.hint_targets.append(hint_terms(s.heading) | (hint_terms(s.page_title) & LIST_HINTS)
+                                     | (LIST_HINTS if home and not s.vanilla else set()))
             self.heading_terms.append(set(tokenize(s.heading)) if s.heading != s.page_title else set())
             df.update(counts.keys())
             bdf.update(pairs.keys())
@@ -250,7 +327,7 @@ class Index:
             groups.append(Group(term, alternatives, exact or bool(synonym)))
         return groups, corrections
 
-    def _score(self, i: int, groups: list[Group], query_terms: set[str], changelog_ok: bool) -> float:
+    def _score(self, i: int, groups: list[Group], query_terms: set[str], changelog_ok: bool, hints: set[str]) -> float:
         active = [g for g in groups if g.alternatives]
         score = 0.0
         matched = 0
@@ -271,8 +348,10 @@ class Index:
             score += TITLE_MATCH_BONUS
         if self.heading_terms[i] and self.heading_terms[i] <= query_terms:
             score += HEADING_MATCH_BONUS
-        if self.heading_terms[i] & self.heading_hints:
+        if self.hint_targets[i] & hints:
             score += HEADING_HINT_BONUS
+        if self.project_terms[i] and query_terms <= self.project_terms[i]:
+            score += PROJECT_BONUS
         path = self.sections[i].path
         if not changelog_ok and "changelog" in path.lower():
             score *= CHANGELOG_FACTOR
@@ -281,29 +360,75 @@ class Index:
     def _title_match(self, i: int, query_terms: set[str]) -> bool:
         return bool(self.title_terms[i]) and self.title_terms[i] <= query_terms
 
-    def find(self, query: str, limit: int = 3, min_score: float = MIN_SCORE) -> Outcome:
+    def find(self, query: str, limit: int = 3, min_score: float = MIN_SCORE,
+             interests: dict[str, float] | None = None) -> Outcome:
+        """interests: project (first path part) → share of that person's past questions, 0..1."""
         groups, corrections = self.analyze(query)
+        hints = self.heading_hints | question_hints(query)
         uncertain = any(not g.exact for g in groups)
-        if not any(g.alternatives for g in groups) or not self.sections:
+        if not self.sections or (not any(g.alternatives for g in groups) and self.vectors is None):
             return Outcome([], corrections, uncertain=bool(groups))
         query_terms = {t for g in groups for terms, _ in g.alternatives for t in terms}
         changelog_ok = bool(query_terms & CHANGELOG_WORDS)
         best: dict[str, tuple[float, int]] = {}
         for i, s in enumerate(self.sections):
-            score = self._score(i, groups, query_terms, changelog_ok)
+            score = self._score(i, groups, query_terms, changelog_ok, hints)
+            if score and interests:
+                score += INTEREST_BONUS * interests.get(s.path.split("/")[0], 0.0)
             if score >= min_score and score > best.get(s.path, (0.0, -1))[0]:
                 best[s.path] = (score, i)
         ranked = sorted(best.values(), reverse=True)[:limit]
         if ranked:
             ranked = [r for r in ranked if r[0] >= ranked[0][0] * RELATIVE_CUTOFF]
+        # Meaning only helps when the keywords aren't sure: a strong match, or a page named in the
+        # question, already is the answer ("curse of blindness" shouldn't drift to "color blindness").
+        # So is a project's home page when the question names the project ("who is katter"), and a
+        # section made for the kind of question ("what dungeons are there" → the overview).
+        top = ranked[0][1] if ranked else -1
+        keyword_sure = bool(ranked) and (
+            ranked[0][0] >= SURE_SCORE
+            or self._title_match(top, query_terms) and ranked[0][0] >= SURE_TITLE_SCORE
+            or bool(self.project_terms[top]) and query_terms <= self.project_terms[top]
+            or bool(self.hint_targets[top] & hints) and ranked[0][0] >= GUESS_SCORE)
+        if self.vectors is not None and not keyword_sure:
+            ranked = self._hybrid(query, best, limit, ranked)
         terms = list(query_terms)
         results = [
             Result(self.sections[i], score, (long_excerpt if rank == 0 else excerpt)(self.sections[i].text, terms),
                    self._title_match(i, query_terms)
-                   or bool(self.heading_terms[i]) and self.heading_terms[i] <= query_terms)
+                   or bool(self.heading_terms[i]) and self.heading_terms[i] <= query_terms,
+                   sum(any(self.docs[i].get(t) for alt, _ in g.alternatives for t in alt) for g in groups))
             for rank, (score, i) in enumerate(ranked)
         ]
         return Outcome(results, corrections if results else {}, uncertain)
+
+    def _hybrid(self, query: str, best: dict[str, tuple[float, int]], limit: int,
+                keyword_ranked: list[tuple[float, int]]) -> list[tuple[float, int]]:
+        """Merges the keyword ranking with the meaning ranking. Pages keep their keyword score and
+        section; a page found only by meaning gets a capped score, so Merl never sounds sure about it."""
+        similarity = self.vectors @ self.embed([query])[0]
+        by_meaning: dict[str, tuple[float, int]] = {}
+        for i in similarity.argsort()[::-1][:SEMANTIC_CANDIDATES * 4]:
+            path = self.sections[i].path
+            if similarity[i] >= SEMANTIC_MIN and path not in by_meaning:
+                by_meaning[path] = (float(similarity[i]), int(i))
+        meaning_rank = {path: r for r, path in enumerate(list(by_meaning)[:SEMANTIC_CANDIDATES])}
+        kept = {self.sections[i].path for _, i in keyword_ranked}
+        keyword_rank = {path: r for r, (path, _) in enumerate(sorted(best.items(), key=lambda kv: -kv[1][0]))}
+        fused = {}
+        for path in set(keyword_rank) | set(meaning_rank):
+            fused[path] = (1 / (RRF_K + keyword_rank[path]) if path in keyword_rank else 0.0) \
+                + (SEMANTIC_WEIGHT / (RRF_K + meaning_rank[path]) if path in meaning_rank else 0.0)
+        out = []
+        for path in sorted(fused, key=lambda p: -fused[p]):
+            if path in best and (path in kept or path in meaning_rank):
+                out.append(best[path])
+            elif path not in best and path in meaning_rank:
+                similar, i = by_meaning[path]
+                out.append((SEMANTIC_SCORE * similar, i))
+            if len(out) == limit:
+                break
+        return out
 
     def search(self, query: str, limit: int = 3) -> list[Result]:
         return self.find(query, limit).results
@@ -355,6 +480,58 @@ def _render(words_: list[Word]) -> str:
     if run:
         out.append(f"||{' '.join(run)}||")
     return " ".join(out)
+
+
+def answer_line(question: str, results: list[Result], index: "Index | None" = None,
+                max_chars: int = ANSWER_CHARS) -> str:
+    """The sentence (plus the one after it) from the top pages that answers the question best, or ""
+    when none covers enough of it. Every section of those pages counts, so "where is Raj Raksha" can
+    answer from "Where to Find" even though the page's intro was the search hit. Rare words count more
+    than common ones, and with the meaning model a sentence that says the same in other words counts
+    too ("how much xp do I lose" → "they lose 30% of their Experience Levels"). No spoiler text."""
+    terms = set(tokenize(question))
+    if not terms:
+        return ""
+    hints = question_hints(question)
+    weight = (lambda t: index.idf.get(t, 1.0)) if index else (lambda t: 1.0)
+    total = sum(weight(t) for t in terms)
+    needed = total * ANSWER_COVERAGE
+    candidates = []  # (text, matched, fits, is hit section, rank, n)
+    for rank, r in enumerate(results[:ANSWER_PAGES]):
+        page = [s for s in index.sections if s.path == r.section.path] if index else []
+        for section in page or [r.section]:
+            fits = rank == 0 and bool(hint_terms(section.heading) & hints)
+            units = [u for _, u in _units(section.text, list(terms))]
+            for n, unit in enumerate(units):
+                if any(hidden for _, _, hidden in unit):
+                    continue
+                text = " ".join(w for w, _, _ in unit)
+                if not ANSWER_MIN_CHARS <= len(text) <= max_chars:
+                    continue
+                if n + 1 < len(units) and not any(hidden for _, _, hidden in units[n + 1]):
+                    following = " ".join(w for w, _, _ in units[n + 1])
+                    if len(text) + len(following) < max_chars:
+                        text = f"{text} {following}"
+                matched = sum(weight(t) for t in {hit for _, hit, _ in unit if hit})
+                candidates.append((text, matched, fits, section is r.section, rank, n))
+    if not candidates:
+        return ""
+    meaning = [0.0] * len(candidates)
+    embed = index.embed if index else None
+    if embed is not None:
+        vectors = embed([question] + [c[0] for c in candidates])
+        meaning = list(vectors[1:] @ vectors[0])
+    best, best_score = "", 0.0
+    for (text, matched, fits, is_hit, rank, n), similar in zip(candidates, meaning):
+        # Enough of the question's words, a section made for this kind of question ("Where to Find"),
+        # or (with the model) the same meaning in other words.
+        if matched < needed and not fits and similar < ANSWER_SEMANTIC_MIN:
+            continue
+        score = (matched + ANSWER_HINT_WEIGHT * needed * fits + ANSWER_HIT_WEIGHT * is_hit
+                 + ANSWER_SEMANTIC_WEIGHT * total * similar - ANSWER_RANK_PENALTY * rank - n * 0.01)
+        if score > best_score:
+            best, best_score = text, score
+    return best
 
 
 def excerpt(text: str, terms: list[str], length: int = EXCERPT_LEN) -> str:

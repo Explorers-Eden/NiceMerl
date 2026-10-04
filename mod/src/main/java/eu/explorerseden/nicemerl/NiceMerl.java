@@ -11,8 +11,10 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +24,8 @@ public class NiceMerl implements ModInitializer {
 	public static final Logger LOGGER = LoggerFactory.getLogger("NiceMerl");
 
 	private static volatile SearchIndex index = null;
+	/** The meaning-based search model, once it's loaded; null means keyword search only. */
+	private static volatile SemanticModel model = null;
 	private static volatile SettingLabels settingLabels = SettingLabels.EMPTY;
 	private static MerlConfig config;
 	private static ScheduledExecutorService scheduler;
@@ -53,6 +57,7 @@ public class NiceMerl implements ModInitializer {
 				return t;
 			});
 			scheduler.execute(() -> scanSettingLabels(server.getResourceManager()));
+			if (config.semanticSearch) scheduler.execute(NiceMerl::loadModel);
 			long hours = Math.max(1, Math.round(config.reindexHours));
 			scheduler.scheduleWithFixedDelay(NiceMerl::reindex, 0, hours, TimeUnit.HOURS);
 		});
@@ -64,6 +69,9 @@ public class NiceMerl implements ModInitializer {
 				s.execute(() -> scanSettingLabels(server.getResourceManager()));
 			}
 		});
+
+		// Statistic milestones (100,000 blocks mined, …), checked every few minutes.
+		ServerTickEvents.END_SERVER_TICK.register(MerlStats::tick);
 
 		ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
 			if (scheduler != null) {
@@ -101,9 +109,23 @@ public class NiceMerl implements ModInitializer {
 			return false;
 		}
 		wikiSections = fresh;
-		index = new SearchIndex(all);
+		index = new SearchIndex(all, model);
 		LOGGER.info("Indexed {} sections from {} pages", all.size(), index.pageCount());
 		return ok;
+	}
+
+	/** Loads (and the first time downloads) the meaning-based search model; runs before the first reindex. */
+	private static void loadModel() {
+		if (model != null) return;
+		try {
+			LOGGER.info("Loading the meaning-based search model (the first time, this downloads about 31 MB)");
+			model = SemanticModel.loadOrDownload(FabricLoader.getInstance().getConfigDir().resolve(MOD_ID).resolve("model"));
+			LOGGER.info("Meaning-based search is on");
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+		} catch (Exception e) {
+			LOGGER.warn("Meaning-based search is off, searching by keywords only: {}", e.toString());
+		}
 	}
 
 	private static void scanSettingLabels(net.minecraft.server.packs.resources.ResourceManager resources) {

@@ -1,5 +1,5 @@
 {
-  "_comment": "Merl's lines, shared by the Discord bot and the Fabric mod (the mod bundles this file at build time). Placeholders: {user}, {community}, {term}, {pages}, {page}, {word}, {count}, {deaths}, {hours}, {advancement}. Emoji outside the basic plane and * are stripped in Minecraft chat. moods/pb_moods pick today's asides_<mood>, status_<mood> and pb_<mood> pools; any small-talk pool with a <pool>_<mood> twin (how_are_you_cozy) uses it half the time on that day. topics map words to reply_<topic> pools after Merl asks what someone is up to. topic_phrases describe a remembered topic in remember_topic ({activity}). progress_ideas are used in-game: the first steps whose 'after' advancement is done and 'unless' is not.",
+  "_comment": "Merl's lines, shared by the Discord bot and the Fabric mod (the mod bundles this file at build time). Placeholders: {user}, {community}, {term}, {pages}, {page}, {word}, {count}, {deaths}, {hours}, {advancement}, {rank}. Emoji outside the basic plane and * are stripped in Minecraft chat. moods/pb_moods pick today's asides_<mood>, status_<mood> and pb_<mood> pools; any small-talk pool with a <pool>_<mood> twin (how_are_you_cozy) uses it half the time on that day. topics map words to reply_<topic> pools after Merl asks what someone is up to. often_phrases say how often someone talked to Merl in met_yes ({often}: once, a few times, lots). topic_phrases describe a remembered topic in remember_topic ({activity}). progress_ideas are used in-game: the first steps whose 'after' advancement is done and 'unless' is not.",
   "pools": {
     "greeting_morning": [
       "Good morning, {user}! ☀️",
@@ -16960,14 +16960,14 @@
       "Remember you? I've got a whole page about you in my notebook! {count} chats!"
     ],
     "remember_me_new": [
-      "Hmm, I think we just met! Nice to meet you, {user}. Now I'll remember you!",
-      "We've only just met, but I'm writing your name down right now!",
-      "I don't think we've talked much yet. Let's change that, {user}!",
-      "We're new friends! Give it time, I'll remember everything.",
-      "Not yet, but I will! Hi, {user}!",
-      "We only just met, {user}! But I like you already.",
-      "Hmm, this might be our first chat! Nice to meet you!",
-      "I'm just getting to know you, {user}. Tell me about yourself!"
+      "You're {user}! We've only just met, but I'll remember you now.",
+      "You're {user}, of course! We're brand new friends.",
+      "{user}! We only just met, but I'm writing your name in my notebook.",
+      "You're {user}. Nice to meet you properly! I'll remember you from now on.",
+      "You're {user}! I'm just getting to know you. Tell me what you're up to?",
+      "That's easy: {user}! We've only just started chatting, but I like you already.",
+      "You're {user}, a new friend of mine! Ask me something and I'll remember.",
+      "{user}, right? We're still new friends. Give me time, I'll remember everything!"
     ],
     "remember_topic": [
       "Last time you told me you were {activity}.",
@@ -16976,6 +16976,54 @@
       "If I remember right, you were {activity}.",
       "Last I heard, you were {activity}.",
       "You told me you were {activity}. How's that going?"
+    ],
+    "more_what": [
+      "More of what? Want a joke, a fact or a tip?",
+      "Sure! More jokes, facts, tips or ideas?",
+      "More? I'd love to! What should it be: a joke, a tip or a fact?",
+      "Happy to! Tell me what you'd like more of.",
+      "More what, {user}? Jokes? Facts? Ideas?",
+      "Ooh, more! More of what, though?",
+      "I've got lots more! Jokes, tips, facts, ideas or stories?",
+      "More is my favorite word. More of what?"
+    ],
+    "clarify": [
+      "Sorry, I think I mixed things up! Those were just the closest pages I found. Can you ask it another way?",
+      "Hmm, I may have confused you. Those pages were only my best guess.",
+      "Oops, not quite! I just showed the pages that looked closest. Try asking with different words?",
+      "Sorry, that came out confusing! I wasn't sure about those pages myself.",
+      "Ah, no, sorry! Those were only related pages, not one answer. What exactly did you want to know?",
+      "Hmm, I don't think I explained that well. I only found pages that might be related.",
+      "Sorry! I wasn't sure, so I showed a few pages. The help channel might know better.",
+      "Oh no, I confused you! Let's try again. Ask me in other words?",
+      "Not exactly! I just grabbed the closest pages. Sorry about that, {user}.",
+      "Sorry, I'm only a wiki helper, so I show pages, not explanations. Want to ask it differently?"
+    ],
+    "met_yes": [
+      "Yes! I know {name}. We've talked {often}.",
+      "Of course! {name} and I have chatted {often}.",
+      "{name}? Yes! We've talked {often}. Say hi from me!",
+      "I have! {name} stopped by {often}.",
+      "Yep, {name} is a friend of mine. We've talked {often}.",
+      "Oh, {name}! Yes, we've chatted {often}. Peanut Butter likes them too.",
+      "I know {name}! We've talked {often}.",
+      "Yes, I've met {name}. We've chatted {often} so far."
+    ],
+    "met_no": [
+      "Hmm, I don't think I've met {name} yet. Tell them to say hi!",
+      "Not yet! I'd love to meet {name}.",
+      "I haven't met {name} yet. Bring them by sometime!",
+      "{name}? Doesn't ring a bell. Maybe they haven't talked to me yet!",
+      "No, I haven't met {name} yet. Peanut Butter is curious, though.",
+      "Not that I remember! Tell {name} I said hi.",
+      "Hmm, I haven't chatted with {name} yet. Maybe soon!",
+      "I don't know {name} yet, but any friend of yours is a friend of mine!"
+    ],
+    "met_you": [
+      "That's you, silly! Of course I know you.",
+      "Hehe, {user}, that's you! Yes, I've met you.",
+      "That's you! Did you forget your own name?",
+      "Wait, that's you, {user}! Yes, we've met."
     ],
     "forget_done": [
       "Okay, {user}. I've forgotten everything about our chats. Nice to meet you! Again.",
@@ -19556,6 +19604,106 @@
       "{advancement}! Yay! Cookies!",
       "{advancement}! Phenomenal!"
     ],
+    "stat_mined": [
+      "{count} blocks mined! Your pickaxe deserves a medal, {user}!",
+      "Wow, {count} blocks mined! That's a whole mountain.",
+      "{count} blocks! The caves are scared of you now.",
+      "You've mined {count} blocks, {user}! I'm writing that in my notebook.",
+      "{count} blocks mined! Peanut Butter is impressed. She's never mined anything.",
+      "Look at you go: {count} blocks mined!",
+      "{count} blocks! You must have worn out a lot of pickaxes.",
+      "Mining legend alert: {count} blocks!",
+      "{count} blocks mined. The ground has a new boss.",
+      "Woohoo, {count} blocks! Diamonds better hide."
+    ],
+    "stat_mobs": [
+      "{count} mobs defeated! The night is safer thanks to you, {user}.",
+      "{count} mobs! Creepers whisper your name.",
+      "Wow, {count} monsters defeated! Brave explorer!",
+      "{count} mobs down! Peanut Butter salutes you.",
+      "You've defeated {count} mobs, {user}! A true hero.",
+      "{count} mobs! The skeletons are drawing up a truce.",
+      "{count} defeated mobs. I'm keeping my distance from your sword!",
+      "Monster hunter: {count} mobs!",
+      "{count} mobs! The zombies are filing a complaint.",
+      "Look at that: {count} mobs defeated!"
+    ],
+    "stat_distance": [
+      "{count} kilometers traveled! Where haven't you been, {user}?",
+      "{count} km! Your boots must be tired.",
+      "Wow, {count} kilometers! That's a real adventure.",
+      "You've traveled {count} km, {user}! The map is running out of blank spots.",
+      "{count} kilometers! Peanut Butter has walked about three meters this week.",
+      "{count} km explored! True explorer spirit.",
+      "Explorer milestone: {count} kilometers!",
+      "{count} kilometers! You could walk around the world. Well, a Minecraft world.",
+      "{count} km on the road. I hope you packed snacks!",
+      "Wow, {count} km! The horizon keeps getting closer."
+    ],
+    "stat_hours": [
+      "{count} hours on the server! Thanks for being part of it, {user}.",
+      "{count} hours played! You're a real regular now.",
+      "Wow, {count} hours! That's a lot of sunsets.",
+      "{count} hours here, {user}! Peanut Butter knows your footsteps.",
+      "You've spent {count} hours with us! I'm so glad you're here.",
+      "{count} hours! The server wouldn't be the same without you.",
+      "Milestone: {count} hours played!",
+      "{count} hours in! Time flies when you're exploring.",
+      "{count} hours! You deserve a cozy chair in the library.",
+      "Happy {count} hours, {user}!"
+    ],
+    "stat_fish": [
+      "{count} fish caught! Peanut Butter would like a word, {user}.",
+      "{count} fish! You're a master angler.",
+      "Wow, {count} fish caught! The rivers are nervous.",
+      "{count} fish! Peanut Butter is sitting next to you very politely.",
+      "You've caught {count} fish, {user}! Any treasure among them?",
+      "{count} catches! The fish tell stories about you."
+    ],
+    "stat_bred": [
+      "{count} animals bred! Your farm must be huge, {user}.",
+      "{count} baby animals! That's a lot of tiny friends.",
+      "Wow, {count} animals bred! The farm is booming.",
+      "{count} animals bred! Peanut Butter wants to know if any are cats.",
+      "You've bred {count} animals, {user}! A true farmer.",
+      "{count} animals bred! Moo, oink, baa, congratulations!"
+    ],
+    "stat_trades": [
+      "{count} villager trades! The villagers love you, {user}. Hrmm!",
+      "{count} trades! You're the village's favorite customer.",
+      "Wow, {count} trades with villagers!",
+      "{count} trades! The emeralds are flowing.",
+      "You've traded {count} times, {user}! Hrmm hrmm!",
+      "{count} villager trades! Master negotiator."
+    ],
+    "stat_jumps": [
+      "{count} jumps! You're bouncier than a slime, {user}.",
+      "{count} jumps! Your legs must be strong.",
+      "Wow, {count} jumps! Hop hop hop!",
+      "{count} jumps! Peanut Butter is jealous, she prefers napping.",
+      "You've jumped {count} times, {user}! Parkour pro?",
+      "{count} jumps! The ground barely sees you."
+    ],
+    "celebrate_first": [
+      "And you're the very first explorer on the server to do it!",
+      "Nobody on the server did this before you. You're the first!",
+      "First on the whole server! History made!",
+      "You're the first one here to manage that. Legendary!",
+      "No one else on the server has done this yet. You're first!"
+    ],
+    "celebrate_rank": [
+      "You're only the {rank} explorer on the server to do this!",
+      "That makes you the {rank} on the whole server!",
+      "Only the {rank} explorer here to manage that!",
+      "You're the {rank} on the server to do it. Rare company!",
+      "{rank} on the server! Not many can say that."
+    ],
+    "celebrate_others": [
+      "{count} explorers did this before you. Welcome to the club!",
+      "You're joining {count} other explorers who managed this!",
+      "{count} others on the server have done it too. Now you're one of them!",
+      "Welcome to the club of {count} explorers who did this before you!"
+    ],
     "pb_sleepy": [
       "Peanut Butter is curled up asleep. She's been napping all day.",
       "Shh, Peanut Butter is snoring a tiny cat snore.",
@@ -20760,7 +20908,7 @@
     },
     {
       "pool": "compliment",
-      "pattern": "(merl |nicemerl )?(you are |youre |ur )?(good|great|nice|cool|awesome|amazing|best|smart|clever|cute)( bot| girl| job| one| work)?( merl| nicemerl)?|(good|nice|great) (bot|job|work)( merl| nicemerl)?|i like you( merl| nicemerl)?"
+      "pattern": "(merl |nicemerl )?(you are |youre |ur )?(good|great|nice|cool|awesome|amazing|best|smart|clever|cute|funny|hilarious|sweet|kind|lovely|adorable|the best|so funny|so sweet|so cute)( bot| girl| job| one| work)?( merl| nicemerl)?|(good|nice|great) (bot|job|work)( merl| nicemerl)?|i like you( merl| nicemerl)?"
     },
     {
       "pool": "insult",
@@ -20769,6 +20917,10 @@
     {
       "pool": "joke",
       "pattern": "(merl |nicemerl )?(tell me a |tell a |say a |another )?(joke|jokes|make me laugh|something funny)( please| pls)?( merl| nicemerl)?"
+    },
+    {
+      "pool": "more",
+      "pattern": "(do you have |do u have |have you got |got |any |can i have |give me |tell me )?(some |any )?(more|another|another one|one more|more of those|more of that|again|another please|more please|one more please|tell me another|another joke|more jokes|again please)( please| pls| merl| nicemerl)?"
     },
     {
       "pool": "love",
@@ -21961,7 +22113,13 @@
           "what r u up to",
           "what are you reading",
           "what are you working on",
-          "what are you up to today"
+          "what are you up to today",
+          "whats on your mind",
+          "what is on your mind",
+          "what are you thinking about",
+          "what are you thinking",
+          "whatcha thinking",
+          "what are you up to right now"
         ],
         "words": [
           "doing",
@@ -21974,7 +22132,12 @@
           "at",
           "moment",
           "the",
-          "tonight"
+          "tonight",
+          "thinking",
+          "mind",
+          "on",
+          "about",
+          "your"
         ]
       },
       {
@@ -22275,6 +22438,45 @@
           "nah",
           "bro"
         ]
+      },
+      {
+        "pool": "laugh",
+        "triggers": [
+          "good one",
+          "nice one",
+          "best joke",
+          "funny joke",
+          "so funny",
+          "hilarious",
+          "made me laugh",
+          "that was funny",
+          "great joke",
+          "good joke",
+          "love that joke",
+          "lmao"
+        ],
+        "words": [
+          "that",
+          "was",
+          "is",
+          "its",
+          "a",
+          "really",
+          "so",
+          "very",
+          "ever",
+          "haha",
+          "hehe",
+          "lol",
+          "xd",
+          "omg",
+          "wow",
+          "the",
+          "one",
+          "joke",
+          "lmao",
+          "merl"
+        ]
       }
     ]
   },
@@ -22426,5 +22628,88 @@
     "fight": "fighting monsters",
     "redstone": "working on redstone",
     "nothing": "taking it easy"
+  },
+  "often_phrases": [
+    "once",
+    "a few times",
+    "lots of times"
+  ],
+  "stat_milestones": {
+    "_comment": "In-game statistic milestones Merl celebrates (stat_<name> pools). distance is in kilometers, hours in hours played.",
+    "mined": [
+      10000,
+      50000,
+      100000,
+      250000,
+      500000,
+      1000000,
+      2500000,
+      5000000,
+      10000000
+    ],
+    "mobs": [
+      500,
+      1000,
+      2500,
+      5000,
+      10000,
+      25000,
+      50000,
+      100000
+    ],
+    "distance": [
+      50,
+      100,
+      250,
+      500,
+      1000,
+      2500,
+      5000,
+      10000
+    ],
+    "hours": [
+      24,
+      50,
+      100,
+      250,
+      500,
+      1000,
+      2500,
+      5000
+    ],
+    "fish": [
+      100,
+      250,
+      500,
+      1000,
+      2500,
+      5000
+    ],
+    "bred": [
+      100,
+      250,
+      500,
+      1000,
+      2500,
+      5000,
+      10000
+    ],
+    "trades": [
+      100,
+      250,
+      500,
+      1000,
+      2500,
+      5000,
+      10000
+    ],
+    "jumps": [
+      10000,
+      50000,
+      100000,
+      250000,
+      500000,
+      1000000
+    ]
   }
 }

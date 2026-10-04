@@ -5,6 +5,9 @@ WORKDIR /app
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+# The meaning-based search model goes into the image, so the bot never downloads anything at runtime.
+RUN python -c "from model2vec import StaticModel; StaticModel.from_pretrained('minishlab/potion-base-8M').save_pretrained('/app/model')" \
+    && chmod -R a+rX /app/model
 
 COPY *.py .
 COPY data/ data/

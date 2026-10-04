@@ -8,6 +8,7 @@
 - **She doesn't repeat herself:** two replies in a row never start the same way, and she won't stack an opener on a line that already starts with *"Oh"* or *"Hmm"*
 - **She's your companion now:** Merl remembers you: when you met, how often you've talked, what you're up to and which page last helped. Come back after a while and she asks how the build is going or whether that page helped; she notices your 50th chat and your friendship anniversaries, and greets regulars like old friends. Ask *"do you remember me?"*, or say *"forget me"* to erase it. No messages are stored, and it takes about a hundred bytes per player
 - **Fewer out-of-place answers:** messages that aren't questions (*"NO! Stop!"*, *"what?"*, *"i like turtles"*) get a reply instead of a random wiki page, and *"that's not what I asked"* gets help asking better
+- **Better conversations:** two bits of small talk in one message (*"you're funny! tell me a joke"*), *"another one"* after a joke, *"so it's the bosses?"* after a confusing answer, *"have you met Alex?"* and *"who am I?"* all get a proper reply, and a guess shows one page instead of three
 - **Settings questions in plain words:** *"can I pvp"*, *"grave type"* or *"keep inventory settings"* now show the settings too, not only questions with words like *"enabled"*; a miss lists the packs Merl knows
 - **"No" is not "OK":** *"no thanks"* or *"nah"* get their own replies instead of a cheerful *"Yay!"*
 - **Understands you better:** small talk works in many more wordings, with stretched letters and small typos (*"can you tell me a joke please"*, *"thaaanks"*, *"im bored gimme ideas"*), while real questions still go to the wiki
@@ -25,6 +26,19 @@
 - **She notices what you're doing:** now and then she comments on what you're holding (mace, trident, totem…), your elytra, the biome you're in, your death count or your play time
 - **She celebrates with you:** Merl congratulates you on big advancements like killing the dragon, finding an elytra or beating the Wither, and on the big ones from our packs: the Katters Structures bosses, Mythical, collecting every mob variant, Ten Tales Told and more (only you see it)
 
+## Smarter answers
+- **Other wordings work:** a small word-vector model helps Merl find pages that say the same thing in other words (*"how do I unlock the boss room"* → Boss Keys). It's downloaded once (about 31 MB) and needs no extra RAM to speak of; without it Merl searches by keywords as before
+- **A one-line answer:** above the pages, Merl now quotes the sentence from the wiki that answers your question (*"You get a boss key by defeating the mini bosses."*)
+- **The right part of the page:** *"where is …"* jumps to "Where to Find", *"how do I get …"* to crafting and drops, *"what dungeons are there"* to the overview, and *"who is Katter"* to the project's home page
+- **She learns what you're into:** Merl remembers which packs you ask about most (just their names) and leans toward them when a question fits several; *"thanks"* and *"that's not what I asked"* teach her too
+- **"it" and "him" work:** *"where do I find him?"* right after an answer about Raj Raksha searches for Raj Raksha
+- **Settings in plain words:** *"can I pvp"*, *"how many homes can I have"*, *"is keep inventory on"*, *"grave settings"* or *"what can I change in Fabled Roots"* all find the right settings
+
+## Statistics milestones
+- Merl congratulates you on milestones: 10,000, 100,000, 500,000 and a million blocks mined (and more), mobs defeated, kilometers traveled, hours played, fish caught, animals bred, villager trades and jumps
+- Milestones you'd already passed before the update are noted quietly, so nobody gets flooded
+- Advancement congratulations now say how rare it is: *"You're the very first explorer to do this!"*, *"only the 3rd"*, or *"12 explorers did this before you"*
+
 ## Commands
 - `/nicemerl comments [on|off]`: turn Merl's comments about where you are and what you're doing on or off, just for you
 - `/nicemerl celebrate [on|off]`: turn Merl's congratulations on or off, just for you
@@ -33,5 +47,7 @@
 ## Config
 - New option `playerComments` (default `true`): turns Merl's comments off for the whole server
 - New option `celebrate` (default `true`): turns congratulations off for the whole server
+- New option `celebrateStatistics` (default `true`): turns statistic milestones off for the whole server
+- New option `semanticSearch` (default `true`): understanding other wordings; downloads the model once to `config/nicemerl/model/` (checked against its known checksum)
 - New option `celebrateAdvancements`: which advancements Merl congratulates players on (vanilla milestones and our packs' bosses, challenges and collections; packs you don't have installed don't matter)
 - Players' choices and Peanut Butter's pet count are saved in `config/nicemerl/state.json`

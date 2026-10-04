@@ -22,9 +22,12 @@ class Visit:
     question: str = ""        # last question searched, as search words
     asked_at: float = 0.0
     page: str = ""            # title of the page Merl answered it with
+    project: str = ""         # the project that page belongs to (first part of its path)
     answered_at: float = 0.0
     asked_back_at: float = 0.0
     asked_feeling_at: float = 0.0
+    talk: str = ""            # the last small talk Merl answered, for "another one"
+    talked_at: float = 0.0
     seen_at: float = 0.0
 
     def is_repeat(self, question: str, now: float) -> bool:
@@ -32,6 +35,12 @@ class Visit:
 
     def recent_question(self, now: float) -> str | None:
         return self.question if self.question and now - self.asked_at < FOLLOW_UP_SECONDS else None
+
+    def recent_talk(self, now: float) -> str | None:
+        return self.talk if self.talk and now - self.talked_at < FOLLOW_UP_SECONDS else None
+
+    def recent_project(self, now: float) -> str | None:
+        return self.project if self.project and now - self.answered_at < THANKS_SECONDS else None
 
     def recent_page(self, now: float) -> str | None:
         return self.page if self.page and now - self.answered_at < THANKS_SECONDS else None

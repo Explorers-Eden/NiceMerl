@@ -70,7 +70,35 @@ The code lives in [NiceKaleido/NiceMerl](https://github.com/NiceKaleido/NiceMerl
 
 1. In Portainer, open **Stacks → Add stack**.
 2. Name it `nicemerl`.
-3. Under **Build method**, choose **Web editor** and paste the contents of [`portainer-stack.yml`](portainer-stack.yml).
+3. Under **Build method**, choose **Web editor** and paste this stack (the same as [`portainer-stack.yml`](portainer-stack.yml)):
+
+   ```yaml
+   services:
+     nicemerl:
+       image: niceron/nicemerl:latest
+       container_name: nicemerl
+       restart: unless-stopped
+       environment:
+         DISCORD_TOKEN: ${DISCORD_TOKEN}
+         CHANNEL_ID: ${CHANNEL_ID}
+         WIKI_URL: ${WIKI_URL:-https://wiki.explorerseden.eu}
+         REINDEX_HOURS: ${REINDEX_HOURS:-6}
+         RESULTS: ${RESULTS:-3}
+         COOLDOWN_SECONDS: ${COOLDOWN_SECONDS:-5}
+         HELP_CHANNEL_ID: ${HELP_CHANNEL_ID:-1245007015865225256}
+         VANILLA_WIKI: ${VANILLA_WIKI:-true}
+         VANILLA_WIKI_URL: ${VANILLA_WIKI_URL:-https://minecraft.wiki}
+         TIMEZONE: ${TIMEZONE:-Europe/Berlin}
+       volumes:
+         # Peanut Butter's pet count and what Merl remembers about people, kept across updates.
+         - nicemerl-state:/app/state
+       mem_limit: 384m
+       cpus: 0.5
+
+   volumes:
+     nicemerl-state:
+   ```
+
 4. Under **Environment variables**, click **Add an environment variable** twice and fill in:
 
    | Name | Value |
@@ -93,7 +121,9 @@ The code lives in [NiceKaleido/NiceMerl](https://github.com/NiceKaleido/NiceMerl
 
 5. Click **Deploy the stack**.
 
-> 💾 The stack creates a small `nicemerl-state` volume, where Merl keeps Peanut Butter's pet count and what she remembers about people (friends.json, a few dozen bytes per person) across updates. If your stack is older than that, paste the current [`portainer-stack.yml`](portainer-stack.yml) into **Stacks → nicemerl → Editor** and click **Update the stack**. Without the volume, everything still works, but the pet count and Merl's memory of people start over after each update.
+> 💾 The stack creates a small `nicemerl-state` volume, where Merl keeps Peanut Butter's pet count and what she remembers about people (friends.json, a few dozen bytes per person) across updates. If your stack has no `volumes:` part, paste the stack from step 3 into **Stacks → nicemerl → Editor** and click **Update the stack**. Without the volume, everything still works, but the pet count and Merl's memory of people start over after each update.
+
+> 🧠 `mem_limit: 384m` leaves room for the small meaning-based search model built into the image (Merl uses about 200 MB). If your stack still says `256m`, change it to `384m` and click **Update the stack**.
 
 > 💡 If the Docker Hub image is **private**, first add Docker Hub under **Registries** in Portainer, and make sure Watchtower has the login too (e.g. by mounting `~/.docker/config.json` into it). A public image needs neither.
 
@@ -167,6 +197,8 @@ docker compose up -d --build
 - **Code changes don't show up:** check that the workflow run went green in GitHub's Actions tab, then give Watchtower until its next check.
 - **She says "I don't know" to everything right after a restart:** she's still reading the wiki. Give her about 10 seconds.
 - **No Minecraft Wiki answers:** check the logs for `Minecraft Wiki lookup failed`. The server needs internet access to `minecraft.wiki`, and `VANILLA_WIKI` must not be `false`.
+- **The log says "Meaning-based search is off":** the model couldn't be loaded. Merl still works and searches by keywords only; pulling the latest image fixes it.
+- **The container keeps restarting with exit code 137:** it ran out of memory. Set `mem_limit` to `384m` (step 4.3).
 - **Greetings say "good morning" in the evening:** set `TIMEZONE` to your time zone, e.g. `America/New_York`.
 
 <br clear="right">

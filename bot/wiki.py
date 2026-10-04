@@ -14,7 +14,7 @@ HEADINGS = ("h1", "h2", "h3")
 LINE_BLOCKS = ("p", "li", "tr", "div", "dt", "dd", "blockquote", "pre", "details", "h4", "h5", "h6")
 # Marks text inside collapsed <details> blocks so excerpts can show it as a Discord spoiler.
 SPOILER_START, SPOILER_END = "\u27e6", "\u27e7"
-PAGE_LIST_QUERY = "{ pages { list(limit: 5000) { path title locale isPublished } } }"
+PAGE_LIST_QUERY = "{ pages { list(limit: 5000) { path title description tags locale isPublished } } }"
 
 
 @dataclass
@@ -26,6 +26,8 @@ class Section:
     text: str
     # From the Minecraft Wiki instead of the community wiki.
     vanilla: bool = False
+    # The page's description and tags from the wiki, the same for every section of the page.
+    meta: str = ""
 
 
 async def fetch_page_list(session: aiohttp.ClientSession, wiki_url: str) -> list[dict]:
@@ -109,7 +111,11 @@ async def fetch_sections(wiki_url: str, concurrency: int = 4) -> list[Section]:
                     return []
                 finally:
                     await asyncio.sleep(0.1)
-            return extract_sections(html, page["path"], page["title"])
+            sections = extract_sections(html, page["path"], page["title"])
+            meta = " ".join([page.get("description") or ""] + list(page.get("tags") or [])).strip()
+            for section in sections:
+                section.meta = meta
+            return sections
 
         results = await asyncio.gather(*(fetch(p) for p in pages))
 

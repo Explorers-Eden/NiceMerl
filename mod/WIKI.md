@@ -1,80 +1,62 @@
 # Description
-NiceMerl is a server-side Fabric mod that lets players ask questions in chat. Using the `/merl` command, players get the best-matching pages from the Explorer's Eden wiki, answers to vanilla questions from the Minecraft Wiki, and the current settings of the installed data packs. Answers are only visible to the player who asked. Players do not need to install anything on their client.
+NiceMerl adds Merl, a friendly helper, to the server. Type `/merl` and a question in chat, and she finds the answer in the Explorer's Eden wiki, the Minecraft Wiki or the server's settings. Only you see her answers. You don't need to install anything.
 
 # Download
-The mod is currently published only on GitHub. It requires Minecraft 26.3, Fabric Loader 0.19.5 or newer and Fabric API. LuckPerms is optional. You can download it here: [NiceMerl on GitHub](https://github.com/Explorers-Eden/NiceMerl/releases/latest)
+Available on [GitHub](https://github.com/Explorers-Eden/NiceMerl/releases/latest). Needs Minecraft 26.3, Fabric Loader 0.19.5 or newer and Fabric API. LuckPerms is optional.
 
-# Usage
-Players type `/merl` followed by a question, for example `/merl how do I get a boss key` or `/merl how do I make a nether portal`. Merl answers with up to three wiki pages, each with a clickable link and a short excerpt. Short questions work best, typos and common abbreviations like tp or xp are understood, and spoilers from the wiki are hidden until hovered over.
+# Asking Merl
+Type `/merl` and your question:
+- `/merl how do I get a boss key`
+- `/merl how do I make a nether portal`
+- `/merl is pvp enabled` or `/merl keep inventory settings`
 
-Questions about the server's settings also show the current values of the installed data packs. They don't need special wording: `/merl is pvp enabled`, `/merl can I pvp`, `/merl grave type` or `/merl keep inventory settings` all work, as long as the question names the setting or the pack. When a settings question doesn't match any setting, Merl lists the packs she knows the settings of. Merl also answers small talk, such as `/merl thanks`, `/merl tell me a joke`, `/merl give me a tip` or `/merl pet peanut butter`.
+Ask in your own words: typos, abbreviations like tp or xp, and other wordings (*"how do I unlock the boss room"*) are fine. Merl answers in one line when she can, then shows up to three wiki pages with a link and a short excerpt. Spoilers stay hidden until you hover over them.
 
-## What should I do next?
-Players who don't know what to do can ask `/merl what should I do next`, `/merl any ideas` or `/merl I'm out of ideas`. Merl looks at the player's advancements and suggests a fitting next step, for example building a nether portal, finding a stronghold or looking for an elytra. Now and then, or when no step fits, she picks one of over 4,500 general ideas instead.
-
-## Merl's personality
-Merl tries to sound like a real person rather than a bot:
-- She understands small talk in many wordings, with stretched letters and small typos, like `/merl can you tell me a joke please`, `/merl thaaanks` or `/merl im bored gimme ideas`.
-- Small talk and a question can be combined, like `/merl thanks! how do I get a boss key`. Merl replies to both.
-- She says how sure she is about an answer, from a confident "Found it!" to "This is my best guess".
-- For a few minutes she remembers the last question. She notices when it is asked again, understands follow-ups like `/merl and in the nether?`, and knows which page helped when a player says thanks. After a few hours away, she welcomes players back.
-- She reacts to the way a question is asked: excited for capital letters, calm for "help, I'm stuck", short for one-word questions.
-- She doesn't answer everything with a wiki page. Messages that aren't questions, like "stop", "what?" or "i like turtles", get a fitting reply instead, unless a page is clearly about them. When an answer was wrong, players can say so ("that's not what I asked") and she suggests how to ask better.
-- She has a mood of the day, gets sleepy late at night, and her cat Peanut Butter has moods as well. Every pet Peanut Butter gets is counted.
-- After small talk, she sometimes asks what the player is up to and reacts to the answer.
-- Now and then she comments on the player's situation: the dimension, the biome, the weather, low health, the item in their hand, an elytra, their number of deaths or their play time.
-- She remembers players, like a friend would. She knows when you first met, how often you've talked, what you told her you were up to and which page last helped. When you come back after a while, she asks about it: "How's the build coming along?" or "Did the Boss Keys page help?". She mentions round numbers of chats and friendship anniversaries, greets regulars like old friends, and answers `/merl do you remember me`. `/merl forget me` erases everything she remembers about you. She never stores what you write.
-- When a player completes a big advancement, like killing the Ender Dragon or finding an elytra, Merl congratulates them. Only that player sees it.
-
-Players can turn the comments and the congratulations off for themselves, see below.
+## More than answers
+- **Ideas:** `/merl what should I do next` suggests a next step based on your advancements, or one of over 4,500 ideas.
+- **Small talk:** jokes, tips, fun facts, stories, `/merl pet peanut butter` and more. Ask for `another one` after a joke.
+- **She remembers you:** when you met, what you're up to, which page helped and which packs you ask about most, so her answers fit you better over time. Ask `/merl do you remember me`, or say `/merl forget me` to erase it. She never saves what you write.
+- **She comments now and then** on where you are and what you're doing.
+- **She celebrates with you:** big advancements (and how few players have them), and milestones like 100,000 blocks mined or 1,000 km traveled.
 
 # Commands
-- `/merl`: Merl introduces herself and gives example questions
-- `/merl <question>`: Searches the wikis and data pack settings for an answer
-- `/nicemerl comments [on|off]`: Turns Merl's comments about the player's situation on or off, only for that player
-- `/nicemerl celebrate [on|off]`: Turns Merl's congratulations on advancements on or off, only for that player
-- `/nicemerl reindex`: Reads the wikis again right away, for example after editing a page
+- `/merl`: Merl says hi and gives examples
+- `/merl <question>`: Ask Merl anything
+- `/nicemerl comments [on|off]`: Turn her comments on your situation on or off, just for you
+- `/nicemerl celebrate [on|off]`: Turn her congratulations on or off, just for you
+- `/nicemerl reindex`: Read the wikis again right away (operators)
 
 # Permissions
-Without a permissions mod, every player can ask questions and change their own comment and congratulation settings, and operators can use `/nicemerl reindex`. With LuckPerms, the following permission nodes can be used:
-- **nicemerl.command.merl**: Allows using `/merl` (default: everyone)
-- **nicemerl.command.toggle**: Allows using `/nicemerl comments` and `/nicemerl celebrate` (default: everyone)
-- **nicemerl.command.reindex**: Allows using `/nicemerl reindex` (default: operators)
-- **nicemerl.bypass.cooldown**: Allows asking questions without the cooldown (default: operators)
-- **nicemerl.settings**: Shows data pack settings in answers (default: everyone)
+Everything works without a permissions mod. With LuckPerms:
+- **nicemerl.command.merl**: use `/merl` (everyone)
+- **nicemerl.command.toggle**: use `/nicemerl comments` and `/nicemerl celebrate` (everyone)
+- **nicemerl.command.reindex**: use `/nicemerl reindex` (operators)
+- **nicemerl.bypass.cooldown**: skip the cooldown between questions (operators)
+- **nicemerl.settings**: see data pack settings in answers (everyone)
 
-For example, `/lp group default permission set nicemerl.settings false` hides the data pack settings from regular players.
+# For server admins
+The config is in `config/nicemerl.json`, created on the first start. Restart the server after changing it. The most useful options:
+- **wikis**: the wikis Merl searches. Remove the Minecraft Wiki to turn off vanilla answers
+- **communityName**: your community's name (Explorer's Eden)
+- **results**: pages per answer (3)
+- **cooldownSeconds**: wait time between questions (5)
+- **settingsSources**: the data pack storages she reads settings from
+- **playerComments** and **celebrate**: turn comments and congratulations off for everyone
+- **celebrateAdvancements**: which advancements she congratulates on
+- **celebrateStatistics**: turn statistic milestones off for everyone
+- **semanticSearch**: understanding other wordings. Downloads a small file (about 31 MB) once to `config/nicemerl/model/`
 
-# Administration
-The settings of the mod are stored in the config/nicemerl.json file, which is created on the first start. Changes take effect after a server restart.
-- **wikis**: The wikis Merl searches, see below
-- **communityName**: The name of your community used in Merl's answers (default: Explorer's Eden)
-- **reindexHours**: How often the wikis are read again, in hours (default: 6)
-- **results**: The number of pages shown per answer (default: 3)
-- **mediaWikiResults**: The maximum number of Minecraft Wiki pages shown per answer (default: 2)
-- **excerptLength**: The length of the text shown below each page, in characters (default: 160)
-- **cooldownSeconds**: The time players have to wait between questions, in seconds (default: 5)
-- **settingsResults**: The maximum number of data pack settings shown per answer (default: 6)
-- **settingsSources**: The data pack storages Merl reads settings from
-- **settingsIgnoreKeys**: Setting keys that are never shown
-- **playerComments**: Whether Merl comments on the player's situation at all (default: true)
-- **celebrate**: Whether Merl congratulates players on advancements at all (default: true)
-- **celebrateAdvancements**: The advancements Merl congratulates players on: big vanilla milestones, and the bosses, challenges and collections of the Explorer's Eden packs. Advancements of packs that aren't installed are simply never completed, so they do no harm
+What Merl remembers about players is saved in `config/nicemerl/state.json`: about a hundred bytes per player, no messages, and players gone for a year are forgotten.
 
-The players' own choices, what Merl remembers about them and Peanut Butter's pet count are stored in config/nicemerl/state.json. It stays small: about a hundred bytes per player, no messages, and players not seen for a year are forgotten.
-
-## Wikis
-Each entry in the wikis list has a name shown to players, a url and a type. Wikis of the type wikijs are downloaded completely and searched on the server. Wikis of the type mediawiki, like the Minecraft Wiki, are only asked when needed. By default, the Explorer's Eden wiki and the Minecraft Wiki are included. Removing the Minecraft Wiki entry turns off answers to vanilla questions.
-
-## Default Config
-This is the config/nicemerl.json file the mod creates on the first start. The configVersion is managed by the mod and should not be changed.
+## Default config
+This is `config/nicemerl.json` as it's created on the first start. Delete the file and restart to get it back.
 
 ```json
 {
   "configVersion": 4,
   "wikis": [
     {
-      "name": "Explorer\u0027s Eden",
+      "name": "Explorer's Eden",
       "url": "https://wiki.explorerseden.eu",
       "type": "wikijs"
     },
@@ -84,10 +66,11 @@ This is the config/nicemerl.json file the mod creates on the first start. The co
       "type": "mediawiki"
     }
   ],
-  "communityName": "Explorer\u0027s Eden",
+  "communityName": "Explorer's Eden",
   "reindexHours": 6.0,
   "results": 3,
   "excerptLength": 160,
+  "semanticSearch": true,
   "cooldownSeconds": 5,
   "settingsSources": [
     {
@@ -112,6 +95,11 @@ This is the config/nicemerl.json file the mod creates on the first start. The co
     },
     {
       "storage": "eden:settings",
+      "path": "nice_admin_tools.gamerules",
+      "name": "Nice Admin Tools"
+    },
+    {
+      "storage": "eden:settings",
       "path": "warping_wonders",
       "name": "Warping Wonders"
     },
@@ -119,11 +107,6 @@ This is the config/nicemerl.json file the mod creates on the first start. The co
       "storage": "kattersstructures:gamerule",
       "path": "settings",
       "name": "Katters Structures"
-    },
-    {
-      "storage": "eden:settings",
-      "path": "nice_admin_tools.gamerules",
-      "name": "Nice Admin Tools"
     }
   ],
   "settingsIgnoreKeys": [
@@ -135,6 +118,7 @@ This is the config/nicemerl.json file the mod creates on the first start. The co
   "mediaWikiResults": 2,
   "playerComments": true,
   "celebrate": true,
+  "celebrateStatistics": true,
   "celebrateAdvancements": [
     "minecraft:story/enter_the_nether",
     "minecraft:story/enter_the_end",

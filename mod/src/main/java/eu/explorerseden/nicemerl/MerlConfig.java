@@ -41,6 +41,12 @@ public class MerlConfig {
 	public int results = 3;
 	/** Approximate excerpt length in characters. */
 	public int excerptLength = 160;
+	/**
+	 * Meaning-based search next to the keyword search, so "how do I unlock the boss room" finds Boss Keys.
+	 * Downloads a small model (about 31 MB) once to config/nicemerl/model/; until then, or if that fails,
+	 * Merl searches by keywords only.
+	 */
+	public boolean semanticSearch = true;
 	/** Minimum seconds between questions per player. */
 	public int cooldownSeconds = 5;
 	/** Command storages holding data pack settings that /merl can report on. */
@@ -68,6 +74,11 @@ public class MerlConfig {
 	 * Players can turn it off for themselves with /nicemerl celebrate.
 	 */
 	public boolean celebrate = true;
+	/**
+	 * Merl also congratulates players on statistic milestones, like 100,000 blocks mined or 1,000 km
+	 * traveled (the milestones are in Merl's lines). Uses the same per-player switch as celebrate.
+	 */
+	public boolean celebrateStatistics = true;
 	/**
 	 * Advancements Merl congratulates players on: big vanilla milestones and the Explorer's Eden
 	 * packs' bosses, challenges and collections. Ids of packs that aren't installed never fire.

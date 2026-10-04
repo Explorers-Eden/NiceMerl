@@ -28,7 +28,7 @@ import org.jsoup.select.NodeVisitor;
 
 /** Fetches public Wiki.js pages and splits them into heading sections. */
 public class WikiClient {
-	private static final String PAGE_LIST_QUERY = "{ pages { list(limit: 5000) { path title locale isPublished } } }";
+	private static final String PAGE_LIST_QUERY = "{ pages { list(limit: 5000) { path title description tags locale isPublished } } }";
 	private static final Set<String> HEADINGS = Set.of("h1", "h2", "h3");
 	private static final String LINE_BLOCKS = "p, li, tr, div, dt, dd, blockquote, pre, details, h4, h5, h6";
 	private static final int CONCURRENCY = 4;
@@ -43,7 +43,8 @@ public class WikiClient {
 		this.wikiUrl = wikiUrl;
 	}
 
-	private record Page(String path, String title) {}
+	/** @param meta the page's description and tags */
+	private record Page(String path, String title, String meta) {}
 
 	public List<Section> fetchSections() throws IOException, InterruptedException {
 		List<Page> pages = fetchPageList();
@@ -84,7 +85,12 @@ public class WikiClient {
 		for (JsonElement element : list) {
 			JsonObject page = element.getAsJsonObject();
 			if (page.get("isPublished").getAsBoolean() && "en".equals(page.get("locale").getAsString())) {
-				pages.add(new Page(page.get("path").getAsString(), page.get("title").getAsString()));
+				StringBuilder meta = new StringBuilder();
+				if (page.has("description") && !page.get("description").isJsonNull()) meta.append(page.get("description").getAsString());
+				if (page.has("tags") && page.get("tags").isJsonArray()) {
+					for (JsonElement tag : page.getAsJsonArray("tags")) meta.append(' ').append(tag.getAsString());
+				}
+				pages.add(new Page(page.get("path").getAsString(), page.get("title").getAsString(), meta.toString().strip()));
 			}
 		}
 		return pages;
@@ -99,7 +105,9 @@ public class WikiClient {
 				return List.of();
 			}
 			Thread.sleep(100);
-			return extractSections(response.body(), page.path(), page.title(), wikiUrl);
+			return extractSections(response.body(), page.path(), page.title(), wikiUrl).stream()
+					.map(s -> s.withMeta(page.meta()))
+					.toList();
 		} catch (IOException | IllegalArgumentException e) {
 			NiceMerl.LOGGER.warn("Failed to fetch {}: {}", page.path(), e.getMessage());
 			return List.of();

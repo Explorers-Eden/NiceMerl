@@ -1,0 +1,2276 @@
+{
+  "_comment": "Test questions for evaluate.py. 'pages' lists the page paths that count as a right answer (any of them; a path ending in * matches every page under it); 'answer' is a phrase that should appear in the short answer summary. 'chatter' should get no wiki page at all. Add real questions from Discord here whenever Merl gets one wrong. 'real' marks questions asked in the Discord channel. 'talk' maps messages to the small-talk pool they should get. 'followups' are two-message exchanges where the second refers to the first. 'context' checks that a person's usual projects (interests) decide close calls but never override a clear answer.",
+  "questions": [
+    {
+      "q": "Where is Sniffer Chicken",
+      "pages": [
+        "nice_mob_variants/variants/chicken/sniffer"
+      ],
+      "answer": "Flower Forest",
+      "real": true
+    },
+    {
+      "q": "What is crystal curse",
+      "pages": [
+        "katters_structures/enchantments/curse_of_crystal"
+      ],
+      "real": true
+    },
+    {
+      "q": "Where are the Creeper Ruins",
+      "pages": [
+        "nice_mob_variants/structures/creeper_ruins"
+      ],
+      "real": true
+    },
+    {
+      "q": "Does the grave timer run when chunk is unloaded?",
+      "pages": [
+        "nice_keep_inventory/home"
+      ],
+      "real": true
+    },
+    {
+      "q": "who is Raj Raksha?",
+      "pages": [
+        "katters_structures/dungeon_structures/raj_raksha"
+      ],
+      "real": true
+    },
+    {
+      "q": "How do I get Anchor",
+      "pages": [
+        "enchantments_encore/enchantments/anchor"
+      ],
+      "real": true
+    },
+    {
+      "q": "What is a husk zombie nautilus",
+      "pages": [
+        "nice_mob_variants/variants/zombie_nautilus/husk"
+      ],
+      "answer": "Warm Ocean Ruins",
+      "real": true
+    },
+    {
+      "q": "how do i get a boss key",
+      "pages": [
+        "katters_structures/dungeon_structures/boss_key"
+      ],
+      "answer": "looted from all mayor Bosses"
+    },
+    {
+      "q": "where do boss keys come from",
+      "pages": [
+        "katters_structures/dungeon_structures/boss_key"
+      ]
+    },
+    {
+      "q": "how do i unlock the boss room",
+      "pages": [
+        "katters_structures/dungeon_structures/boss_key"
+      ]
+    },
+    {
+      "q": "who is katter",
+      "pages": [
+        "katters_structures/home"
+      ]
+    },
+    {
+      "q": "what is katters structures",
+      "pages": [
+        "katters_structures/home"
+      ]
+    },
+    {
+      "q": "which bosses are there",
+      "pages": [
+        "katters_structures/dungeon_structures/bosses"
+      ]
+    },
+    {
+      "q": "list of all bosses",
+      "pages": [
+        "katters_structures/dungeon_structures/bosses"
+      ]
+    },
+    {
+      "q": "where is raj raksha",
+      "pages": [
+        "katters_structures/dungeon_structures/raj_raksha"
+      ],
+      "answer": "top of the Sky Dungeon"
+    },
+    {
+      "q": "where can i find the lightning boss",
+      "pages": [
+        "katters_structures/dungeon_structures/raj_raksha"
+      ]
+    },
+    {
+      "q": "what does raj drop",
+      "pages": [
+        "katters_structures/dungeon_structures/raj_raksha"
+      ]
+    },
+    {
+      "q": "who is the giant turtle boss",
+      "pages": [
+        "katters_structures/dungeon_structures/tenku_mizu_gami",
+        "katters_structures/dungeon_structures/skyrtle"
+      ]
+    },
+    {
+      "q": "tenku mizu gami",
+      "pages": [
+        "katters_structures/dungeon_structures/tenku_mizu_gami"
+      ]
+    },
+    {
+      "q": "how do i beat tenku",
+      "pages": [
+        "katters_structures/dungeon_structures/tenku_mizu_gami"
+      ]
+    },
+    {
+      "q": "what is the skyrtle",
+      "pages": [
+        "katters_structures/dungeon_structures/skyrtle"
+      ]
+    },
+    {
+      "q": "where is the flying turtle dungeon",
+      "pages": [
+        "katters_structures/dungeon_structures/skyrtle"
+      ],
+      "answer": "Warm Ocean"
+    },
+    {
+      "q": "sky dungeon",
+      "pages": [
+        "katters_structures/dungeon_structures/sky_dungeon"
+      ]
+    },
+    {
+      "q": "how do i find the sky dungeon",
+      "pages": [
+        "katters_structures/dungeon_structures/sky_dungeon"
+      ],
+      "answer": "Old Growth Spruce Taiga"
+    },
+    {
+      "q": "who is arachne",
+      "pages": [
+        "katters_structures/dungeon_structures/arachne"
+      ]
+    },
+    {
+      "q": "spider boss",
+      "pages": [
+        "katters_structures/dungeon_structures/arachne",
+        "katters_structures/dungeon_structures/spider_den"
+      ]
+    },
+    {
+      "q": "spider den",
+      "pages": [
+        "katters_structures/dungeon_structures/spider_den"
+      ]
+    },
+    {
+      "q": "who is magus theron",
+      "pages": [
+        "katters_structures/dungeon_structures/magus_theron"
+      ]
+    },
+    {
+      "q": "theron spells",
+      "pages": [
+        "katters_structures/dungeon_structures/theron_spells"
+      ]
+    },
+    {
+      "q": "what spells does the wizard boss use",
+      "pages": [
+        "katters_structures/dungeon_structures/theron_spells",
+        "katters_structures/dungeon_structures/magus_theron"
+      ]
+    },
+    {
+      "q": "who is rusta",
+      "pages": [
+        "katters_structures/dungeon_structures/rusta"
+      ]
+    },
+    {
+      "q": "rustas random totem",
+      "pages": [
+        "katters_structures/dungeon_structures/rustas_random_totem"
+      ]
+    },
+    {
+      "q": "magic tower",
+      "pages": [
+        "katters_structures/dungeon_structures/magic_tower"
+      ]
+    },
+    {
+      "q": "desert dungeon",
+      "pages": [
+        "katters_structures/dungeon_structures/desert_dungeon"
+      ]
+    },
+    {
+      "q": "mini dungeons",
+      "pages": [
+        "katters_structures/dungeon_structures/mini_dungeons"
+      ]
+    },
+    {
+      "q": "armory",
+      "pages": [
+        "katters_structures/dungeon_structures/armory"
+      ]
+    },
+    {
+      "q": "pillager village",
+      "pages": [
+        "katters_structures/dungeon_structures/pillager_village"
+      ]
+    },
+    {
+      "q": "raj lightning rod",
+      "pages": [
+        "katters_structures/dungeon_structures/raj_lightning_rod",
+        "katters_structures/dungeon_structures/raj_lightning_rod_block"
+      ]
+    },
+    {
+      "q": "what dungeons are there",
+      "pages": [
+        "katters_structures/dungeon_structures/overview"
+      ]
+    },
+    {
+      "q": "what villages are there",
+      "pages": [
+        "katters_structures/village_structures/overview"
+      ]
+    },
+    {
+      "q": "cherry village",
+      "pages": [
+        "katters_structures/village_structures/cherry_village"
+      ]
+    },
+    {
+      "q": "where do i find a village in the sky",
+      "pages": [
+        "katters_structures/village_structures/sky_village"
+      ]
+    },
+    {
+      "q": "underground village",
+      "pages": [
+        "katters_structures/village_structures/underground_village"
+      ]
+    },
+    {
+      "q": "ocean village",
+      "pages": [
+        "katters_structures/village_structures/ocean_village"
+      ]
+    },
+    {
+      "q": "swamp village",
+      "pages": [
+        "katters_structures/village_structures/swamp_village"
+      ]
+    },
+    {
+      "q": "mesa village",
+      "pages": [
+        "katters_structures/village_structures/mesa_village"
+      ]
+    },
+    {
+      "q": "badlands village",
+      "pages": [
+        "katters_structures/village_structures/mesa_village"
+      ]
+    },
+    {
+      "q": "jungle village",
+      "pages": [
+        "katters_structures/village_structures/jungle_village"
+      ]
+    },
+    {
+      "q": "witch circle",
+      "pages": [
+        "katters_structures/ambient_structures/witch_circle"
+      ]
+    },
+    {
+      "q": "what are the villager statues",
+      "pages": [
+        "katters_structures/ambient_structures/villager_statues"
+      ]
+    },
+    {
+      "q": "big cherry tree",
+      "pages": [
+        "katters_structures/ambient_structures/big_cherry_tree"
+      ]
+    },
+    {
+      "q": "shroom cave",
+      "pages": [
+        "katters_structures/ambient_structures/shroom_cave"
+      ]
+    },
+    {
+      "q": "mushroom cave",
+      "pages": [
+        "katters_structures/ambient_structures/shroom_cave"
+      ]
+    },
+    {
+      "q": "windmill",
+      "pages": [
+        "katters_structures/ambient_structures/windmill"
+      ]
+    },
+    {
+      "q": "fossils",
+      "pages": [
+        "katters_structures/ambient_structures/fossils"
+      ]
+    },
+    {
+      "q": "trader outposts",
+      "pages": [
+        "katters_structures/ambient_structures/trader_outposts"
+      ]
+    },
+    {
+      "q": "far watch",
+      "pages": [
+        "katters_structures/ambient_structures/far_watch"
+      ]
+    },
+    {
+      "q": "skyhold",
+      "pages": [
+        "katters_structures/ambient_structures/skyhold"
+      ]
+    },
+    {
+      "q": "ocean ships",
+      "pages": [
+        "katters_structures/ambient_structures/ocean_ships"
+      ]
+    },
+    {
+      "q": "what is deep blue",
+      "pages": [
+        "katters_structures/deep_blue/overview",
+        "katters_structures/deep_blue/structures_overview"
+      ]
+    },
+    {
+      "q": "deep blue city",
+      "pages": [
+        "katters_structures/deep_blue/deep_blue_city"
+      ]
+    },
+    {
+      "q": "deep blue labs",
+      "pages": [
+        "katters_structures/deep_blue/deep_blue_labs"
+      ]
+    },
+    {
+      "q": "what books are there",
+      "pages": [
+        "katters_structures/books/overview"
+      ]
+    },
+    {
+      "q": "villager tales",
+      "pages": [
+        "katters_structures/books/villager_tales"
+      ]
+    },
+    {
+      "q": "pillager ledgers",
+      "pages": [
+        "katters_structures/books/pillager_ledgers"
+      ]
+    },
+    {
+      "q": "verdant tome",
+      "pages": [
+        "katters_structures/books/verdant_tome"
+      ]
+    },
+    {
+      "q": "raj enchantments",
+      "pages": [
+        "katters_structures/enchantments/raj_enchantments"
+      ]
+    },
+    {
+      "q": "curse of crystal",
+      "pages": [
+        "katters_structures/enchantments/curse_of_crystal"
+      ]
+    },
+    {
+      "q": "ocean heart enchantment",
+      "pages": [
+        "katters_structures/enchantments/ocean_heart"
+      ]
+    },
+    {
+      "q": "what does the heavy enchantment do",
+      "pages": [
+        "katters_structures/enchantments/heavy"
+      ]
+    },
+    {
+      "q": "what is nice keep inventory",
+      "pages": [
+        "nice_keep_inventory/home"
+      ]
+    },
+    {
+      "q": "do i lose my items when i die",
+      "pages": [
+        "nice_keep_inventory/home"
+      ]
+    },
+    {
+      "q": "what happens when i die",
+      "pages": [
+        "nice_keep_inventory/home"
+      ]
+    },
+    {
+      "q": "how do graves work",
+      "pages": [
+        "nice_keep_inventory/home"
+      ],
+      "answer": "Graves store the items"
+    },
+    {
+      "q": "where is my grave",
+      "pages": [
+        "nice_keep_inventory/home"
+      ]
+    },
+    {
+      "q": "how much xp do i lose on death",
+      "pages": [
+        "nice_keep_inventory/home"
+      ],
+      "answer": "30%"
+    },
+    {
+      "q": "do i drop my head when i die",
+      "pages": [
+        "nice_keep_inventory/home"
+      ],
+      "answer": "20% chance"
+    },
+    {
+      "q": "does my armor break when i die",
+      "pages": [
+        "nice_keep_inventory/home"
+      ],
+      "answer": "10%"
+    },
+    {
+      "q": "gravehold",
+      "pages": [
+        "nice_keep_inventory/enchantments/gravehold"
+      ]
+    },
+    {
+      "q": "how do i make my grave last longer",
+      "pages": [
+        "nice_keep_inventory/enchantments/gravehold"
+      ]
+    },
+    {
+      "q": "deathlock",
+      "pages": [
+        "nice_keep_inventory/enchantments/deathlock"
+      ]
+    },
+    {
+      "q": "safekeep enchantment",
+      "pages": [
+        "nice_keep_inventory/enchantments/safekeep"
+      ]
+    },
+    {
+      "q": "what is warping wonders",
+      "pages": [
+        "Warping_Wonders/home"
+      ]
+    },
+    {
+      "q": "how do i teleport",
+      "pages": [
+        "Warping_Wonders/home",
+        "Warping_Wonders/Waypoint_Hub",
+        "nice_actions/home"
+      ]
+    },
+    {
+      "q": "how do i craft a waypoint hub",
+      "pages": [
+        "Warping_Wonders/Waypoint_Hub"
+      ],
+      "answer": "2 Raw Gold"
+    },
+    {
+      "q": "waypoint hub recipe",
+      "pages": [
+        "Warping_Wonders/Waypoint_Hub"
+      ]
+    },
+    {
+      "q": "how do i rename a waypoint",
+      "pages": [
+        "Warping_Wonders/Waypoint_Hub"
+      ],
+      "answer": "Name Tag"
+    },
+    {
+      "q": "how do i let my friend use my waypoint",
+      "pages": [
+        "Warping_Wonders/Waypoint_Hub"
+      ],
+      "answer": "trust"
+    },
+    {
+      "q": "how do i lock my waypoint",
+      "pages": [
+        "Warping_Wonders/Waypoint_Hub"
+      ],
+      "answer": "Waypoint Lock"
+    },
+    {
+      "q": "how do i turn off teleport messages",
+      "pages": [
+        "Warping_Wonders/Waypoint_Hub"
+      ],
+      "answer": "Wool"
+    },
+    {
+      "q": "how do i change the color of my waypoint",
+      "pages": [
+        "Warping_Wonders/Waypoint_Hub"
+      ],
+      "answer": "Dye"
+    },
+    {
+      "q": "portal horn",
+      "pages": [
+        "Warping_Wonders/home"
+      ]
+    },
+    {
+      "q": "what is nice actions",
+      "pages": [
+        "nice_actions/home"
+      ]
+    },
+    {
+      "q": "how do i open the quick actions menu",
+      "pages": [
+        "nice_actions/home"
+      ],
+      "answer": "G)"
+    },
+    {
+      "q": "how do i set my home",
+      "pages": [
+        "nice_actions/home"
+      ],
+      "answer": "home location"
+    },
+    {
+      "q": "how do i sit down",
+      "pages": [
+        "nice_actions/home"
+      ]
+    },
+    {
+      "q": "how do i see my coordinates",
+      "pages": [
+        "nice_actions/home"
+      ]
+    },
+    {
+      "q": "how do i find where i died",
+      "pages": [
+        "nice_actions/home",
+        "nice_keep_inventory/home"
+      ]
+    },
+    {
+      "q": "random teleport",
+      "pages": [
+        "nice_actions/home"
+      ]
+    },
+    {
+      "q": "how do i wear a block as a hat",
+      "pages": [
+        "nice_actions/home"
+      ],
+      "answer": "Head slot"
+    },
+    {
+      "q": "how do i move enchantments to another item",
+      "pages": [
+        "nice_actions/home"
+      ],
+      "answer": "Offhand"
+    },
+    {
+      "q": "what are events",
+      "pages": [
+        "nice_actions/home"
+      ]
+    },
+    {
+      "q": "what is nice admin tools",
+      "pages": [
+        "nice_admin_tools/home"
+      ]
+    },
+    {
+      "q": "nice name tags",
+      "pages": [
+        "nice_name_tags/home"
+      ]
+    },
+    {
+      "q": "what is nice mob variants",
+      "pages": [
+        "nice_mob_variants/home"
+      ]
+    },
+    {
+      "q": "where do ducks spawn",
+      "pages": [
+        "nice_mob_variants/variants/chicken/duck"
+      ],
+      "answer": "Swamps"
+    },
+    {
+      "q": "what happens if i name a chicken benny",
+      "pages": [
+        "nice_mob_variants/variants/chicken/duck"
+      ],
+      "answer": "Benny"
+    },
+    {
+      "q": "how do i get a slime cat",
+      "pages": [
+        "nice_mob_variants/items/gooey_treat",
+        "nice_mob_variants/variants/cat/slime"
+      ]
+    },
+    {
+      "q": "gooey treat",
+      "pages": [
+        "nice_mob_variants/items/gooey_treat"
+      ]
+    },
+    {
+      "q": "where do i find gooey treats",
+      "pages": [
+        "nice_mob_variants/items/gooey_treat"
+      ],
+      "answer": "Slime Dungeon"
+    },
+    {
+      "q": "penguin chicken",
+      "pages": [
+        "nice_mob_variants/variants/chicken/penguin"
+      ]
+    },
+    {
+      "q": "flamingo",
+      "pages": [
+        "nice_mob_variants/variants/chicken/flamingo"
+      ]
+    },
+    {
+      "q": "moobloom",
+      "pages": [
+        "nice_mob_variants/variants/cow/pink_moobloom",
+        "nice_mob_variants/variants/cow/yellow_moobloom",
+        "nice_mob_variants/variants/cow/blue_moobloom"
+      ]
+    },
+    {
+      "q": "shiba wolf",
+      "pages": [
+        "nice_mob_variants/variants/wolf/shiba"
+      ]
+    },
+    {
+      "q": "tiger cat",
+      "pages": [
+        "nice_mob_variants/variants/cat/tiger"
+      ]
+    },
+    {
+      "q": "sculk frog",
+      "pages": [
+        "nice_mob_variants/variants/frog/sculk"
+      ]
+    },
+    {
+      "q": "frog feeder",
+      "pages": [
+        "nice_mob_variants/items/frog_feeder"
+      ]
+    },
+    {
+      "q": "livestock breeder",
+      "pages": [
+        "nice_mob_variants/items/livestock_breeder"
+      ]
+    },
+    {
+      "q": "slime dungeon",
+      "pages": [
+        "nice_mob_variants/structures/slime_dungeon"
+      ]
+    },
+    {
+      "q": "hot spring",
+      "pages": [
+        "nice_mob_variants/structures/hot_spring"
+      ]
+    },
+    {
+      "q": "archaeological site",
+      "pages": [
+        "nice_mob_variants/structures/archaeological_site"
+      ]
+    },
+    {
+      "q": "what is enchantments encore",
+      "pages": [
+        "enchantments_encore/home"
+      ]
+    },
+    {
+      "q": "rise structure",
+      "pages": [
+        "enchantments_encore/structures/rise"
+      ]
+    },
+    {
+      "q": "where do i find new enchantments",
+      "pages": [
+        "enchantments_encore/structures/rise",
+        "enchantments_encore/home"
+      ]
+    },
+    {
+      "q": "bunny hop",
+      "pages": [
+        "enchantments_encore/enchantments/bunny_hop"
+      ]
+    },
+    {
+      "q": "bane of bosses",
+      "pages": [
+        "enchantments_encore/enchantments/bane_of_bosses"
+      ]
+    },
+    {
+      "q": "curse of death",
+      "pages": [
+        "enchantments_encore/enchantments/curse_of_death",
+        "enchantments_encore/enchantments/death_curse"
+      ]
+    },
+    {
+      "q": "what are the server rules",
+      "pages": [
+        "a_realm_recrafted/home"
+      ],
+      "answer": "cheating"
+    },
+    {
+      "q": "how do i join the server",
+      "pages": [
+        "a_realm_recrafted/home"
+      ]
+    },
+    {
+      "q": "what difficulty is the server",
+      "pages": [
+        "a_realm_recrafted/home"
+      ],
+      "answer": "normal difficulty"
+    },
+    {
+      "q": "how long is a day on the server",
+      "pages": [
+        "a_realm_recrafted/home"
+      ],
+      "answer": "40 minutes"
+    },
+    {
+      "q": "do i need mods to play",
+      "pages": [
+        "a_realm_recrafted/home"
+      ]
+    },
+    {
+      "q": "can i change my race",
+      "pages": [
+        "a_realm_recrafted/home"
+      ]
+    },
+    {
+      "q": "the resource pack didnt load",
+      "pages": [
+        "a_realm_recrafted/home"
+      ]
+    },
+    {
+      "q": "what is the wiki status",
+      "pages": [
+        "status"
+      ]
+    },
+    {
+      "q": "how do i teleport with a clock",
+      "pages": [
+        "Warping_Wonders/home"
+      ],
+      "answer": "respawn point"
+    },
+    {
+      "q": "can i teleport to my bed",
+      "pages": [
+        "Warping_Wonders/home"
+      ],
+      "answer": "respawn point"
+    },
+    {
+      "q": "how do i use a compass to teleport",
+      "pages": [
+        "Warping_Wonders/home"
+      ],
+      "answer": "Lodestones"
+    },
+    {
+      "q": "teleport to my death location",
+      "pages": [
+        "Warping_Wonders/home"
+      ],
+      "answer": "last death location"
+    },
+    {
+      "q": "how do i craft a portal horn",
+      "pages": [
+        "Warping_Wonders/home"
+      ],
+      "answer": "two Iron Ingots"
+    },
+    {
+      "q": "what does the portal horn do",
+      "pages": [
+        "Warping_Wonders/home"
+      ]
+    },
+    {
+      "q": "lodestone teleport",
+      "pages": [
+        "Warping_Wonders/home"
+      ]
+    },
+    {
+      "q": "recovery compass teleport",
+      "pages": [
+        "Warping_Wonders/home"
+      ]
+    },
+    {
+      "q": "how do i open the warping wonders menu",
+      "pages": [
+        "Warping_Wonders/home"
+      ]
+    },
+    {
+      "q": "waypoint hub menu",
+      "pages": [
+        "Warping_Wonders/Waypoint_Hub"
+      ]
+    },
+    {
+      "q": "how do i add a description to a waypoint",
+      "pages": [
+        "Warping_Wonders/Waypoint_Hub"
+      ]
+    },
+    {
+      "q": "waypoint lock",
+      "pages": [
+        "Warping_Wonders/Waypoint_Hub"
+      ]
+    },
+    {
+      "q": "can i buy a waypoint hub from a villager",
+      "pages": [
+        "Warping_Wonders/Waypoint_Hub"
+      ]
+    },
+    {
+      "q": "how many waypoint hub variants are there",
+      "pages": [
+        "Warping_Wonders/Waypoint_Hub"
+      ]
+    },
+    {
+      "q": "how do i make my waypoint private",
+      "pages": [
+        "Warping_Wonders/Waypoint_Hub"
+      ]
+    },
+    {
+      "q": "trust a player on my waypoint",
+      "pages": [
+        "Warping_Wonders/Waypoint_Hub"
+      ]
+    },
+    {
+      "q": "quick actions menu",
+      "pages": [
+        "nice_actions/home"
+      ]
+    },
+    {
+      "q": "how do i teleport to spawn",
+      "pages": [
+        "nice_actions/home"
+      ],
+      "answer": "spawn point"
+    },
+    {
+      "q": "tp back",
+      "pages": [
+        "nice_actions/home"
+      ],
+      "answer": "before their last"
+    },
+    {
+      "q": "how do i go back to where i was",
+      "pages": [
+        "nice_actions/home"
+      ],
+      "answer": "before their last"
+    },
+    {
+      "q": "send my coordinates in chat",
+      "pages": [
+        "nice_actions/home"
+      ],
+      "answer": "public chat message"
+    },
+    {
+      "q": "coordinates hud",
+      "pages": [
+        "nice_actions/home"
+      ],
+      "answer": "coordinates"
+    },
+    {
+      "q": "time and date hud",
+      "pages": [
+        "nice_actions/home"
+      ]
+    },
+    {
+      "q": "how do i see the time",
+      "pages": [
+        "nice_actions/home"
+      ]
+    },
+    {
+      "q": "villager info",
+      "pages": [
+        "nice_actions/home"
+      ]
+    },
+    {
+      "q": "how do i check a horse's stats",
+      "pages": [
+        "nice_actions/home"
+      ],
+      "answer": "nearest Horse"
+    },
+    {
+      "q": "share my stats",
+      "pages": [
+        "nice_actions/home"
+      ]
+    },
+    {
+      "q": "how do events work",
+      "pages": [
+        "nice_actions/home"
+      ]
+    },
+    {
+      "q": "how do i join events",
+      "pages": [
+        "nice_actions/home"
+      ],
+      "answer": "participates in events"
+    },
+    {
+      "q": "transfer enchantments",
+      "pages": [
+        "nice_actions/home"
+      ],
+      "answer": "Offhand"
+    },
+    {
+      "q": "teleport warm up",
+      "pages": [
+        "nice_actions/home",
+        "Warping_Wonders/home"
+      ]
+    },
+    {
+      "q": "can i sit on stairs",
+      "pages": [
+        "nice_actions/home"
+      ]
+    },
+    {
+      "q": "how do i equip a hat",
+      "pages": [
+        "nice_actions/home"
+      ],
+      "answer": "Head slot"
+    },
+    {
+      "q": "show death coordinates",
+      "pages": [
+        "nice_actions/home"
+      ]
+    },
+    {
+      "q": "keep inventory",
+      "pages": [
+        "nice_keep_inventory/home"
+      ]
+    },
+    {
+      "q": "which items do i keep when i die",
+      "pages": [
+        "nice_keep_inventory/home"
+      ]
+    },
+    {
+      "q": "non droppable item tag list",
+      "pages": [
+        "nice_keep_inventory/home"
+      ]
+    },
+    {
+      "q": "can i restore my inventory",
+      "pages": [
+        "nice_keep_inventory/home"
+      ]
+    },
+    {
+      "q": "how do i open a grave",
+      "pages": [
+        "nice_keep_inventory/home"
+      ]
+    },
+    {
+      "q": "where do graves spawn",
+      "pages": [
+        "nice_keep_inventory/home"
+      ]
+    },
+    {
+      "q": "what happens if i die in lava",
+      "pages": [
+        "nice_keep_inventory/home"
+      ]
+    },
+    {
+      "q": "player head drop",
+      "pages": [
+        "nice_keep_inventory/home"
+      ]
+    },
+    {
+      "q": "experience loss on death",
+      "pages": [
+        "nice_keep_inventory/home"
+      ]
+    },
+    {
+      "q": "equipment damage on death",
+      "pages": [
+        "nice_keep_inventory/home"
+      ]
+    },
+    {
+      "q": "what does deathlock do",
+      "pages": [
+        "nice_keep_inventory/enchantments/deathlock"
+      ],
+      "answer": "only the player who died"
+    },
+    {
+      "q": "what does safekeep do",
+      "pages": [
+        "nice_keep_inventory/enchantments/safekeep"
+      ],
+      "answer": "retain items"
+    },
+    {
+      "q": "how do i get gravehold",
+      "pages": [
+        "nice_keep_inventory/enchantments/gravehold"
+      ]
+    },
+    {
+      "q": "keep my items enchantment",
+      "pages": [
+        "nice_keep_inventory/enchantments/safekeep",
+        "nice_keep_inventory/enchantments/deathlock",
+        "nice_keep_inventory/home"
+      ]
+    },
+    {
+      "q": "how do i ban a player",
+      "pages": [
+        "nice_admin_tools/home"
+      ]
+    },
+    {
+      "q": "broadcast a message",
+      "pages": [
+        "nice_admin_tools/home"
+      ]
+    },
+    {
+      "q": "change the weather",
+      "pages": [
+        "nice_admin_tools/home"
+      ]
+    },
+    {
+      "q": "clear items on the ground",
+      "pages": [
+        "nice_admin_tools/home"
+      ]
+    },
+    {
+      "q": "entity count",
+      "pages": [
+        "nice_admin_tools/home"
+      ]
+    },
+    {
+      "q": "how do i create an npc",
+      "pages": [
+        "nice_admin_tools/home"
+      ]
+    },
+    {
+      "q": "mannequin",
+      "pages": [
+        "nice_admin_tools/home"
+      ]
+    },
+    {
+      "q": "text display",
+      "pages": [
+        "nice_admin_tools/home"
+      ]
+    },
+    {
+      "q": "item display editor",
+      "pages": [
+        "nice_admin_tools/home"
+      ]
+    },
+    {
+      "q": "custom mob spawner",
+      "pages": [
+        "nice_admin_tools/home"
+      ]
+    },
+    {
+      "q": "spectate a player",
+      "pages": [
+        "nice_admin_tools/home"
+      ],
+      "answer": "Spectator Mode"
+    },
+    {
+      "q": "inspect player inventory",
+      "pages": [
+        "nice_admin_tools/home"
+      ],
+      "answer": "inventory contents"
+    },
+    {
+      "q": "how do i open the admin menu",
+      "pages": [
+        "nice_admin_tools/home"
+      ]
+    },
+    {
+      "q": "game rules menu",
+      "pages": [
+        "nice_admin_tools/home"
+      ]
+    },
+    {
+      "q": "how do i make a mob silent",
+      "pages": [
+        "nice_name_tags/home"
+      ],
+      "answer": "Silent"
+    },
+    {
+      "q": "keep a mob as a baby forever",
+      "pages": [
+        "nice_name_tags/home"
+      ]
+    },
+    {
+      "q": "name tag tricks",
+      "pages": [
+        "nice_name_tags/home"
+      ]
+    },
+    {
+      "q": "cat variants",
+      "pages": [
+        "nice_mob_variants/home"
+      ]
+    },
+    {
+      "q": "chicken variants",
+      "pages": [
+        "nice_mob_variants/home"
+      ]
+    },
+    {
+      "q": "what wolf variants are there",
+      "pages": [
+        "nice_mob_variants/home"
+      ]
+    },
+    {
+      "q": "zombie nautilus variants",
+      "pages": [
+        "nice_mob_variants/home"
+      ]
+    },
+    {
+      "q": "simba cat",
+      "pages": [
+        "nice_mob_variants/variants/cat/simba"
+      ]
+    },
+    {
+      "q": "creeper cat",
+      "pages": [
+        "nice_mob_variants/variants/cat/creeper"
+      ]
+    },
+    {
+      "q": "soul cat",
+      "pages": [
+        "nice_mob_variants/variants/cat/soul"
+      ]
+    },
+    {
+      "q": "embroidery cat",
+      "pages": [
+        "nice_mob_variants/variants/cat/embroidery"
+      ]
+    },
+    {
+      "q": "cluckshroom",
+      "pages": [
+        "nice_mob_variants/variants/chicken/cluckshroom"
+      ]
+    },
+    {
+      "q": "diamond chicken",
+      "pages": [
+        "nice_mob_variants/variants/chicken/diamond"
+      ]
+    },
+    {
+      "q": "golden chicken",
+      "pages": [
+        "nice_mob_variants/variants/chicken/golden"
+      ]
+    },
+    {
+      "q": "goose",
+      "pages": [
+        "nice_mob_variants/variants/chicken/goose"
+      ]
+    },
+    {
+      "q": "ostrich",
+      "pages": [
+        "nice_mob_variants/variants/chicken/ostrich"
+      ]
+    },
+    {
+      "q": "turkey",
+      "pages": [
+        "nice_mob_variants/variants/chicken/turkey"
+      ]
+    },
+    {
+      "q": "rooster",
+      "pages": [
+        "nice_mob_variants/variants/chicken/rooster"
+      ]
+    },
+    {
+      "q": "pigeon",
+      "pages": [
+        "nice_mob_variants/variants/chicken/pigeon"
+      ]
+    },
+    {
+      "q": "where do penguins spawn",
+      "pages": [
+        "nice_mob_variants/variants/chicken/penguin"
+      ],
+      "answer": "Snowy Beach"
+    },
+    {
+      "q": "ender chicken",
+      "pages": [
+        "nice_mob_variants/variants/chicken/ender"
+      ]
+    },
+    {
+      "q": "potato cow",
+      "pages": [
+        "nice_mob_variants/variants/cow/potato"
+      ]
+    },
+    {
+      "q": "wandering cow",
+      "pages": [
+        "nice_mob_variants/variants/cow/wandering"
+      ]
+    },
+    {
+      "q": "skeleton cow",
+      "pages": [
+        "nice_mob_variants/variants/cow/skeleton"
+      ]
+    },
+    {
+      "q": "pink moobloom",
+      "pages": [
+        "nice_mob_variants/variants/cow/pink_moobloom"
+      ],
+      "answer": "pink tulips"
+    },
+    {
+      "q": "frozen frog",
+      "pages": [
+        "nice_mob_variants/variants/frog/frozen"
+      ]
+    },
+    {
+      "q": "guardian frog",
+      "pages": [
+        "nice_mob_variants/variants/frog/guardian"
+      ]
+    },
+    {
+      "q": "nether frog",
+      "pages": [
+        "nice_mob_variants/variants/frog/nether"
+      ]
+    },
+    {
+      "q": "glow zombie nautilus",
+      "pages": [
+        "nice_mob_variants/variants/zombie_nautilus/glow"
+      ]
+    },
+    {
+      "q": "swamp zombie nautilus",
+      "pages": [
+        "nice_mob_variants/variants/zombie_nautilus/swamp"
+      ]
+    },
+    {
+      "q": "timber wolf",
+      "pages": [
+        "nice_mob_variants/variants/wolf/timber"
+      ]
+    },
+    {
+      "q": "skeleton wolf",
+      "pages": [
+        "nice_mob_variants/variants/wolf/skeleton"
+      ]
+    },
+    {
+      "q": "legend pig",
+      "pages": [
+        "nice_mob_variants/variants/pig/legend"
+      ]
+    },
+    {
+      "q": "zombified pig",
+      "pages": [
+        "nice_mob_variants/variants/pig/zombified"
+      ]
+    },
+    {
+      "q": "muddy pig",
+      "pages": [
+        "nice_mob_variants/variants/pig/muddy_dark",
+        "nice_mob_variants/variants/pig/muddy_cold",
+        "nice_mob_variants/variants/pig/muddy_creamy",
+        "nice_mob_variants/variants/pig/muddy_pale",
+        "nice_mob_variants/variants/pig/muddy_red",
+        "nice_mob_variants/variants/pig/muddy_temperate",
+        "nice_mob_variants/variants/pig/muddy_warm",
+        "nice_mob_variants/variants/pig/muddy_wild"
+      ]
+    },
+    {
+      "q": "how do i get a slime wolf",
+      "pages": [
+        "nice_mob_variants/items/gooey_treat",
+        "nice_mob_variants/variants/wolf/slime"
+      ]
+    },
+    {
+      "q": "how do i feed frogs",
+      "pages": [
+        "nice_mob_variants/items/frog_feeder"
+      ],
+      "answer": "small Magma Cubes"
+    },
+    {
+      "q": "how do i breed animals automatically",
+      "pages": [
+        "nice_mob_variants/items/livestock_breeder"
+      ],
+      "answer": "love mode"
+    },
+    {
+      "q": "barn",
+      "pages": [
+        "nice_mob_variants/structures/barn"
+      ]
+    },
+    {
+      "q": "chicken coop",
+      "pages": [
+        "nice_mob_variants/structures/coop_wood",
+        "nice_mob_variants/structures/coop_bamboo",
+        "nice_mob_variants/structures/coop_cold",
+        "nice_mob_variants/structures/coop_shroom"
+      ]
+    },
+    {
+      "q": "end farm",
+      "pages": [
+        "nice_mob_variants/structures/end_farm"
+      ]
+    },
+    {
+      "q": "nether well",
+      "pages": [
+        "nice_mob_variants/structures/nether_well"
+      ]
+    },
+    {
+      "q": "monolith",
+      "pages": [
+        "nice_mob_variants/structures/monolith"
+      ]
+    },
+    {
+      "q": "potato farm",
+      "pages": [
+        "nice_mob_variants/structures/potato_farm"
+      ]
+    },
+    {
+      "q": "fallen mushroom",
+      "pages": [
+        "nice_mob_variants/structures/fallen_mushroom"
+      ]
+    },
+    {
+      "q": "pale oak tree structure",
+      "pages": [
+        "nice_mob_variants/structures/pale_oak_tree"
+      ]
+    },
+    {
+      "q": "katters structures bosses",
+      "pages": [
+        "katters_structures/dungeon_structures/bosses"
+      ]
+    },
+    {
+      "q": "how do i summon the boss",
+      "pages": [
+        "katters_structures/dungeon_structures/bosses",
+        "katters_structures/dungeon_structures/boss_key"
+      ]
+    },
+    {
+      "q": "what does tenku drop",
+      "pages": [
+        "katters_structures/dungeon_structures/tenku_mizu_gami"
+      ]
+    },
+    {
+      "q": "where do i find tenku",
+      "pages": [
+        "katters_structures/dungeon_structures/tenku_mizu_gami",
+        "katters_structures/dungeon_structures/skyrtle"
+      ],
+      "answer": "Warm Ocean"
+    },
+    {
+      "q": "raj raksha attacks",
+      "pages": [
+        "katters_structures/dungeon_structures/raj_raksha"
+      ]
+    },
+    {
+      "q": "arachne loot",
+      "pages": [
+        "katters_structures/dungeon_structures/arachne"
+      ]
+    },
+    {
+      "q": "where is arachne",
+      "pages": [
+        "katters_structures/dungeon_structures/arachne",
+        "katters_structures/dungeon_structures/spider_den"
+      ]
+    },
+    {
+      "q": "rusta boss",
+      "pages": [
+        "katters_structures/dungeon_structures/rusta"
+      ]
+    },
+    {
+      "q": "magus theron attacks",
+      "pages": [
+        "katters_structures/dungeon_structures/magus_theron"
+      ]
+    },
+    {
+      "q": "where is the magic tower",
+      "pages": [
+        "katters_structures/dungeon_structures/magic_tower"
+      ]
+    },
+    {
+      "q": "better vanilla dungeon",
+      "pages": [
+        "katters_structures/dungeon_structures/better_vanilla_dungeon"
+      ]
+    },
+    {
+      "q": "what is in the armory",
+      "pages": [
+        "katters_structures/dungeon_structures/armory"
+      ]
+    },
+    {
+      "q": "totem from rusta",
+      "pages": [
+        "katters_structures/dungeon_structures/rustas_random_totem"
+      ]
+    },
+    {
+      "q": "lightning rod from raj",
+      "pages": [
+        "katters_structures/dungeon_structures/raj_lightning_rod"
+      ]
+    },
+    {
+      "q": "birch village",
+      "pages": [
+        "katters_structures/village_structures/birch_village"
+      ]
+    },
+    {
+      "q": "where is the cherry village",
+      "pages": [
+        "katters_structures/village_structures/cherry_village"
+      ]
+    },
+    {
+      "q": "village underground",
+      "pages": [
+        "katters_structures/village_structures/underground_village"
+      ]
+    },
+    {
+      "q": "big birch tree",
+      "pages": [
+        "katters_structures/ambient_structures/big_birch_tree"
+      ]
+    },
+    {
+      "q": "big dark oak tree",
+      "pages": [
+        "katters_structures/ambient_structures/big_dark_oak_tree"
+      ]
+    },
+    {
+      "q": "graveyard katters",
+      "pages": [
+        "katters_structures/ambient_structures/graveyard"
+      ]
+    },
+    {
+      "q": "ruined village",
+      "pages": [
+        "katters_structures/ambient_structures/ruined_village"
+      ]
+    },
+    {
+      "q": "sky decor",
+      "pages": [
+        "katters_structures/ambient_structures/sky_decor"
+      ]
+    },
+    {
+      "q": "deep blue lab ruins",
+      "pages": [
+        "katters_structures/deep_blue/deep_blue_lab_ruins"
+      ]
+    },
+    {
+      "q": "theron book",
+      "pages": [
+        "katters_structures/books/theron"
+      ]
+    },
+    {
+      "q": "nox research",
+      "pages": [
+        "katters_structures/books/nox_research"
+      ]
+    },
+    {
+      "q": "blunt enchantment",
+      "pages": [
+        "katters_structures/enchantments/blunt"
+      ]
+    },
+    {
+      "q": "light enchantment",
+      "pages": [
+        "katters_structures/enchantments/light"
+      ]
+    },
+    {
+      "q": "curse of alchemy",
+      "pages": [
+        "katters_structures/enchantments/curse_of_alchemy"
+      ]
+    },
+    {
+      "q": "enlightning",
+      "pages": [
+        "katters_structures/enchantments/enlightning"
+      ]
+    },
+    {
+      "q": "katters structures compatibility",
+      "pages": [
+        "katters_structures/home"
+      ]
+    },
+    {
+      "q": "does katters structures work with terralith",
+      "pages": [
+        "katters_structures/home"
+      ]
+    },
+    {
+      "q": "katters structures gamerules",
+      "pages": [
+        "katters_structures/home"
+      ]
+    },
+    {
+      "q": "anchor enchantment",
+      "pages": [
+        "enchantments_encore/enchantments/anchor"
+      ]
+    },
+    {
+      "q": "angry aura",
+      "pages": [
+        "enchantments_encore/enchantments/angry_aura"
+      ]
+    },
+    {
+      "q": "what does aquatic aura do",
+      "pages": [
+        "enchantments_encore/enchantments/aquatic_aura"
+      ]
+    },
+    {
+      "q": "bane of endborn",
+      "pages": [
+        "enchantments_encore/enchantments/bane_of_endborn"
+      ]
+    },
+    {
+      "q": "bane of netherborn",
+      "pages": [
+        "enchantments_encore/enchantments/bane_of_netherborn"
+      ]
+    },
+    {
+      "q": "bane of raiders",
+      "pages": [
+        "enchantments_encore/enchantments/bane_of_raiders"
+      ]
+    },
+    {
+      "q": "bear spirit",
+      "pages": [
+        "enchantments_encore/enchantments/bear_spirit"
+      ]
+    },
+    {
+      "q": "boar spirit",
+      "pages": [
+        "enchantments_encore/enchantments/boar_spirit"
+      ]
+    },
+    {
+      "q": "boltbringer",
+      "pages": [
+        "enchantments_encore/enchantments/boltbringer"
+      ]
+    },
+    {
+      "q": "bomber enchantment",
+      "pages": [
+        "enchantments_encore/enchantments/bomber"
+      ]
+    },
+    {
+      "q": "bounce",
+      "pages": [
+        "enchantments_encore/enchantments/bounce"
+      ]
+    },
+    {
+      "q": "bulletproof",
+      "pages": [
+        "enchantments_encore/enchantments/bulletproof"
+      ]
+    },
+    {
+      "q": "cleansing enchantment",
+      "pages": [
+        "enchantments_encore/enchantments/cleansing"
+      ]
+    },
+    {
+      "q": "crab claw",
+      "pages": [
+        "enchantments_encore/enchantments/crab_claw"
+      ]
+    },
+    {
+      "q": "creeper alloy",
+      "pages": [
+        "enchantments_encore/enchantments/creeper_alloy"
+      ]
+    },
+    {
+      "q": "crispbread",
+      "pages": [
+        "enchantments_encore/enchantments/crispbread"
+      ]
+    },
+    {
+      "q": "crop dance",
+      "pages": [
+        "enchantments_encore/enchantments/crop_dance"
+      ]
+    },
+    {
+      "q": "curse of blindness",
+      "pages": [
+        "enchantments_encore/enchantments/blindness_curse"
+      ]
+    },
+    {
+      "q": "curse of breeze",
+      "pages": [
+        "enchantments_encore/enchantments/breeze_curse"
+      ]
+    },
+    {
+      "q": "curse of fragility",
+      "pages": [
+        "enchantments_encore/enchantments/fragility_curse"
+      ]
+    },
+    {
+      "q": "curse of reach",
+      "pages": [
+        "enchantments_encore/enchantments/reach_curse"
+      ]
+    },
+    {
+      "q": "curse of undying",
+      "pages": [
+        "enchantments_encore/enchantments/undying_curse"
+      ]
+    },
+    {
+      "q": "cushion",
+      "pages": [
+        "enchantments_encore/enchantments/cushion"
+      ]
+    },
+    {
+      "q": "day protection",
+      "pages": [
+        "enchantments_encore/enchantments/day_protection"
+      ]
+    },
+    {
+      "q": "electric walker",
+      "pages": [
+        "enchantments_encore/enchantments/electric_walker"
+      ]
+    },
+    {
+      "q": "end protection",
+      "pages": [
+        "enchantments_encore/enchantments/end_protection"
+      ]
+    },
+    {
+      "q": "ender shot",
+      "pages": [
+        "enchantments_encore/enchantments/ender_shot"
+      ]
+    },
+    {
+      "q": "evokers wrath",
+      "pages": [
+        "enchantments_encore/enchantments/evokers_wrath"
+      ]
+    },
+    {
+      "q": "fetch enchantment",
+      "pages": [
+        "enchantments_encore/enchantments/fetch"
+      ]
+    },
+    {
+      "q": "fire alloy",
+      "pages": [
+        "enchantments_encore/enchantments/fire_alloy"
+      ]
+    },
+    {
+      "q": "flare",
+      "pages": [
+        "enchantments_encore/enchantments/flare"
+      ]
+    },
+    {
+      "q": "forge shot",
+      "pages": [
+        "enchantments_encore/enchantments/forge_shot"
+      ]
+    },
+    {
+      "q": "gallop",
+      "pages": [
+        "enchantments_encore/enchantments/gallop"
+      ]
+    },
+    {
+      "q": "ghost spirit",
+      "pages": [
+        "enchantments_encore/enchantments/ghost_spirit"
+      ]
+    },
+    {
+      "q": "gluttony",
+      "pages": [
+        "enchantments_encore/enchantments/gluttony"
+      ]
+    },
+    {
+      "q": "grass walker",
+      "pages": [
+        "enchantments_encore/enchantments/grass_walker"
+      ]
+    },
+    {
+      "q": "growth enchantment",
+      "pages": [
+        "enchantments_encore/enchantments/growth"
+      ]
+    },
+    {
+      "q": "handyman",
+      "pages": [
+        "enchantments_encore/enchantments/handyman"
+      ]
+    },
+    {
+      "q": "haste enchantment",
+      "pages": [
+        "enchantments_encore/enchantments/haste"
+      ]
+    },
+    {
+      "q": "heroes crown",
+      "pages": [
+        "enchantments_encore/enchantments/heroes_crown"
+      ]
+    },
+    {
+      "q": "hunger aspect",
+      "pages": [
+        "enchantments_encore/enchantments/hunger_aspect"
+      ]
+    },
+    {
+      "q": "illumination",
+      "pages": [
+        "enchantments_encore/enchantments/illumination"
+      ]
+    },
+    {
+      "q": "implosion",
+      "pages": [
+        "enchantments_encore/enchantments/implosion"
+      ]
+    },
+    {
+      "q": "what enchantment makes my dog bring me items",
+      "pages": [
+        "enchantments_encore/enchantments/fetch"
+      ],
+      "answer": "brings you something"
+    },
+    {
+      "q": "enchantment for horse speed",
+      "pages": [
+        "enchantments_encore/enchantments/gallop"
+      ],
+      "answer": "faster"
+    },
+    {
+      "q": "enchantment that protects from arrows",
+      "pages": [
+        "enchantments_encore/enchantments/bulletproof"
+      ]
+    },
+    {
+      "q": "enchantment against bosses",
+      "pages": [
+        "enchantments_encore/enchantments/bane_of_bosses"
+      ]
+    },
+    {
+      "q": "which enchantment teleports arrows",
+      "pages": [
+        "enchantments_encore/enchantments/ender_shot"
+      ]
+    },
+    {
+      "q": "enchantment that repairs items",
+      "pages": [
+        "enchantments_encore/enchantments/handyman"
+      ]
+    },
+    {
+      "q": "enchantments encore compatibility",
+      "pages": [
+        "enchantments_encore/home"
+      ]
+    },
+    {
+      "q": "enchantment lore",
+      "pages": [
+        "enchantments_encore/home"
+      ]
+    },
+    {
+      "q": "3d books resource pack",
+      "pages": [
+        "enchantments_encore/home"
+      ]
+    },
+    {
+      "q": "what races are there",
+      "pages": [
+        "a_realm_recrafted/home"
+      ]
+    },
+    {
+      "q": "optional client mods",
+      "pages": [
+        "a_realm_recrafted/home"
+      ]
+    },
+    {
+      "q": "server changelog",
+      "pages": [
+        "a_realm_recrafted/home",
+        "a_realm_recrafted/changelogs/*"
+      ]
+    },
+    {
+      "q": "what version is the server",
+      "pages": [
+        "a_realm_recrafted/home"
+      ]
+    },
+    {
+      "q": "what's new on the server",
+      "pages": [
+        "a_realm_recrafted/home",
+        "a_realm_recrafted/changelogs/*"
+      ]
+    }
+  ],
+  "chatter": [
+    "NO! Stop!",
+    "i like turtles",
+    "bananas lol",
+    "the boss is so annoying",
+    "brb",
+    "lmaooo",
+    "omg",
+    "that's crazy",
+    "my cat is sleeping",
+    "i'm so tired of mining",
+    "ok cool",
+    "yeah",
+    "same",
+    "nice",
+    "gg",
+    "i hate creepers",
+    "anyone online?",
+    "who wants to play",
+    "it's raining irl",
+    "pizza time",
+    "just vibing",
+    "wow okay",
+    "never mind",
+    "i'm back",
+    "good night everyone",
+    "Why is Katter not nice",
+    "I think Merl's working fine for now",
+    "what was i asking first"
+  ],
+  "talk": {
+    "_comment": "Messages that should be answered as small talk (any small-talk pool counts unless one is named).",
+    "Im bored merl what should i do": "idea",
+    "gimme an idea on what to do next": "idea",
+    "whats on your mind": "what_doing",
+    "another idea please": [
+      "more",
+      "idea"
+    ],
+    "and now a joke please": "joke",
+    "tell me a joke": "joke",
+    "thanks!": "thanks",
+    "hi merl": "greeting",
+    "What to do next": "idea",
+    "you're funny! tell me a joke": "joke",
+    "Best joke ever, do u have more? ^^": "more",
+    "Who am I?": "remember_me",
+    "whats up": "greeting",
+    "what are you thinking about": "what_doing",
+    "how was your day": "how_are_you"
+  },
+  "followups": [
+    {
+      "first": "Where do i get mending?",
+      "then": "Can I apply it to my carrot on a stick",
+      "note": "'it' means mending; answer should be about Mending, vanilla"
+    },
+    {
+      "first": "who is Raj Raksha?",
+      "then": "where do i find him",
+      "pages": [
+        "katters_structures/dungeon_structures/raj_raksha",
+        "katters_structures/dungeon_structures/sky_dungeon"
+      ]
+    },
+    {
+      "first": "how do i craft a waypoint hub",
+      "then": "how do i rename it",
+      "pages": [
+        "Warping_Wonders/Waypoint_Hub"
+      ]
+    }
+  ],
+  "context": [
+    {
+      "q": "graveyard",
+      "interests": {
+        "katters_structures": 1.0
+      },
+      "pages": [
+        "katters_structures/ambient_structures/graveyard"
+      ]
+    },
+    {
+      "q": "graveyard",
+      "interests": {
+        "nice_mob_variants": 1.0
+      },
+      "pages": [
+        "nice_mob_variants/structures/graveyard"
+      ]
+    },
+    {
+      "q": "how do i teleport",
+      "interests": {
+        "nice_actions": 0.8,
+        "katters_structures": 0.2
+      },
+      "pages": [
+        "nice_actions/home"
+      ]
+    },
+    {
+      "q": "how do i teleport",
+      "interests": {
+        "Warping_Wonders": 1.0
+      },
+      "pages": [
+        "Warping_Wonders/home",
+        "Warping_Wonders/Waypoint_Hub"
+      ]
+    },
+    {
+      "q": "what enchantments are there",
+      "interests": {
+        "nice_keep_inventory": 1.0
+      },
+      "pages": [
+        "nice_keep_inventory/home",
+        "nice_keep_inventory/enchantments/*"
+      ]
+    },
+    {
+      "q": "what enchantments are there",
+      "interests": {
+        "katters_structures": 1.0
+      },
+      "pages": [
+        "katters_structures/*"
+      ]
+    },
+    {
+      "q": "what enchantments are there",
+      "interests": {
+        "enchantments_encore": 1.0
+      },
+      "pages": [
+        "enchantments_encore/*"
+      ]
+    },
+    {
+      "q": "teleport cooldown",
+      "interests": {
+        "nice_actions": 1.0
+      },
+      "pages": [
+        "nice_actions/home"
+      ]
+    },
+    {
+      "q": "what structures are there",
+      "interests": {
+        "nice_mob_variants": 1.0
+      },
+      "pages": [
+        "nice_mob_variants/*"
+      ]
+    },
+    {
+      "q": "what structures are there",
+      "interests": {
+        "katters_structures": 1.0
+      },
+      "pages": [
+        "katters_structures/*"
+      ]
+    },
+    {
+      "q": "how do i get a boss key",
+      "interests": {
+        "nice_mob_variants": 1.0
+      },
+      "pages": [
+        "katters_structures/dungeon_structures/boss_key"
+      ],
+      "note": "interests must not override a clear answer"
+    },
+    {
+      "q": "where do ducks spawn",
+      "interests": {
+        "katters_structures": 1.0
+      },
+      "pages": [
+        "nice_mob_variants/variants/chicken/duck"
+      ],
+      "note": "interests must not override a clear answer"
+    }
+  ]
+}

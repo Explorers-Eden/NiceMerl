@@ -64,18 +64,59 @@ public class SearchIndex {
 	/** The whole page title / heading appears in the question. */
 	private static final double TITLE_MATCH_BONUS = 2.0;
 	private static final double HEADING_MATCH_BONUS = 1.0;
-	/** Sections whose heading is one of the caller's hint words, e.g. "Crafting" for "how do I make…". */
+	/** Sections whose heading is one of the hint words, e.g. "Crafting" for "how do I make…". */
 	private static final double HEADING_HINT_BONUS = 2.5;
+	/** The page's description and tags from the wiki count like a little extra text. */
+	private static final int META_WEIGHT = 1;
+	/** A project's home page when the question only names the project ("who is katter"). */
+	private static final double PROJECT_BONUS = 3.0;
+	/** A person's usual projects (from past questions) tip close calls their way, never more than this. */
+	private static final double INTEREST_BONUS = 2.5;
+	/** Page titles that say nothing; such pages are titled after their project instead. */
+	private static final Set<String> GENERIC_TITLES = Set.of("main", "home");
 	/** Changelogs mention everything, so they only win when the question is about changes. */
-	private static final double CHANGELOG_FACTOR = 0.75;
+	private static final double CHANGELOG_FACTOR = 0.5;
+	private static final Pattern SENTENCE_END = Pattern.compile("(?<=[.!?])\\s+(?=[A-Z0-9\"'(\\[])");
+	// The answer line: one sentence (plus the next) from the top pages, covering at least this share of the question.
+	private static final int ANSWER_CHARS = 300;
+	private static final int ANSWER_MIN_CHARS = 20;
+	private static final int ANSWER_PAGES = 2;
+	private static final double ANSWER_COVERAGE = 0.5;
+	private static final double ANSWER_HINT_WEIGHT = 2.5;
+	private static final double ANSWER_HIT_WEIGHT = 1.5;
+	private static final double ANSWER_RANK_PENALTY = 2.0;
+	/** With the model, a sentence that means the same as the question in other words can answer it too. */
+	private static final double ANSWER_SEMANTIC_MIN = 0.7;
+	// Hybrid search (keywords + meaning, with the model): rankings merge by reciprocal rank fusion, each page
+	// scoring 1 / (RRF_K + its rank) per ranking it's in; the meaning ranking counts SEMANTIC_WEIGHT as much.
+	private static final int RRF_K = 10;
+	private static final double SEMANTIC_WEIGHT = 0.6;
+	private static final int SEMANTIC_CANDIDATES = 10;
+	/** Pages less similar than this aren't found by meaning. */
+	private static final double SEMANTIC_MIN = 0.40;
+	/** Score of a page found only by meaning (times its similarity): never enough to sound sure. */
+	private static final double SEMANTIC_SCORE = 9.0;
+	/** How much of a section is embedded (title, heading, description and the start of its text). */
+	private static final int SEMANTIC_TEXT_CHARS = 400;
 	private static final Set<String> CHANGELOG_WORDS = Set.of("changelog", "change", "update", "patch", "new", "added", "release");
 	/** Results scoring below this share of the best result are dropped. */
 	private static final double RELATIVE_CUTOFF = 0.35;
 	private static final Pattern WORD = Pattern.compile("[a-z0-9]+");
 	private static final Pattern COMBINING = Pattern.compile("\\p{M}");
+	// Which section headings answer which kind of question.
+	private static final Set<String> WHERE_WORDS = Set.of("where", "find", "location", "locate", "located", "spawn", "spawns", "found", "generate");
+	private static final Set<String> WHERE_HINTS = hintTerms("where find location locations spawning spawn generation biomes found");
+	private static final Set<String> OBTAIN_WORDS = Set.of("get", "obtain", "craft", "make", "recipe", "drop", "drops", "loot", "build", "create");
+	private static final Set<String> OBTAIN_HINTS = hintTerms("obtaining crafting recipe loot drops obtain craft sources trading");
+	private static final Set<String> LIST_HINTS = hintTerms("overview list all");
+	private static final Pattern LIST_QUESTION = Pattern.compile("\\b(what|which)\\b.*\\bare there\\b|\\blist of\\b|\\ball (the )?[a-z]+s\\b"
+			+ "|\\bevery\\b|\\b(types|kinds|sorts) of\\b|\\boverview\\b|\\b(variants|types|kinds)\\b");
 
-	/** @param titleMatch the page title or heading is exactly what was asked about */
-	public record Result(Section section, double score, Excerpt excerpt, boolean titleMatch) {}
+	/**
+	 * @param titleMatch the page title or heading is exactly what was asked about
+	 * @param matched how many of the question's words the section contains
+	 */
+	public record Result(Section section, double score, Excerpt excerpt, boolean titleMatch, int matched) {}
 
 	/**
 	 * @param corrections words that were read as something else, e.g. "enchantmnt" → "enchantment"
@@ -104,7 +145,14 @@ public class SearchIndex {
 	private final double avgLength;
 	private final List<Set<String>> titleTerms = new ArrayList<>();
 	private final List<Set<String>> headingTerms = new ArrayList<>();
+	/** Heading words for question-type hints ("Where to Find"), stopwords included. */
+	private final List<Set<String>> hintTargets = new ArrayList<>();
+	/** The project words of a project's home page, else empty. */
+	private final List<Set<String>> projectTerms = new ArrayList<>();
 	private final Map<String, Double> idf = new HashMap<>();
+	/** The meaning-based search model and each section's vector, or null for keyword search only. */
+	private final SemanticModel model;
+	private final float[][] vectors;
 	private final Map<String, Double> bigramIdf = new HashMap<>();
 	/** Most common written form of each term, to show corrections readably. */
 	private final Map<String, String> display = new HashMap<>();
@@ -120,6 +168,15 @@ public class SearchIndex {
 	 * @param headingHints terms that make a section heading a likely answer, e.g. "craft", "obtain"
 	 */
 	public SearchIndex(List<Section> sections, Map<String, Double> priors, Set<String> headingHints) {
+		this(sections, priors, headingHints, null);
+	}
+
+	/** @param model meaning-based search next to the keywords, or null */
+	public SearchIndex(List<Section> sections, SemanticModel model) {
+		this(sections, Map.of(), Set.of(), model);
+	}
+
+	public SearchIndex(List<Section> sections, Map<String, Double> priors, Set<String> headingHints, SemanticModel model) {
 		this.sections = List.copyOf(sections);
 		this.priors = priors;
 		this.headingHints = headingHints;
@@ -140,6 +197,7 @@ public class SearchIndex {
 			List<String> tokens = new ArrayList<>(textTokens);
 			for (int w = 0; w < TITLE_WEIGHT; w++) tokens.addAll(titleTokens);
 			for (int w = 0; w < PATH_WEIGHT; w++) tokens.addAll(pathTokens);
+			for (int w = 0; w < META_WEIGHT; w++) tokens.addAll(tokenize(s.meta()));
 
 			Map<String, Integer> counts = new HashMap<>();
 			for (String t : tokens) counts.merge(t, 1, Integer::sum);
@@ -150,7 +208,20 @@ public class SearchIndex {
 			bigrams.add(pairs);
 			lengths[i] = tokens.size();
 			total += tokens.size();
-			titleTerms.add(new HashSet<>(tokenize(s.pageTitle())));
+			// A project's home page ("Main") is about the project ("Katters Structures").
+			Set<String> project = new HashSet<>(tokenize(s.path().split("/")[0].replace('_', ' ')));
+			boolean home = s.path().endsWith("/home") || GENERIC_TITLES.contains(s.pageTitle().toLowerCase(Locale.ROOT));
+			Set<String> title = new HashSet<>(tokenize(s.pageTitle()));
+			title.removeAll(GENERIC_TITLES);
+			if (home) title.addAll(project);
+			titleTerms.add(title);
+			projectTerms.add(home && !s.vanilla() ? project : Set.of());
+			// Headings answer kinds of questions ("Where to Find"); overview pages answer "what … are there".
+			Set<String> targets = hintTerms(s.heading());
+			for (String t : hintTerms(s.pageTitle())) if (LIST_HINTS.contains(t)) targets.add(t);
+			// A project's home page lists what the project has ("cat variants" → the Cat list on Nice Mob Variants).
+			if (home && !s.vanilla()) targets.addAll(LIST_HINTS);
+			hintTargets.add(targets);
 			headingTerms.add(s.heading().equals(s.pageTitle()) ? Set.of() : new HashSet<>(tokenize(s.heading())));
 			for (String t : counts.keySet()) df.merge(t, 1, Integer::sum);
 			for (String p : pairs.keySet()) bdf.merge(p, 1, Integer::sum);
@@ -174,6 +245,15 @@ public class SearchIndex {
 				.filter(t -> t.length() >= 4 && !t.chars().allMatch(Character::isDigit))
 				.sorted(Comparator.<String>comparingInt(df::get).reversed().thenComparing(Comparator.naturalOrder()))
 				.toList();
+		this.model = sections.isEmpty() ? null : model;
+		this.vectors = this.model == null ? null : sections.stream()
+				.map(s -> this.model.embed(s.pageTitle() + ". " + s.heading() + ". " + s.meta() + ". " + start(s.text(), SEMANTIC_TEXT_CHARS)))
+				.toArray(float[][]::new);
+	}
+
+	/** The first characters of the text (counting like Python, so emoji aren't cut in half). */
+	private static String start(String text, int chars) {
+		return text.codePointCount(0, text.length()) <= chars ? text : text.substring(0, text.offsetByCodePoints(0, chars));
 	}
 
 	public int pageCount() {
@@ -209,7 +289,7 @@ public class SearchIndex {
 				.limit(limit)
 				.map(hit -> {
 					Section s = sections.get((int) hit[1]);
-					return new Result(s, hit[0], Excerpt.of(s.text(), termSet, excerptLength), false);
+					return new Result(s, hit[0], Excerpt.of(s.text(), termSet, excerptLength), false, 0);
 				})
 				.toList();
 	}
@@ -220,10 +300,19 @@ public class SearchIndex {
 	}
 
 	public Outcome find(String query, int limit, int excerptLength, double minScore) {
+		return find(query, limit, excerptLength, minScore, Map.of());
+	}
+
+	/** @param interests project (first path part) → share of that person's past questions, 0..1 */
+	public Outcome find(String query, int limit, int excerptLength, Map<String, Double> interests) {
+		return find(query, limit, excerptLength, MIN_SCORE, interests);
+	}
+
+	public Outcome find(String query, int limit, int excerptLength, double minScore, Map<String, Double> interests) {
 		Map<String, String> corrections = new LinkedHashMap<>();
 		List<Group> groups = analyze(query, corrections);
 		boolean uncertain = groups.stream().anyMatch(g -> !g.exact());
-		if (groups.stream().allMatch(g -> g.alternatives().isEmpty()) || sections.isEmpty()) {
+		if (sections.isEmpty() || groups.stream().allMatch(g -> g.alternatives().isEmpty()) && vectors == null) {
 			return new Outcome(List.of(), corrections, !groups.isEmpty());
 		}
 		Set<String> queryTerms = new HashSet<>();
@@ -231,10 +320,15 @@ public class SearchIndex {
 			for (Alternative a : g.alternatives()) queryTerms.addAll(a.terms());
 		}
 		boolean changelogOk = queryTerms.stream().anyMatch(CHANGELOG_WORDS::contains);
+		Set<String> hints = new HashSet<>(headingHints);
+		hints.addAll(questionHints(query));
 
 		Map<String, double[]> best = new HashMap<>(); // page -> {score, section index}
 		for (int i = 0; i < sections.size(); i++) {
-			double score = score(i, groups, queryTerms, changelogOk);
+			double score = score(i, groups, queryTerms, changelogOk, hints);
+			if (score > 0 && !interests.isEmpty()) {
+				score += INTEREST_BONUS * interests.getOrDefault(sections.get(i).path().split("/")[0], 0.0);
+			}
 			if (score < minScore || score <= 0) continue;
 			Section s = sections.get(i);
 			String page = s.wiki() + "/" + s.path(); // several wikis can have the same path
@@ -244,20 +338,94 @@ public class SearchIndex {
 			}
 		}
 		// Highest score first; on a tie the later section wins, like Python's sort of (score, index).
-		List<double[]> ranked = best.values().stream()
+		List<double[]> byScore = best.values().stream()
 				.sorted((a, b) -> a[0] != b[0] ? Double.compare(b[0], a[0]) : Double.compare(b[1], a[1]))
-				.limit(limit)
 				.toList();
+		List<double[]> ranked = byScore.stream().limit(limit)
+				.filter(hit -> hit[0] >= byScore.get(0)[0] * RELATIVE_CUTOFF)
+				.toList();
+		// Meaning only helps when the keywords aren't sure: a strong match, or a page named in the
+		// question, already is the answer ("curse of blindness" shouldn't drift to "color blindness").
+		// So is a project's home page when the question names the project ("who is katter"), and a
+		// section made for the kind of question ("what dungeons are there" → the overview).
+		boolean keywordSure = false;
+		if (!ranked.isEmpty()) {
+			int top = (int) ranked.get(0)[1];
+			double topScore = ranked.get(0)[0];
+			keywordSure = topScore >= SURE_SCORE
+					|| titleMatch(top, queryTerms) && topScore >= SURE_TITLE_SCORE
+					|| !projectTerms.get(top).isEmpty() && projectTerms.get(top).containsAll(queryTerms)
+					|| hintTargets.get(top).stream().anyMatch(hints::contains) && topScore >= GUESS_SCORE;
+		}
+		if (vectors != null && !keywordSure) ranked = hybrid(query, best, byScore, ranked, limit);
 		List<Result> results = new ArrayList<>();
 		for (double[] hit : ranked) {
-			if (hit[0] < ranked.get(0)[0] * RELATIVE_CUTOFF) continue;
 			int i = (int) hit[1];
 			Section s = sections.get(i);
 			boolean titled = titleMatch(i, queryTerms)
 					|| (!headingTerms.get(i).isEmpty() && queryTerms.containsAll(headingTerms.get(i)));
-			results.add(new Result(s, hit[0], Excerpt.of(s.text(), queryTerms, excerptLength), titled));
+			int matched = 0;
+			for (Group g : groups) {
+				if (g.alternatives().stream().anyMatch(a -> a.terms().stream().anyMatch(docs.get(i)::containsKey))) matched++;
+			}
+			results.add(new Result(s, hit[0], Excerpt.of(s.text(), queryTerms, excerptLength), titled, matched));
 		}
 		return new Outcome(results, results.isEmpty() ? Map.of() : corrections, uncertain);
+	}
+
+	/**
+	 * Merges the keyword ranking with the meaning ranking. Pages keep their keyword score and section;
+	 * a page found only by meaning gets a capped score, so Merl never sounds sure about it.
+	 */
+	private List<double[]> hybrid(String query, Map<String, double[]> best, List<double[]> byScore,
+			List<double[]> keywordRanked, int limit) {
+		float[] q = model.embed(query);
+		Integer[] order = new Integer[sections.size()];
+		float[] similarity = new float[sections.size()];
+		for (int i = 0; i < order.length; i++) {
+			order[i] = i;
+			similarity[i] = SemanticModel.dot(vectors[i], q);
+		}
+		Arrays.sort(order, (a, b) -> Float.compare(similarity[b], similarity[a]));
+		Map<String, double[]> byMeaning = new LinkedHashMap<>(); // page -> {similarity, section index}
+		for (int r = 0; r < Math.min(order.length, SEMANTIC_CANDIDATES * 4); r++) {
+			int i = order[r];
+			if (similarity[i] >= SEMANTIC_MIN) byMeaning.putIfAbsent(page(i), new double[] {similarity[i], i});
+		}
+		Map<String, Integer> meaningRank = new HashMap<>();
+		for (String page : byMeaning.keySet()) {
+			if (meaningRank.size() == SEMANTIC_CANDIDATES) break;
+			meaningRank.put(page, meaningRank.size());
+		}
+		Set<String> kept = new HashSet<>();
+		for (double[] hit : keywordRanked) kept.add(page((int) hit[1]));
+		Map<String, Integer> keywordRank = new HashMap<>();
+		for (double[] hit : byScore) keywordRank.put(page((int) hit[1]), keywordRank.size());
+		Map<String, Double> fused = new HashMap<>();
+		Set<String> all = new HashSet<>(keywordRank.keySet());
+		all.addAll(meaningRank.keySet());
+		for (String page : all) {
+			fused.put(page, (keywordRank.containsKey(page) ? 1.0 / (RRF_K + keywordRank.get(page)) : 0)
+					+ (meaningRank.containsKey(page) ? SEMANTIC_WEIGHT / (RRF_K + meaningRank.get(page)) : 0));
+		}
+		List<double[]> out = new ArrayList<>();
+		for (String page : all.stream().sorted(Comparator.<String>comparingDouble(fused::get).reversed()
+				.thenComparing(Comparator.naturalOrder())).toList()) {
+			if (best.containsKey(page) && (kept.contains(page) || meaningRank.containsKey(page))) {
+				out.add(best.get(page));
+			} else if (!best.containsKey(page) && meaningRank.containsKey(page)) {
+				double[] meaning = byMeaning.get(page);
+				out.add(new double[] {SEMANTIC_SCORE * meaning[0], meaning[1]});
+			}
+			if (out.size() == limit) break;
+		}
+		return out;
+	}
+
+	/** A section's page; several wikis can have the same path. */
+	private String page(int i) {
+		Section s = sections.get(i);
+		return s.wiki() + "/" + s.path();
 	}
 
 	private List<Group> analyze(String query, Map<String, String> corrections) {
@@ -295,7 +463,7 @@ public class SearchIndex {
 		return groups;
 	}
 
-	private double score(int i, List<Group> groups, Set<String> queryTerms, boolean changelogOk) {
+	private double score(int i, List<Group> groups, Set<String> queryTerms, boolean changelogOk, Set<String> hints) {
 		List<Group> active = groups.stream().filter(g -> !g.alternatives().isEmpty()).toList();
 		double score = 0;
 		int matched = 0;
@@ -323,7 +491,8 @@ public class SearchIndex {
 		score *= Math.sqrt((double) matched / active.size());
 		if (titleMatch(i, queryTerms)) score += TITLE_MATCH_BONUS;
 		if (!headingTerms.get(i).isEmpty() && queryTerms.containsAll(headingTerms.get(i))) score += HEADING_MATCH_BONUS;
-		if (headingTerms.get(i).stream().anyMatch(headingHints::contains)) score += HEADING_HINT_BONUS;
+		if (hintTargets.get(i).stream().anyMatch(hints::contains)) score += HEADING_HINT_BONUS;
+		if (!projectTerms.get(i).isEmpty() && projectTerms.get(i).containsAll(queryTerms)) score += PROJECT_BONUS;
 		String path = sections.get(i).path();
 		if (!changelogOk && path.toLowerCase(Locale.ROOT).contains("changelog")) score *= CHANGELOG_FACTOR;
 		return score + priors.getOrDefault(path, 0.0);
@@ -387,6 +556,95 @@ public class SearchIndex {
 			prev = cur;
 		}
 		return prev[b.length()];
+	}
+
+	private static String fold(String text) {
+		return COMBINING.matcher(Normalizer.normalize(text, Normalizer.Form.NFKD)).replaceAll("").toLowerCase(Locale.ROOT);
+	}
+
+	/** Every word stemmed, stopwords included, for matching headings like "Where to Find". */
+	static Set<String> hintTerms(String text) {
+		Set<String> out = new HashSet<>();
+		Matcher m = WORD.matcher(fold(text));
+		while (m.find()) out.add(stem(m.group()));
+		return out;
+	}
+
+	/** Heading words that fit the kind of question: "where…" → location, "how do I get…" → obtaining. */
+	static Set<String> questionHints(String question) {
+		String folded = fold(question);
+		Set<String> asked = new HashSet<>(Arrays.asList(folded.split("[^a-z]+")));
+		Set<String> hints = new HashSet<>();
+		if (asked.stream().anyMatch(WHERE_WORDS::contains)) hints.addAll(WHERE_HINTS);
+		if (asked.stream().anyMatch(OBTAIN_WORDS::contains)) hints.addAll(OBTAIN_HINTS);
+		if (LIST_QUESTION.matcher(folded).find()) hints.addAll(LIST_HINTS);
+		return hints;
+	}
+
+	/**
+	 * The sentence (plus the one after it) from the top pages that answers the question best, or ""
+	 * when none covers enough of it. Every section of those pages counts, so "where is Raj Raksha" can
+	 * answer from "Where to Find". Rare words count more than common ones. No spoiler text.
+	 */
+	public String answerLine(String question, List<Result> results) {
+		Set<String> terms = new HashSet<>(tokenize(question));
+		if (terms.isEmpty()) return "";
+		Set<String> hints = questionHints(question);
+		double needed = terms.stream().mapToDouble(t -> idf.getOrDefault(t, 1.0)).sum() * ANSWER_COVERAGE;
+		float[] meaning = model == null ? null : model.embed(question);
+		String best = "";
+		double bestScore = 0;
+		for (int rank = 0; rank < Math.min(ANSWER_PAGES, results.size()); rank++) {
+			Section hit = results.get(rank).section();
+			List<Section> page = sections.stream().filter(x -> x.path().equals(hit.path()) && x.wiki().equals(hit.wiki())).toList();
+			for (Section section : page.isEmpty() ? List.of(hit) : page) {
+				boolean fits = rank == 0 && hintTerms(section.heading()).stream().anyMatch(hints::contains);
+				List<String> units = sentences(section.text());
+				for (int n = 0; n < units.size(); n++) {
+					String text = units.get(n);
+					if (text == null) continue;
+					double matched = 0;
+					for (String t : new HashSet<>(tokenize(text))) if (terms.contains(t)) matched += idf.getOrDefault(t, 1.0);
+					if (text.length() < ANSWER_MIN_CHARS || text.length() > ANSWER_CHARS) continue;
+					if (n + 1 < units.size() && units.get(n + 1) != null && text.length() + units.get(n + 1).length() < ANSWER_CHARS) {
+						text = text + " " + units.get(n + 1);
+					}
+					// Enough of the question's words, a section made for this kind of question ("Where to Find"),
+					// or (with the model) the same meaning in other words.
+					if (matched < needed && !fits
+							&& (meaning == null || SemanticModel.dot(model.embed(text), meaning) < ANSWER_SEMANTIC_MIN)) continue;
+					double score = matched + (fits ? ANSWER_HINT_WEIGHT * needed : 0) + (section == hit ? ANSWER_HIT_WEIGHT : 0)
+							- ANSWER_RANK_PENALTY * rank - n * 0.01;
+					if (score > bestScore) {
+						best = text;
+						bestScore = score;
+					}
+				}
+			}
+		}
+		return best;
+	}
+
+	/** The sentences and list lines of a section; null for those inside spoilers. */
+	private static List<String> sentences(String text) {
+		List<String> out = new ArrayList<>();
+		int spoiler = 0;
+		for (String line : text.split("\n")) {
+			for (String sentence : SENTENCE_END.split(line)) {
+				boolean hidden = spoiler > 0 || sentence.contains(Section.SPOILER_START);
+				spoiler += count(sentence, Section.SPOILER_START) - count(sentence, Section.SPOILER_END);
+				spoiler = Math.max(0, spoiler);
+				String clean = sentence.replace(Section.SPOILER_START, "").replace(Section.SPOILER_END, "").strip();
+				if (!clean.isEmpty()) out.add(hidden ? null : clean);
+			}
+		}
+		return out;
+	}
+
+	private static int count(String text, String part) {
+		int n = 0;
+		for (int i = text.indexOf(part); i >= 0; i = text.indexOf(part, i + 1)) n++;
+		return n;
 	}
 
 	private static List<String> bigramsOf(List<String> tokens) {

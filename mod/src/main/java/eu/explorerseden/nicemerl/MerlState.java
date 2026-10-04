@@ -25,6 +25,9 @@ public final class MerlState {
 	/** Players not seen for this long are forgotten. */
 	private static final int KEEP_DAYS = 365;
 	private static final int PAGE_CHARS = 60;
+	/** Projects remembered per player, and how high a count gets before all counts are halved. */
+	private static final int INTERESTS_KEPT = 3;
+	private static final int INTEREST_CAP = 50;
 	/** "Welcome back!" after this long away (minutes), but not after so long that it's a first visit again. */
 	static final long WELCOME_BACK_AFTER = 3 * 60;
 	static final long WELCOME_BACK_UNTIL = 30 * 1440;
@@ -51,6 +54,65 @@ public final class MerlState {
 		/** The last friendship anniversary (in days) and number of chats Merl mentioned. */
 		@SerializedName("a") public Integer anniversary;
 		@SerializedName("n") public Integer noted;
+		/** Name, for "have you met Alex?". */
+		@SerializedName("nm") public String name;
+		/** The last milestone celebrated per statistic, as an index into its list: "mined:4 mobs:2". */
+		@SerializedName("ms") public String milestones;
+
+		/** The index of the last celebrated milestone for a statistic, or null when it was never checked. */
+		public Integer milestone(String stat) {
+			return pairs(milestones).get(stat);
+		}
+
+		public void setMilestone(String stat, int index) {
+			java.util.Map<String, Integer> all = pairs(milestones);
+			all.put(stat, index);
+			milestones = all.entrySet().stream().map(e -> e.getKey() + ":" + e.getValue()).reduce((a, b) -> a + " " + b).orElse(null);
+		}
+
+		/** Projects they ask about most: "katters_structures:12 nice_keep_inventory:3". */
+		@SerializedName("in") public String interests;
+
+		/** Project → share of the questions they asked about it. */
+		public java.util.Map<String, Double> interestShares() {
+			java.util.Map<String, Integer> counts = interestCounts();
+			int total = counts.values().stream().mapToInt(Integer::intValue).sum();
+			java.util.Map<String, Double> shares = new java.util.HashMap<>();
+			if (total > 0) counts.forEach((k, v) -> shares.put(k, (double) v / total));
+			return shares;
+		}
+
+		/** Counts a question about a project; only the top few projects are kept, and old interests fade. */
+		public void learn(String project, int amount) {
+			java.util.Map<String, Integer> counts = interestCounts();
+			counts.merge(project, amount, Integer::sum);
+			if (counts.values().stream().anyMatch(v -> v > INTEREST_CAP)) counts.replaceAll((k, v) -> v / 2);
+			String kept = counts.entrySet().stream().filter(e -> e.getValue() > 0)
+					.sorted(java.util.Map.Entry.<String, Integer>comparingByValue().reversed()).limit(INTERESTS_KEPT)
+					.map(e -> e.getKey() + ":" + e.getValue()).reduce((a, b) -> a + " " + b).orElse(null);
+			interests = kept;
+		}
+
+		private java.util.Map<String, Integer> interestCounts() {
+			return pairs(interests);
+		}
+
+		/** Reads "key:3 other:1" lists; broken entries are dropped. */
+		private static java.util.Map<String, Integer> pairs(String text) {
+			java.util.Map<String, Integer> counts = new java.util.LinkedHashMap<>();
+			if (text == null) return counts;
+			for (String part : text.split(" ")) {
+				int colon = part.lastIndexOf(':');
+				if (colon > 0) {
+					try {
+						counts.put(part.substring(0, colon), Integer.parseInt(part.substring(colon + 1)));
+					} catch (NumberFormatException ignored) {
+						// A broken entry is simply dropped.
+					}
+				}
+			}
+			return counts;
+		}
 
 		public int chatCount() {
 			return chats == null ? 0 : chats;
@@ -73,7 +135,7 @@ public final class MerlState {
 		void forget() {
 			met = chats = topicDay = pageDay = anniversary = noted = null;
 			seen = null;
-			topic = page = null;
+			topic = page = name = interests = null;
 		}
 
 		boolean isDefault() {
@@ -143,6 +205,14 @@ public final class MerlState {
 		change.accept(player);
 		if (player.isDefault()) data.players.remove(id.toString());
 		save();
+	}
+
+	/** A player Merl has talked to, by name (any case), or null. */
+	public static synchronized Player find(String name) {
+		for (Player player : data.players.values()) {
+			if (player.name != null && player.name.equalsIgnoreCase(name)) return player;
+		}
+		return null;
 	}
 
 	/** "forget me": erases what Merl remembers about the player. */

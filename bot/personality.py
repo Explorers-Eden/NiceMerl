@@ -19,6 +19,7 @@ MOODS: list[str] = LINES["moods"]
 PB_MOODS: list[str] = LINES["pb_moods"]
 TOPICS: dict[str, list[str]] = LINES["topics"]
 TOPIC_PHRASES: dict[str, str] = LINES["topic_phrases"]
+OFTEN_PHRASES: list[str] = LINES["often_phrases"]
 KEYWORDS = LINES["keyword_intents"]
 STRIP_START = sorted(KEYWORDS["strip_start"], key=len, reverse=True)
 STRIP_END = sorted(KEYWORDS["strip_end"], key=len, reverse=True)
@@ -76,7 +77,20 @@ QUIET_TALK = {"stop", "forget_me", "insult", "wrong", "comfort", "sorry", "confu
 
 # Small talk that can start a question ("thanks! how do I…"), and the short line it gets.
 PREFIX_POOLS = {"greeting": "greeting_prefix", "thanks": "thanks_prefix", "sorry": "sorry_prefix",
-                "ok": "ok_prefix", "no": "ok_prefix", "compliment": "compliment_prefix"}
+                "ok": "ok_prefix", "no": "ok_prefix", "compliment": "compliment_prefix", "laugh": "compliment_prefix"}
+# Small talk that "more" / "another one" asks for again.
+REPEATABLE = {"joke", "fact", "tip", "idea", "story", "sing", "creeper_song", "pet_pb", "hungry"}
+# Sentences and clauses, for messages with several bits of small talk ("you're funny! tell me a joke").
+CLAUSE = re.compile(r"[.!?,;]+")
+# "so it's the bosses?" right after an answer: confusion about that answer, not a new question.
+CLARIFY_CUES = ("so ", "wait so ", "you mean ", "do you mean ", "are you saying ", "so youre saying ", "so basically ")
+# "have you met Alex?" is about a person; "do you know Alex?" only when Alex is someone Merl knows.
+MET_STRICT = re.compile(r"(?:have you (?:ever )?(?:met|talked to|spoken to|chatted with)|did you (?:meet|talk to))\s+"
+                        r"@?(.{2,40}?)(?:\s+(?:yet|before|already))?\s*[?!.]*", re.I)
+MET_LOOSE = re.compile(r"(?:do you know|do you remember|you know)\s+@?(.{2,40}?)\s*[?!.]*", re.I)
+NOT_NAMES = {"me", "you", "yourself", "him", "her", "them", "anyone", "someone", "everyone", "my name"}
+NOT_NAME_STARTS = {"how", "what", "where", "why", "when", "which", "who", "the", "a", "an", "any", "about", "if",
+                   "that", "this", "my", "your", "some", "of", "to"}
 QUESTION_WORDS = {"how", "what", "where", "why", "when", "which", "who", "can", "is", "does", "do", "are",
                   "should", "could", "will", "whats", "wheres", "hows", "whos", "whys"}
 FOLLOW_UP_CUES = ("and ", "also ", "what about ", "how about ", "but what about ", "and what about ")
@@ -266,12 +280,15 @@ def seeks_info(text: str) -> bool:
     return "?" in text or bool(INFO_WORDS.intersection(normalize(text).split()))
 
 
-def clearly_about(sure: str | None, title_match: bool, text: str) -> bool:
+def clearly_about(sure: str | None, title_match: bool, text: str, all_matched: bool = False) -> bool:
     """For a message that isn't a question: is the top page clearly what it's about? Yes when Merl is
-    sure, or when the page is named after it and the message is just a topic ("turtles", "boss keys")."""
+    sure, or when the page is named after it and the message is just a topic ("turtles", "boss keys").
+    "i hate creepers" names the Creeper page too, but it's a comment, not a search."""
     if not sure:
         return False
-    return sure == "sure" or (title_match and (sure == "maybe" or len(normalize(text).split()) <= TOPIC_WORDS))
+    short = len(normalize(text).split()) <= TOPIC_WORDS
+    # "moobloom", "mannequin": a short message whose every word is on the page is a topic search.
+    return sure == "sure" or (short and (title_match or all_matched))
 
 
 def is_follow_up(text: str) -> bool:
@@ -450,3 +467,65 @@ def remember_me(chats: int, days: int, topic: str, user: str) -> str:
     if topic in TOPIC_PHRASES:
         line += " " + pick("remember_topic", activity=TOPIC_PHRASES[topic])
     return line
+
+
+def multi_small_talk(text: str) -> tuple[str | None, str | None]:
+    """ "you're funny! tell me a joke" -> ("compliment_prefix", "joke"): several sentences that are all small
+    talk get an answer to the last one, with a short reply to the first. (None, None) otherwise."""
+    clauses = [c for c in CLAUSE.split(text) if normalize(c)]
+    if len(clauses) < 2:
+        return None, None
+    talks = [small_talk(c) for c in clauses]
+    if None in talks:
+        return None, None
+    first, main = talks[0], talks[-1]
+    return (PREFIX_POOLS.get(first) if first != main else None), main
+
+
+def is_clarifying(text: str) -> bool:
+    """ "so Katter is the bosses?", "you mean the skyrtle?" """
+    normalized = normalize(text) + " "
+    return normalized.startswith(CLARIFY_CUES) and not ASKING_WORDS.intersection(normalized.split())
+
+
+def met_question(text: str) -> tuple[str, bool] | None:
+    """ "have you met NotNiceRon yet?" -> ("NotNiceRon", True); the second part says it's surely about a
+    person (for "do you know X?" Merl only answers when X is someone she knows). None otherwise."""
+    for pattern, strict in ((MET_STRICT, True), (MET_LOOSE, False)):
+        m = pattern.fullmatch(text.strip())
+        if not m:
+            continue
+        name = m.group(1).strip()
+        words = normalize(name).split()
+        if words and normalize(name) not in NOT_NAMES and words[0] not in NOT_NAME_STARTS and len(words) <= 3:
+            return name, strict
+    return None
+
+
+def often(chats: int) -> str:
+    """How often someone talked to Merl: "once", "a few times", "lots of times"."""
+    return OFTEN_PHRASES[0 if chats <= 1 else 1 if chats < 10 else 2]
+
+
+# The project of the last answer counts this much extra in the next search ("and the loot?").
+RECENT_PROJECT_SHARE = 0.5
+
+
+def interests(shares: dict[str, float], recent_project: str | None) -> dict[str, float]:
+    """A person's usual projects plus what they're asking about right now, for Index.find."""
+    out = dict(shares)
+    if recent_project:
+        out[recent_project] = min(1.0, out.get(recent_project, 0.0) + RECENT_PROJECT_SHARE)
+    return out
+
+
+# "how do I beat him?" right after an answer: "him" is what that answer was about.
+# "there" only as a place ("how do I get there"), not in "what dungeons are there".
+REFERENCE = re.compile(r"\b(it|its|him|her|them|they|he|she)\b|(?<!\bare )(?<!\bis )(?<!\bwas )(?<!\bwere )\bthere\b", re.I)
+
+
+def resolve_reference(search: str, previous_page: str) -> str:
+    """ "where do I find him" after the Raj Raksha page -> "where do I find Raj Raksha"."""
+    if not previous_page:
+        return search
+    return REFERENCE.sub(previous_page, search, count=1)

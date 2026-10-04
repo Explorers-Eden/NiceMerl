@@ -4,3 +4,5 @@ __pycache__/
 *.pyc
 .DS_Store
 bot/state/
+bot/eval/wiki_snapshot.json
+bot/model/

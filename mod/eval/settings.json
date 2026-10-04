@@ -1,0 +1,773 @@
+{
+ "_comment": "Settings test for the mod (run with the SettingsProbe). 'want' is the setting label expected first (or within the first two), '@Pack' means that pack's settings, '*' means no setting but the list of known packs, null means no settings at all. The settings are modelled on the setting names listed in the wiki.",
+ "settings": [
+  [
+   "Nice Keep Inventory",
+   "Graves",
+   "graves",
+   "true Enabled"
+  ],
+  [
+   "Nice Keep Inventory",
+   "Grave Duration (Minutes)",
+   "grave duration",
+   "30"
+  ],
+  [
+   "Nice Keep Inventory",
+   "Grave Appearance",
+   "grave appearance",
+   "chest Chest"
+  ],
+  [
+   "Nice Keep Inventory",
+   "Player Head Drop on Death",
+   "head drop",
+   "true Enabled"
+  ],
+  [
+   "Nice Keep Inventory",
+   "Player Head Drop Chance",
+   "head drop chance",
+   "20"
+  ],
+  [
+   "Nice Keep Inventory",
+   "Exp Loss",
+   "exp loss",
+   "true Enabled"
+  ],
+  [
+   "Nice Keep Inventory",
+   "Exp Loss Amount",
+   "exp loss amount",
+   "30"
+  ],
+  [
+   "Nice Keep Inventory",
+   "Equipment Damage",
+   "equip dmg",
+   "true Enabled"
+  ],
+  [
+   "Nice Keep Inventory",
+   "Equipment Damage Amount",
+   "equip dmg amount",
+   "10"
+  ],
+  [
+   "Nice Keep Inventory",
+   "Keep Inventory Type",
+   "keepinv type",
+   "taglist Tag List"
+  ],
+  [
+   "Nice Actions",
+   "Events › Event Chance",
+   "events event chance",
+   "10"
+  ],
+  [
+   "Nice Actions",
+   "Events › Event Messages",
+   "events messages",
+   "chat Chat"
+  ],
+  [
+   "Nice Actions",
+   "Events › Max Amount Needed",
+   "events max amount",
+   "64"
+  ],
+  [
+   "Nice Actions",
+   "RTP Type",
+   "rtp type",
+   "spawn Spawn"
+  ],
+  [
+   "Nice Actions",
+   "RTP Radius",
+   "rtp radius",
+   "5000"
+  ],
+  [
+   "Nice Actions",
+   "Min RTP Height",
+   "rtp min height",
+   "60"
+  ],
+  [
+   "Nice Actions",
+   "Max RTP Height",
+   "rtp max height",
+   "200"
+  ],
+  [
+   "Nice Actions",
+   "RTP Cooldown",
+   "rtp cooldown",
+   "600"
+  ],
+  [
+   "Nice Actions",
+   "TP Home Cooldown",
+   "tp home cooldown",
+   "60"
+  ],
+  [
+   "Nice Actions",
+   "TP Spawn Cooldown",
+   "tp spawn cooldown",
+   "60"
+  ],
+  [
+   "Nice Actions",
+   "TP Back Cooldown",
+   "tp back cooldown",
+   "60"
+  ],
+  [
+   "Nice Actions",
+   "Teleport Warm-Up",
+   "teleport warmup",
+   "3"
+  ],
+  [
+   "Nice Actions",
+   "Exp Costs › Random Teleport",
+   "exp costs rtp",
+   "0"
+  ],
+  [
+   "Nice Actions",
+   "Exp Costs › Set Home",
+   "exp costs sethome",
+   "0"
+  ],
+  [
+   "Nice Actions",
+   "Exp Costs › Sit Down",
+   "exp costs sit",
+   "0"
+  ],
+  [
+   "Nice Actions",
+   "Time Format",
+   "time format",
+   "24 24-hour"
+  ],
+  [
+   "Nice Actions",
+   "Time/Date HUD Style",
+   "hud style",
+   "simple Simple"
+  ],
+  [
+   "Warping Wonders",
+   "Item Teleport › Active",
+   "item teleport active",
+   "true Enabled"
+  ],
+  [
+   "Warping Wonders",
+   "Item Teleport › Exp Level Cost",
+   "item teleport exp cost",
+   "1"
+  ],
+  [
+   "Warping Wonders",
+   "Item Teleport › Chance of Item Breaking",
+   "item teleport break chance",
+   "5"
+  ],
+  [
+   "Warping Wonders",
+   "Item Teleport › Teleport Leashed Mobs",
+   "item teleport leashed",
+   "true Enabled"
+  ],
+  [
+   "Warping Wonders",
+   "Waypoint Hub › Active",
+   "waypoint hub active",
+   "true Enabled"
+  ],
+  [
+   "Warping Wonders",
+   "Waypoint Hub › Exp Level Cost",
+   "waypoint hub exp cost",
+   "2"
+  ],
+  [
+   "Warping Wonders",
+   "Waypoint Hub › Teleport Leashed Mobs",
+   "waypoint hub leashed",
+   "true Enabled"
+  ],
+  [
+   "Warping Wonders",
+   "Waypoint Hub › Min Distance Between Waypoint Hubs",
+   "waypoint hub min distance",
+   "64"
+  ],
+  [
+   "Warping Wonders",
+   "Waypoint Hub › Max Waypoint Hubs per Player",
+   "waypoint hub max per player",
+   "5"
+  ],
+  [
+   "Warping Wonders",
+   "Waypoint Hub › Teleport Warm-Up in Seconds",
+   "waypoint hub warmup",
+   "3"
+  ],
+  [
+   "Nice Admin Tools",
+   "PvP",
+   "gamerules pvp",
+   "true Enabled"
+  ],
+  [
+   "Nice Admin Tools",
+   "Daylight Cycle Length",
+   "gamerules daylight cycle length",
+   "40"
+  ],
+  [
+   "Nice Admin Tools",
+   "Mob Griefing",
+   "gamerules mob griefing",
+   "false Disabled"
+  ],
+  [
+   "Nice Admin Tools",
+   "Phantoms",
+   "gamerules phantoms",
+   "false Disabled"
+  ],
+  [
+   "Nice Admin Tools",
+   "Players Sleeping Percentage",
+   "gamerules players sleeping percentage",
+   "50"
+  ],
+  [
+   "Nice Admin Tools",
+   "Fire Spread",
+   "gamerules fire spread",
+   "false Disabled"
+  ],
+  [
+   "Nice Admin Tools",
+   "Spawn Radius",
+   "gamerules spawn radius",
+   "10"
+  ],
+  [
+   "Nice Admin Tools",
+   "Keep Inventory",
+   "gamerules keep inventory",
+   "false Disabled"
+  ],
+  [
+   "Nice Mob Manager",
+   "Zombie › Spawn Chance",
+   "zombie spawn chance",
+   "50"
+  ],
+  [
+   "Nice Mob Manager",
+   "Creeper › Spawn Chance",
+   "creeper spawn chance",
+   "40"
+  ],
+  [
+   "Nice Mob Manager",
+   "Phantom › Spawn Chance",
+   "phantom spawn chance",
+   "0"
+  ],
+  [
+   "Nice Mob Manager",
+   "Enderman › Spawn Chance",
+   "enderman spawn chance",
+   "30"
+  ],
+  [
+   "Nice Mob Manager",
+   "Creeper › Block Damage",
+   "creeper block damage",
+   "false Disabled"
+  ],
+  [
+   "Katters Structures",
+   "Boss Bars",
+   "bossbars",
+   "true Enabled"
+  ],
+  [
+   "Katters Structures",
+   "Boss Difficulty",
+   "boss difficulty",
+   "normal Normal"
+  ],
+  [
+   "Katters Structures",
+   "Dungeon Spawn Rate",
+   "dungeon spawn rate",
+   "100"
+  ],
+  [
+   "Fabled Roots",
+   "Race Change Cost",
+   "race change cost",
+   "5"
+  ],
+  [
+   "Fabled Roots",
+   "Class Perks",
+   "class perks",
+   "true Enabled"
+  ]
+ ],
+ "questions": [
+  {
+   "q": "is pvp enabled",
+   "want": "PvP"
+  },
+  {
+   "q": "can i pvp",
+   "want": "PvP"
+  },
+  {
+   "q": "is pvp on",
+   "want": "PvP"
+  },
+  {
+   "q": "pvp?",
+   "want": "PvP"
+  },
+  {
+   "q": "can i fight other players",
+   "want": "PvP"
+  },
+  {
+   "q": "is player vs player allowed",
+   "want": "PvP"
+  },
+  {
+   "q": "are graves enabled",
+   "want": "Graves"
+  },
+  {
+   "q": "are there graves",
+   "want": "Graves"
+  },
+  {
+   "q": "do graves exist on the server",
+   "want": "Graves"
+  },
+  {
+   "q": "how long do graves last",
+   "want": "Grave Duration (Minutes)"
+  },
+  {
+   "q": "how long until my grave disappears",
+   "want": "Grave Duration (Minutes)"
+  },
+  {
+   "q": "when do graves despawn",
+   "want": "Grave Duration (Minutes)"
+  },
+  {
+   "q": "what do graves look like",
+   "want": "Grave Appearance"
+  },
+  {
+   "q": "grave appearance",
+   "want": "Grave Appearance"
+  },
+  {
+   "q": "how much xp do i lose when i die",
+   "want": "Exp Loss Amount"
+  },
+  {
+   "q": "do i lose xp on death",
+   "want": "Exp Loss"
+  },
+  {
+   "q": "how many levels do i lose",
+   "want": "Exp Loss Amount"
+  },
+  {
+   "q": "is there exp loss",
+   "want": "Exp Loss"
+  },
+  {
+   "q": "what is the head drop chance",
+   "want": "Player Head Drop Chance"
+  },
+  {
+   "q": "do players drop their head when they die",
+   "want": "Player Head Drop on Death"
+  },
+  {
+   "q": "how likely is a head drop",
+   "want": "Player Head Drop Chance"
+  },
+  {
+   "q": "does my armor get damaged when i die",
+   "want": "Equipment Damage"
+  },
+  {
+   "q": "how much durability do i lose when i die",
+   "want": "Equipment Damage Amount"
+  },
+  {
+   "q": "is equipment damage on",
+   "want": "Equipment Damage"
+  },
+  {
+   "q": "what keep inventory type do we use",
+   "want": "Keep Inventory Type"
+  },
+  {
+   "q": "is keep inventory on",
+   "want": "Keep Inventory"
+  },
+  {
+   "q": "keep inventory settings",
+   "want": "@Nice Keep Inventory"
+  },
+  {
+   "q": "what are the keep inventory settings",
+   "want": "@Nice Keep Inventory"
+  },
+  {
+   "q": "show me the nice keep inventory config",
+   "want": "@Nice Keep Inventory"
+  },
+  {
+   "q": "what's the rtp cooldown",
+   "want": "RTP Cooldown"
+  },
+  {
+   "q": "how long do i have to wait between random teleports",
+   "want": "RTP Cooldown"
+  },
+  {
+   "q": "rtp cooldown",
+   "want": "RTP Cooldown"
+  },
+  {
+   "q": "how far does random teleport go",
+   "want": "RTP Radius"
+  },
+  {
+   "q": "what is the rtp radius",
+   "want": "RTP Radius"
+  },
+  {
+   "q": "where does rtp teleport me",
+   "want": "RTP Type"
+  },
+  {
+   "q": "how high can rtp put me",
+   "want": "Max RTP Height"
+  },
+  {
+   "q": "what is the minimum rtp height",
+   "want": "Min RTP Height"
+  },
+  {
+   "q": "what is the home teleport cooldown",
+   "want": "TP Home Cooldown"
+  },
+  {
+   "q": "how long until i can tp home again",
+   "want": "TP Home Cooldown"
+  },
+  {
+   "q": "tp spawn cooldown",
+   "want": "TP Spawn Cooldown"
+  },
+  {
+   "q": "how often can i use tp back",
+   "want": "TP Back Cooldown"
+  },
+  {
+   "q": "how long is the teleport warm up",
+   "want": "Teleport Warm-Up"
+  },
+  {
+   "q": "how long is the teleport countdown",
+   "want": "Teleport Warm-Up"
+  },
+  {
+   "q": "does rtp cost xp",
+   "want": "Exp Costs › Random Teleport"
+  },
+  {
+   "q": "how much does setting a home cost",
+   "want": "Exp Costs › Set Home"
+  },
+  {
+   "q": "does sitting cost levels",
+   "want": "Exp Costs › Sit Down"
+  },
+  {
+   "q": "how often do events happen",
+   "want": "Events › Event Chance"
+  },
+  {
+   "q": "what is the event chance",
+   "want": "Events › Event Chance"
+  },
+  {
+   "q": "how are event messages shown",
+   "want": "Events › Event Messages"
+  },
+  {
+   "q": "is the clock 24 hour",
+   "want": "Time Format"
+  },
+  {
+   "q": "what time format is used",
+   "want": "Time Format"
+  },
+  {
+   "q": "nice actions settings",
+   "want": "@Nice Actions"
+  },
+  {
+   "q": "how many waypoint hubs can i have",
+   "want": "Waypoint Hub › Max Waypoint Hubs per Player"
+  },
+  {
+   "q": "max waypoints per player",
+   "want": "Waypoint Hub › Max Waypoint Hubs per Player"
+  },
+  {
+   "q": "how far apart do waypoint hubs have to be",
+   "want": "Waypoint Hub › Min Distance Between Waypoint Hubs"
+  },
+  {
+   "q": "minimum distance between waypoints",
+   "want": "Waypoint Hub › Min Distance Between Waypoint Hubs"
+  },
+  {
+   "q": "does using a waypoint cost xp",
+   "want": "Waypoint Hub › Exp Level Cost"
+  },
+  {
+   "q": "how much xp does a waypoint teleport cost",
+   "want": "Waypoint Hub › Exp Level Cost"
+  },
+  {
+   "q": "can my pets teleport with me",
+   "want": "Teleport Leashed Mobs"
+  },
+  {
+   "q": "do leashed mobs teleport",
+   "want": "Teleport Leashed Mobs"
+  },
+  {
+   "q": "does my horse come with me when i teleport",
+   "want": "Teleport Leashed Mobs"
+  },
+  {
+   "q": "are waypoint hubs enabled",
+   "want": "Waypoint Hub › Active"
+  },
+  {
+   "q": "is item teleport active",
+   "want": "Item Teleport › Active"
+  },
+  {
+   "q": "can the teleport item break",
+   "want": "Item Teleport › Chance of Item Breaking"
+  },
+  {
+   "q": "what is the chance of item breaking",
+   "want": "Item Teleport › Chance of Item Breaking"
+  },
+  {
+   "q": "how long is the waypoint warm up",
+   "want": "Waypoint Hub › Teleport Warm-Up in Seconds"
+  },
+  {
+   "q": "warping wonders settings",
+   "want": "@Warping Wonders"
+  },
+  {
+   "q": "how long is a day",
+   "want": "Daylight Cycle Length"
+  },
+  {
+   "q": "how long is the day night cycle",
+   "want": "Daylight Cycle Length"
+  },
+  {
+   "q": "is mob griefing on",
+   "want": "Mob Griefing"
+  },
+  {
+   "q": "do creepers destroy blocks",
+   "want": "Creeper › Block Damage"
+  },
+  {
+   "q": "are phantoms disabled",
+   "want": "Phantoms"
+  },
+  {
+   "q": "are there phantoms",
+   "want": "Phantoms"
+  },
+  {
+   "q": "how many players need to sleep",
+   "want": "Players Sleeping Percentage"
+  },
+  {
+   "q": "what percentage of players have to sleep",
+   "want": "Players Sleeping Percentage"
+  },
+  {
+   "q": "does fire spread",
+   "want": "Fire Spread"
+  },
+  {
+   "q": "is fire spread on",
+   "want": "Fire Spread"
+  },
+  {
+   "q": "what is the spawn radius",
+   "want": "Spawn Radius"
+  },
+  {
+   "q": "game rules",
+   "want": "@Nice Admin Tools"
+  },
+  {
+   "q": "zombie spawn chance",
+   "want": "Zombie › Spawn Chance"
+  },
+  {
+   "q": "how often do creepers spawn",
+   "want": "Creeper › Spawn Chance"
+  },
+  {
+   "q": "do phantoms spawn",
+   "want": "Phantom › Spawn Chance"
+  },
+  {
+   "q": "enderman spawn chance",
+   "want": "Enderman › Spawn Chance"
+  },
+  {
+   "q": "mob manager settings",
+   "want": "@Nice Mob Manager"
+  },
+  {
+   "q": "are boss bars shown",
+   "want": "Boss Bars"
+  },
+  {
+   "q": "are bossbars on",
+   "want": "Boss Bars"
+  },
+  {
+   "q": "what is the boss difficulty",
+   "want": "Boss Difficulty"
+  },
+  {
+   "q": "how hard are the bosses",
+   "want": "Boss Difficulty"
+  },
+  {
+   "q": "dungeon spawn rate",
+   "want": "Dungeon Spawn Rate"
+  },
+  {
+   "q": "how much does changing my race cost",
+   "want": "Race Change Cost"
+  },
+  {
+   "q": "are class perks enabled",
+   "want": "Class Perks"
+  },
+  {
+   "q": "show me the config",
+   "want": "*"
+  },
+  {
+   "q": "what are the server settings",
+   "want": "*"
+  },
+  {
+   "q": "what settings are there",
+   "want": "*"
+  },
+  {
+   "q": "how do i get a boss key",
+   "want": null
+  },
+  {
+   "q": "how do i craft a waypoint hub",
+   "want": null
+  },
+  {
+   "q": "where is raj raksha",
+   "want": null
+  },
+  {
+   "q": "how do i tame a cat",
+   "want": null
+  },
+  {
+   "q": "what is the best sword enchantment",
+   "want": null
+  },
+  {
+   "q": "how do i find diamonds",
+   "want": null
+  },
+  {
+   "q": "where do ducks spawn",
+   "want": null
+  },
+  {
+   "q": "how do graves work",
+   "want": null
+  },
+  {
+   "q": "what is a waypoint lock",
+   "want": null
+  },
+  {
+   "q": "how do i set my home",
+   "want": null
+  },
+  {
+   "q": "who is arachne",
+   "want": null
+  },
+  {
+   "q": "what does the heavy enchantment do",
+   "want": null
+  },
+  {
+   "q": "how do i get to the skyrtle",
+   "want": null
+  },
+  {
+   "q": "what is nice mob variants",
+   "want": null
+  },
+  {
+   "q": "tell me about the sky dungeon",
+   "want": null
+  }
+ ]
+}

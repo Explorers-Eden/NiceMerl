@@ -27,9 +27,14 @@ public final class MerlMemory {
 		public long askedAt;
 		/** Title of the page Merl answered it with. */
 		public String page = "";
+		/** The project that page belongs to (first part of its path). */
+		public String project = "";
 		public long answeredAt;
 		public long askedBackAt;
 		public long askedFeelingAt;
+		/** The last small talk Merl answered, for "another one". */
+		public String talk = "";
+		public long talkedAt;
 		public long seenAt;
 		/** Last /merl question, for the cooldown. */
 		public long lastMessageAt;
@@ -46,6 +51,14 @@ public final class MerlMemory {
 		/** The page of the last answer if it was just now, else null. */
 		public String recentPage(long now) {
 			return !page.isEmpty() && now - answeredAt < THANKS ? page : null;
+		}
+
+		public String recentProject(long now) {
+			return !project.isEmpty() && now - answeredAt < THANKS ? project : null;
+		}
+
+		public String recentTalk(long now) {
+			return !talk.isEmpty() && now - talkedAt < FOLLOW_UP ? talk : null;
 		}
 
 		public boolean awaitingReply(long now) {

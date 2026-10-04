@@ -138,7 +138,69 @@ jobs:
           assert p.friendship_note(11, 10, 8, 0, "Steve")[1:] == (10, 7)
           assert p.friendship_note(12, 10, 9, 7, "Steve") == (None, 10, 7)
           assert p.small_talk("do you remember me") == "remember_me" and p.small_talk("forget me") == "forget_me"
+          # Conversations: two bits of small talk, "another one", confusion about the last answer, other people.
+          assert p.multi_small_talk("you're funny! tell me a joke") == ("compliment_prefix", "joke")
+          assert p.small_talk("one more please") == "more"
+          assert p.is_clarifying("So Katter is Bosses, the Skyrtle and a Fossil?") and not p.is_clarifying("so how do i get there")
+          assert p.met_question("Have you met NotNiceRon yet?") == ("NotNiceRon", True)
+          assert p.met_question("do you know how to craft a bed") is None
           print("Small talk detection works")
+          EOF
+
+      - name: Check the search (project pages, question types, interests, meaning, answer lines)
+        run: |
+          python - <<'EOF'
+          import numpy as np
+          from search import Index, SURE_SCORE
+          from wiki import Section
+          pages = [
+              Section("katters_structures/home", "Main", "Main", "", "Katter builds dungeons, towers and ruins for the server."),
+              Section("katters_structures/boss_keys", "Boss Keys", "Boss Keys", "", "You get a boss key by defeating the mini bosses. Each key opens one boss room."),
+              Section("katters_structures/raj_raksha", "Raj Raksha", "Raj Raksha", "", "Raj Raksha is a tiger boss with a golden crown."),
+              Section("katters_structures/raj_raksha", "Raj Raksha", "Where to Find", "where-to-find", "Look for the jungle temple ruins deep in bamboo jungles."),
+              Section("nice_mob_variants/home", "Main", "Main", "", "Nice Mob Variants adds new looks for cats, cows and chickens."),
+              Section("nice_mob_variants/cats", "Cats", "Cats", "", "Cats come in twelve new patterns, each tied to a biome."),
+              Section("fabled_roots/cats", "Cats", "Cats", "", "Fabled Roots cats are spirits that guard the old trees."),
+          ]
+          # A project's home page answers "who is <project>"; a "Where to Find" section answers "where".
+          assert Index(pages).find("who is katter").results[0].section.path == "katters_structures/home"
+          assert Index(pages).find("where is raj raksha").results[0].section.heading == "Where to Find"
+          # What someone usually asks about tips a question that fits two projects.
+          assert Index(pages).find("tell me about cats", interests={"fabled_roots": 1.0}).results[0].section.path == "fabled_roots/cats"
+          assert Index(pages).find("tell me about cats", interests={"nice_mob_variants": 1.0}).results[0].section.path == "nice_mob_variants/cats"
+          # Hybrid search: a page found only by meaning (no shared words) shows up, but never sounds sure.
+          concepts = {"unlatch": 0, "opens": 0, "portal": 1, "room": 1}
+          def embed(texts):
+              out = np.zeros((len(texts), 4), dtype=np.float32)
+              for row, text in enumerate(texts):
+                  out[row, 3] = 0.3
+                  for word in text.lower().replace(".", " ").split():
+                      if word in concepts: out[row, concepts[word]] += 1
+              return out / np.linalg.norm(out, axis=1, keepdims=True)
+          found = Index(pages, embed=embed).find("unlatch the portal").results
+          assert found and found[0].section.path == "katters_structures/boss_keys" and found[0].score < SURE_SCORE, found
+          assert not Index(pages).find("unlatch the portal").results
+          # A keyword-sure answer isn't changed by meaning.
+          assert Index(pages, embed=embed).find("who is katter").results[0].section.path == "katters_structures/home"
+          # The answer line is a sentence from the page that answers the question.
+          index = Index(pages)
+          from search import answer_line
+          assert "defeating the mini bosses" in answer_line("how do i get a boss key", index.find("how do i get a boss key").results, index)
+          assert "bamboo jungles" in answer_line("where is raj raksha", index.find("where is raj raksha").results, index)
+          print("Search works: projects, question types, interests, meaning and answer lines")
+          EOF
+
+      - name: Check that the stack in SETUP.md matches portainer-stack.yml
+        run: |
+          python - <<'EOF'
+          import re, pathlib
+          setup = pathlib.Path("SETUP.md").read_text()
+          shown = re.search(r"```yaml\n(.*?)```", setup, re.S).group(1)
+          shown = "\n".join(line[3:] for line in shown.splitlines()).strip()
+          stack = pathlib.Path("portainer-stack.yml").read_text()
+          stack = "\n".join(l for l in stack.splitlines() if not l.startswith("#")).strip()
+          assert shown == stack, "The stack in SETUP.md differs from portainer-stack.yml, update both"
+          print("SETUP.md shows the current stack")
           EOF
 
   bot-image:

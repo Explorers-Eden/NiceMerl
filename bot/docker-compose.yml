@@ -6,7 +6,7 @@ services:
     env_file: .env
     volumes:
       - nicemerl-state:/app/state
-    mem_limit: 256m
+    mem_limit: 384m
     cpus: 0.5
 
 volumes:

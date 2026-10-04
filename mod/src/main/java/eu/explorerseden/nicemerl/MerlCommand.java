@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -100,7 +101,7 @@ public final class MerlCommand {
 	 * @param knownPacks when the player asked about settings and none matched: the packs Merl knows settings of
 	 */
 	private record Ask(String prefix, boolean repeat, String energy, MerlMemory.Visit visit, long now,
-			boolean asking, List<String> knownPacks, String question, String note) {}
+			boolean asking, List<String> knownPacks, String question, String note, String search) {}
 
 	private MerlCommand() {}
 
@@ -207,6 +208,24 @@ public final class MerlCommand {
 		return 1;
 	}
 
+	/** "have you met Alex?": whether Merl knows them, by name; null when it's not about someone she knows. */
+	private static String metLine(MerlLines.Met met, CommandSourceStack source) {
+		String user = source.getTextName();
+		String key = met.name().toLowerCase(java.util.Locale.ROOT).replaceFirst("^@", "");
+		if (key.equals("peanut butter") || key.equals("pb") || key.equals("your cat")) return MerlLines.peanutButter(LocalDate.now());
+		if (key.equals("merl") || key.equals("nicemerl")) {
+			return MerlLines.pick("who_are_you", "community", NiceMerl.config().communityName);
+		}
+		if (key.equalsIgnoreCase(user)) return MerlLines.pick("met_you", "user", user);
+		ServerPlayer online = source.getServer().getPlayerList().getPlayerByName(met.name());
+		MerlState.Player friend = online != null ? MerlState.player(online.getUUID()) : MerlState.find(met.name());
+		String name = online != null ? online.getName().getString() : friend != null && friend.name != null ? friend.name : met.name();
+		if (friend != null && friend.chatCount() > 0) {
+			return MerlLines.pick("met_yes", "name", name, "often", MerlLines.often(friend.chatCount()), "user", user);
+		}
+		return met.strict() ? MerlLines.pick("met_no", "name", name, "user", user) : null;
+	}
+
 	/** What this chat means for the friendship: first one, back after a while, and maybe a milestone line. */
 	private record Meeting(boolean first, boolean returning, String note, int today) {}
 
@@ -225,6 +244,7 @@ public final class MerlCommand {
 			if (p.met == null) p.met = today;
 			p.chats = p.chatCount() + 1;
 			p.seen = minute;
+			p.name = user;
 			if (quiet) return;
 			MerlLines.Note n = MerlLines.friendshipNote(p.chats, p.noted == null ? 0 : p.noted, today - p.met,
 					p.anniversary == null ? 0 : p.anniversary, user);
@@ -264,7 +284,23 @@ public final class MerlCommand {
 		visit.seenAt = now;
 		Meeting meeting = meet(player, question, source.getTextName());
 
+		MerlLines.Met met = MerlLines.metQuestion(question);
+		String metLine = met != null ? metLine(met, source) : null;
+		if (metLine != null) {
+			reply(source, Component.literal(metLine));
+			sendNote(source, meeting.note());
+			return 1;
+		}
 		String talk = MerlLines.smallTalk(question);
+		String talkPrefix = null;
+		if (talk == null) {
+			// "you're funny! tell me a joke"
+			MerlLines.MultiTalk multi = MerlLines.multiSmallTalk(question);
+			if (multi != null) {
+				talk = multi.talk();
+				talkPrefix = multi.prefix();
+			}
+		}
 		// Merl only waits one message for an answer to "what are you up to?".
 		boolean awaiting = visit.awaitingReply(now);
 		visit.askedBackAt = 0;
@@ -294,11 +330,25 @@ public final class MerlCommand {
 			}
 		}
 
-		if ("greeting".equals(talk) || (talk == null && SearchIndex.tokenize(question).isEmpty())) {
+		String resolved = MerlLines.resolveReference(question, visit.recentPage(now));
+		if ("greeting".equals(talk) || (talk == null && SearchIndex.tokenize(resolved).isEmpty())) {
 			return hello(source, visit, meeting, now);
+		}
+		if ("more".equals(talk)) {
+			// "another one!" after a joke is another joke.
+			String last = visit.recentTalk(now);
+			if (last == null || !MerlLines.REPEATABLE.contains(last)) {
+				reply(source, Component.literal(MerlLines.pick("more_what", "user", source.getTextName())));
+				sendNote(source, meeting.note());
+				return 1;
+			}
+			talk = last;
 		}
 		if (talk != null) {
 			String text = smallTalkLine(talk, source, player, visit, now, meeting);
+			if (talkPrefix != null) text = MerlLines.pick(talkPrefix, "user", source.getTextName()) + " " + text;
+			visit.talk = talk;
+			visit.talkedAt = now;
 			String askBack = askBack(talk, visit, now);
 			if (askBack == null) askBack = askFeeling(talk, text, visit, now);
 			reply(source, Component.literal(askBack != null ? text + " " + askBack : text));
@@ -306,8 +356,16 @@ public final class MerlCommand {
 			return 1;
 		}
 
+		if (MerlLines.isClarifying(question) && visit.recentPage(now) != null) {
+			// "so Katter is the bosses?" right after an answer
+			reply(source, Component.literal(MerlLines.pick("clarify", "user", source.getTextName())));
+			sendNote(source, meeting.note());
+			return 1;
+		}
+
 		MerlLines.Split split = MerlLines.splitSmallTalk(question);
-		String search = split.rest();
+		// "where do I find him?" right after the Raj Raksha page
+		String search = MerlLines.resolveReference(split.rest(), visit.recentPage(now));
 		boolean asking = split.prefix() != null || MerlLines.seeksInfo(question) || MerlLines.isFollowUp(search);
 
 		// Every question is checked against the settings: loosely when it sounds like a settings question
@@ -321,7 +379,7 @@ public final class MerlCommand {
 				knownPacks = DatapackSettings.packs(source.getServer(), config);
 			}
 		}
-		Ask ask = new Ask(split.prefix(), false, MerlLines.energy(question), visit, now, asking, knownPacks, question, meeting.note());
+		Ask ask = new Ask(split.prefix(), false, MerlLines.energy(question), visit, now, asking, knownPacks, question, meeting.note(), search);
 
 		SearchIndex index = NiceMerl.index();
 		if (index == null && settings.isEmpty()) {
@@ -330,22 +388,25 @@ public final class MerlCommand {
 		}
 		// Keep the reply compact when settings are listed too.
 		int limit = settings.isEmpty() ? config.results : Math.min(2, config.results);
+		// Close calls go to the projects this player usually asks about, and to what they're asking about now.
+		Map<String, Double> leaning = MerlLines.interests(
+				player != null ? MerlState.player(player.getUUID()).interestShares() : Map.of(), visit.recentProject(now));
 		SearchIndex.Outcome outcome = index != null
-				? index.find(search, limit, config.excerptLength)
+				? index.find(search, limit, config.excerptLength, leaning)
 				: new SearchIndex.Outcome(List.of(), Map.of(), false);
 		// "and in the nether?" right after a question: if it finds nothing good on its own,
 		// search it together with the previous question.
 		String previous = visit.recentQuestion(now);
 		boolean weak = outcome.results().isEmpty() || outcome.confidence() < SearchIndex.SURE_TITLE_SCORE;
 		if (index != null && weak && previous != null && MerlLines.isFollowUp(search)) {
-			SearchIndex.Outcome combined = index.find(previous + " " + search, limit, config.excerptLength);
+			SearchIndex.Outcome combined = index.find(previous + " " + search, limit, config.excerptLength, leaning);
 			if (combined.confidence() >= outcome.confidence()) {
 				search = previous + " " + search;
 				outcome = combined;
 			}
 		}
 		String asked = String.join(" ", SearchIndex.tokenize(search));
-		ask = new Ask(ask.prefix(), visit.isRepeat(asked, now), ask.energy(), visit, now, ask.asking(), ask.knownPacks(), ask.question(), ask.note());
+		ask = new Ask(ask.prefix(), visit.isRepeat(asked, now), ask.energy(), visit, now, ask.asking(), ask.knownPacks(), ask.question(), ask.note(), search);
 		visit.question = asked;
 		visit.askedAt = now;
 
@@ -379,6 +440,12 @@ public final class MerlCommand {
 		if (talk.equals("forget_me") && player != null) {
 			MerlState.forget(player.getUUID());
 			return MerlLines.pick("forget_done", "user", source.getTextName());
+		}
+		// "thanks" after an answer: that project was right for them; "that's not what I asked": it wasn't.
+		String project = visit.recentProject(now);
+		if ((talk.equals("thanks") || talk.equals("wrong")) && project != null && player != null) {
+			int amount = talk.equals("thanks") ? 1 : -1;
+			MerlState.update(player.getUUID(), p -> p.learn(project, amount));
 		}
 		String page = visit.recentPage(now);
 		if (talk.equals("thanks") && page != null) {
@@ -433,13 +500,25 @@ public final class MerlCommand {
 		if (settings.isEmpty() && !ask.knownPacks().isEmpty()) {
 			return settingsOverview(source, results, ask, config);
 		}
+		boolean allMatched = !results.isEmpty() && results.get(0).matched() >= new HashSet<>(SearchIndex.tokenize(ask.search())).size();
 		boolean confident = !results.isEmpty() && MerlLines.clearlyAbout(VanillaWiki.confidence(results, outcome),
-				results.get(0).titleMatch(), ask.question());
+				results.get(0).titleMatch(), ask.question(), allMatched);
 		if (settings.isEmpty() && !ask.asking() && !confident) {
 			// "NO! Stop!" or "i like turtles": no question, and no page that's clearly about it.
 			reply(source, Component.literal(MerlLines.pick("unclear", "user", source.getTextName())).append(
 					Component.literal(" Try ").withStyle(ChatFormatting.GRAY)).append(example("/merl how do I get a boss key")));
 			return 0;
+		}
+		String sure = results.isEmpty() ? null : VanillaWiki.confidence(results, outcome);
+		if (settings.isEmpty() && "guess".equals(sure) && results.get(0).matched() <= 1 && !results.get(0).titleMatch()) {
+			// "anyone online?": one loose word in common with a page isn't an answer.
+			reply(source, Component.literal(MerlLines.pick("unclear", "user", source.getTextName())).append(
+					Component.literal(" Try ").withStyle(ChatFormatting.GRAY)).append(example("/merl how do I get a boss key")));
+			return 0;
+		}
+		if ("guess".equals(sure)) {
+			// A guess is one page, not three loosely related ones.
+			results = results.subList(0, 1);
 		}
 		if (settings.isEmpty() && results.isEmpty()) {
 			ask.visit().page = "";
@@ -452,7 +531,14 @@ public final class MerlCommand {
 			ServerPlayer player = source.getPlayer();
 			if (player != null) {
 				int today = (int) LocalDate.now().toEpochDay();
-				MerlState.update(player.getUUID(), p -> p.remember(ask.visit().page, today));
+				Section top = results.get(0).section();
+				boolean learn = !top.vanilla();
+				if (learn) ask.visit().project = top.path().split("/")[0];
+				String project = ask.visit().project;
+				MerlState.update(player.getUUID(), p -> {
+					p.remember(ask.visit().page, today);
+					if (learn) p.learn(project, 1);
+				});
 			}
 		}
 
@@ -469,6 +555,10 @@ public final class MerlCommand {
 			}
 		} else {
 			message = Component.literal(headline(outcome, results, ask, source.getTextName()));
+			// The answer line goes first, the pages below it.
+			SearchIndex index = NiceMerl.index();
+			String line = index != null && ("sure".equals(sure) || "maybe".equals(sure)) ? index.answerLine(ask.search(), results) : "";
+			if (!line.isEmpty()) message.append(Component.literal("\n" + line).withStyle(ChatFormatting.WHITE));
 		}
 		for (SearchIndex.Result result : results) {
 			message.append(Component.literal("\n"));
@@ -588,6 +678,27 @@ public final class MerlCommand {
 			if (i > 0) body.append(title.copy().withStyle(Style.EMPTY.withColor(HIT_COLOR)));
 			body.append(Component.literal(parts[i]));
 		}
+		// How many others on the server have it too ("only the 3rd explorer to do this!"). Online players
+		// are checked live; everyone else's saved advancements are read off the server thread.
+		MinecraftServer server = player.level().getServer();
+		String id = holder.id().toString();
+		Set<UUID> online = new HashSet<>();
+		int onlineDone = 0;
+		for (ServerPlayer other : server.getPlayerList().getPlayers()) {
+			online.add(other.getUUID());
+			if (other != player && other.getAdvancements().getOrStartProgress(holder).isDone()) onlineDone++;
+		}
+		int alreadyOnline = onlineDone;
+		java.nio.file.Path dir = server.getWorldPath(net.minecraft.world.level.storage.LevelResource.PLAYER_ADVANCEMENTS_DIR);
+		NiceMerl.lookupAsync(() -> alreadyOnline + MerlStats.countDone(dir, id, online), others -> server.execute(() -> {
+			body.append(Component.literal(" " + MerlStats.rankLine(others)));
+			sendCelebration(player, body);
+		}));
+	}
+
+	/** A private congratulation, with a hover hint on how to turn them off. */
+	static void sendCelebration(ServerPlayer player, MutableComponent body) {
+		if (player.hasDisconnected()) return;
 		player.sendSystemMessage(framed(body.withStyle(Style.EMPTY
 				.withHoverEvent(new HoverEvent.ShowText(Component.literal("Click to turn these off: /nicemerl celebrate off")
 						.withStyle(ChatFormatting.GRAY)))

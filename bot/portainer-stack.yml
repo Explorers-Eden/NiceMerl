@@ -20,7 +20,7 @@ services:
     volumes:
       # Peanut Butter's pet count and what Merl remembers about people, kept across updates.
       - nicemerl-state:/app/state
-    mem_limit: 256m
+    mem_limit: 384m
     cpus: 0.5
 
 volumes:

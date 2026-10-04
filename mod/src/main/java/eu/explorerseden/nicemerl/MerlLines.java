@@ -74,7 +74,29 @@ public final class MerlLines {
 
 	/** Small talk that can start a question ("thanks! how do I…"), and the short line it gets. */
 	private static final Map<String, String> PREFIX_POOLS = Map.of("greeting", "greeting_prefix", "thanks", "thanks_prefix",
-			"sorry", "sorry_prefix", "ok", "ok_prefix", "no", "ok_prefix", "compliment", "compliment_prefix");
+			"sorry", "sorry_prefix", "ok", "ok_prefix", "no", "ok_prefix", "compliment", "compliment_prefix", "laugh", "compliment_prefix");
+	/** Small talk that "more" / "another one" asks for again. */
+	public static final Set<String> REPEATABLE = Set.of("joke", "fact", "tip", "idea", "story", "sing", "creeper_song", "pet_pb", "hungry");
+	/** Sentences and clauses, for messages with several bits of small talk ("you're funny! tell me a joke"). */
+	private static final Pattern CLAUSE = Pattern.compile("[.!?,;]+");
+	/** "so it's the bosses?" right after an answer: confusion about that answer, not a new question. */
+	private static final List<String> CLARIFY_CUES = List.of("so ", "wait so ", "you mean ", "do you mean ", "are you saying ",
+			"so youre saying ", "so basically ");
+	/** "have you met Alex?" is about a person; "do you know Alex?" only when Alex is someone Merl knows. */
+	private static final Pattern MET_STRICT = Pattern.compile("(?:have you (?:ever )?(?:met|talked to|spoken to|chatted with)"
+			+ "|did you (?:meet|talk to))\\s+@?(.{2,40}?)(?:\\s+(?:yet|before|already))?\\s*[?!.]*", Pattern.CASE_INSENSITIVE);
+	private static final Pattern MET_LOOSE = Pattern.compile("(?:do you know|do you remember|you know)\\s+@?(.{2,40}?)\\s*[?!.]*",
+			Pattern.CASE_INSENSITIVE);
+	private static final Set<String> NOT_NAMES = Set.of("me", "you", "yourself", "him", "her", "them", "anyone", "someone",
+			"everyone", "my name");
+	private static final Set<String> NOT_NAME_STARTS = Set.of("how", "what", "where", "why", "when", "which", "who", "the", "a",
+			"an", "any", "about", "if", "that", "this", "my", "your", "some", "of", "to");
+
+	/** "you're funny! tell me a joke" → the answer to the last bit of small talk, with a short reply to the first. */
+	public record MultiTalk(String prefix, String talk) {}
+
+	/** "have you met NotNiceRon yet?" → the name, and whether it's surely about a person. */
+	public record Met(String name, boolean strict) {}
 	private static final Set<String> QUESTION_WORDS = Set.of("how", "what", "where", "why", "when", "which", "who", "can", "is",
 			"does", "do", "are", "should", "could", "will", "whats", "wheres", "hows", "whos", "whys");
 	/** Words that can come between small talk and the question ("ok so what is…"). */
@@ -127,6 +149,15 @@ public final class MerlLines {
 	private static final Map<String, List<String>> TOPICS = new LinkedHashMap<>();
 	/** How a remembered topic is said in remember_topic: "build" → "building". */
 	private static final Map<String, String> TOPIC_PHRASES = new HashMap<>();
+	/** Statistic milestones Merl celebrates, by statistic ("mined" → 10,000, 50,000, …). */
+	private static final Map<String, List<Long>> STAT_MILESTONES = new LinkedHashMap<>();
+
+	public static List<Long> statMilestones(String stat) {
+		return STAT_MILESTONES.getOrDefault(stat, List.of());
+	}
+
+	/** How often someone talked to Merl in met_yes: once, a few times, lots of times. */
+	private static final List<String> OFTEN_PHRASES = new ArrayList<>();
 	private static final List<ProgressIdea> PROGRESS_IDEAS = new ArrayList<>();
 	/** Small talk in any wording: a trigger phrase, and every other word allowed next to it. */
 	private record KeywordIntent(String pool, List<String> triggers, Set<String> allowed) {}
@@ -157,6 +188,13 @@ public final class MerlLines {
 		PB_MOODS.addAll(strings(lines.get("pb_moods")));
 		lines.getAsJsonObject("topics").entrySet().forEach(e -> TOPICS.put(e.getKey(), strings(e.getValue())));
 		lines.getAsJsonObject("topic_phrases").entrySet().forEach(e -> TOPIC_PHRASES.put(e.getKey(), e.getValue().getAsString()));
+		OFTEN_PHRASES.addAll(strings(lines.get("often_phrases")));
+		lines.getAsJsonObject("stat_milestones").entrySet().forEach(e -> {
+			if (e.getKey().startsWith("_")) return;
+			List<Long> steps = new ArrayList<>();
+			for (JsonElement step : e.getValue().getAsJsonArray()) steps.add(step.getAsLong());
+			STAT_MILESTONES.put(e.getKey(), List.copyOf(steps));
+		});
 		for (JsonElement element : lines.getAsJsonArray("progress_ideas")) {
 			JsonObject idea = element.getAsJsonObject();
 			PROGRESS_IDEAS.add(new ProgressIdea(
@@ -420,11 +458,74 @@ public final class MerlLines {
 	/**
 	 * For a message that isn't a question: is the top page clearly what it's about? Yes when Merl is sure
 	 * ({@code sure} is "sure", "maybe" or "guess"), or when the page is named after it and the message is
-	 * just a topic ("turtles", "boss keys").
+	 * just a topic ("turtles", "boss keys"). "i hate creepers" names the Creeper page too, but it's a comment.
 	 */
-	public static boolean clearlyAbout(String sure, boolean titleMatch, String text) {
+	public static boolean clearlyAbout(String sure, boolean titleMatch, String text, boolean allMatched) {
 		if (sure == null) return false;
-		return sure.equals("sure") || (titleMatch && (sure.equals("maybe") || words(normalize(text)).size() <= TOPIC_WORDS));
+		boolean shortMessage = words(normalize(text)).size() <= TOPIC_WORDS;
+		// "moobloom", "mannequin": a short message whose every word is on the page is a topic search.
+		return sure.equals("sure") || (shortMessage && (titleMatch || allMatched));
+	}
+
+	/** "there" only as a place ("how do I get there"), not in "what dungeons are there". */
+	private static final Pattern REFERENCE = Pattern.compile(
+			"\\b(it|its|him|her|them|they|he|she)\\b|(?<!\\bare )(?<!\\bis )(?<!\\bwas )(?<!\\bwere )\\bthere\\b", Pattern.CASE_INSENSITIVE);
+
+	/** "where do I find him" after the Raj Raksha page → "where do I find Raj Raksha". */
+	public static String resolveReference(String search, String previousPage) {
+		if (previousPage == null || previousPage.isEmpty()) return search;
+		return REFERENCE.matcher(search).replaceFirst(Matcher.quoteReplacement(previousPage));
+	}
+
+	/** Several sentences that are all small talk; null when they aren't. */
+	public static MultiTalk multiSmallTalk(String text) {
+		List<String> clauses = Arrays.stream(CLAUSE.split(text)).filter(c -> !normalize(c).isEmpty()).toList();
+		if (clauses.size() < 2) return null;
+		List<String> talks = new ArrayList<>();
+		for (String clause : clauses) {
+			String talk = smallTalk(clause);
+			if (talk == null) return null;
+			talks.add(talk);
+		}
+		String first = talks.get(0);
+		String main = talks.get(talks.size() - 1);
+		return new MultiTalk(first.equals(main) ? null : PREFIX_POOLS.get(first), main);
+	}
+
+	/** "so Katter is the bosses?", "you mean the skyrtle?" */
+	public static boolean isClarifying(String text) {
+		String normalized = normalize(text) + " ";
+		return CLARIFY_CUES.stream().anyMatch(normalized::startsWith) && words(normalized.strip()).stream().noneMatch(ASKING_WORDS::contains);
+	}
+
+	/** The person a "have you met …?" question is about, or null. */
+	public static Met metQuestion(String text) {
+		for (Pattern pattern : List.of(MET_STRICT, MET_LOOSE)) {
+			Matcher m = pattern.matcher(text.strip());
+			if (!m.matches()) continue;
+			String name = m.group(1).strip();
+			List<String> nameWords = words(normalize(name));
+			if (!nameWords.isEmpty() && !NOT_NAMES.contains(normalize(name)) && !NOT_NAME_STARTS.contains(nameWords.get(0))
+					&& nameWords.size() <= 3) {
+				return new Met(name, pattern == MET_STRICT);
+			}
+		}
+		return null;
+	}
+
+	/** How often someone talked to Merl: "once", "a few times", "lots of times". */
+	public static String often(int chats) {
+		return OFTEN_PHRASES.get(chats <= 1 ? 0 : chats < 10 ? 1 : 2);
+	}
+
+	/** The project of the last answer counts this much extra in the next search ("and the loot?"). */
+	private static final double RECENT_PROJECT_SHARE = 0.5;
+
+	/** A person's usual projects plus what they're asking about right now, for SearchIndex.find. */
+	public static Map<String, Double> interests(Map<String, Double> shares, String recentProject) {
+		Map<String, Double> out = new HashMap<>(shares);
+		if (recentProject != null) out.put(recentProject, Math.min(1.0, out.getOrDefault(recentProject, 0.0) + RECENT_PROJECT_SHARE));
+		return out;
 	}
 
 	/** "and in the nether?", "what about the boss one" */
