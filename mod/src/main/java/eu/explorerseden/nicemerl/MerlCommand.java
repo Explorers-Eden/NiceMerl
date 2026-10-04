@@ -284,6 +284,13 @@ public final class MerlCommand {
 		visit.seenAt = now;
 		Meeting meeting = meet(player, question, source.getTextName());
 
+		// "what can I craft?" looks at the player's inventory.
+		if (player != null && config.craftingHelp && MerlLines.craftingQuestion(question)) {
+			reply(source, MerlCrafting.answer(player, question));
+			sendNote(source, meeting.note());
+			return 1;
+		}
+
 		MerlLines.Met met = MerlLines.metQuestion(question);
 		String metLine = met != null ? metLine(met, source) : null;
 		if (metLine != null) {
@@ -359,6 +366,12 @@ public final class MerlCommand {
 		if (MerlLines.isClarifying(question) && visit.recentPage(now) != null) {
 			// "so Katter is the bosses?" right after an answer
 			reply(source, Component.literal(MerlLines.pick("clarify", "user", source.getTextName())));
+			sendNote(source, meeting.note());
+			return 1;
+		}
+
+		// "where's the closest cherry grove?" and "where's a slime chunk?" get coordinates.
+		if (MerlLocate.handle(source, question, body -> reply(source, body))) {
 			sendNote(source, meeting.note());
 			return 1;
 		}

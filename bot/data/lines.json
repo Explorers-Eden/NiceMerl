@@ -1,5 +1,5 @@
 {
-  "_comment": "Merl's lines, shared by the Discord bot and the Fabric mod (the mod bundles this file at build time). Placeholders: {user}, {community}, {term}, {pages}, {page}, {word}, {count}, {deaths}, {hours}, {advancement}, {rank}. Emoji outside the basic plane and * are stripped in Minecraft chat. moods/pb_moods pick today's asides_<mood>, status_<mood> and pb_<mood> pools; any small-talk pool with a <pool>_<mood> twin (how_are_you_cozy) uses it half the time on that day. topics map words to reply_<topic> pools after Merl asks what someone is up to. often_phrases say how often someone talked to Merl in met_yes ({often}: once, a few times, lots). topic_phrases describe a remembered topic in remember_topic ({activity}). progress_ideas are used in-game: the first steps whose 'after' advancement is done and 'unless' is not.",
+  "_comment": "Merl's lines, shared by the Discord bot and the Fabric mod (the mod bundles this file at build time). Placeholders: {user}, {community}, {term}, {pages}, {page}, {word}, {count}, {deaths}, {hours}, {advancement}, {rank}, {biome}, {distance}, {direction}, {dimension}, {y}, {x1}, {z1}, {x2}, {z2}, {item}. Emoji outside the basic plane and * are stripped in Minecraft chat. moods/pb_moods pick today's asides_<mood>, status_<mood> and pb_<mood> pools; any small-talk pool with a <pool>_<mood> twin (how_are_you_cozy) uses it half the time on that day. topics map words to reply_<topic> pools after Merl asks what someone is up to. often_phrases say how often someone talked to Merl in met_yes ({often}: once, a few times, lots). topic_phrases describe a remembered topic in remember_topic ({activity}). progress_ideas are used in-game: the first steps whose 'after' advancement is done and 'unless' is not.",
   "pools": {
     "greeting_morning": [
       "Good morning, {user}! ☀️",
@@ -20871,6 +20871,147 @@
       "Nothing? I've got ideas!",
       "Chill mode!",
       "Relaxing! Yay!"
+    ],
+    "locate_looking": [
+      "Let me look around…",
+      "Hang on, let me check the map…",
+      "One sec, I'm looking…",
+      "Looking around for you…",
+      "Let me peek at the world…",
+      "Hmm, let me search a bit…",
+      "Checking every direction…",
+      "Peanut Butter and I are looking…",
+      "Scanning the horizon…",
+      "Give me a moment to look…"
+    ],
+    "locate_found": [
+      "The closest {biome} is about {distance} blocks {direction} of you:",
+      "Found one! {biome}, about {distance} blocks {direction}:",
+      "{biome} is about {distance} blocks to the {direction}:",
+      "Head {direction} for about {distance} blocks and you'll reach {biome}:",
+      "Your nearest {biome} is {distance} blocks {direction}:",
+      "Ooh, {biome}! About {distance} blocks {direction} of here:",
+      "Got it! {distance} blocks {direction}, there's {biome}:",
+      "The nearest {biome} I can find is {distance} blocks to the {direction}:",
+      "Pack your things, {user}! {biome} is waiting about {distance} blocks {direction}:",
+      "{biome}, about {distance} blocks {direction}. Have fun exploring:",
+      "Go {direction}! The closest {biome} is about {distance} blocks away:",
+      "I spotted {biome} about {distance} blocks {direction} of you:"
+    ],
+    "locate_here": [
+      "Look around, {user}! You're standing in {biome} right now.",
+      "You're already in {biome}!",
+      "Good news: you're in {biome} as we speak!",
+      "No need to travel, this is {biome}!",
+      "You found it already! This is {biome}.",
+      "Haha, you're right in the middle of {biome}!",
+      "Look down! You're standing in {biome}.",
+      "That's where you are right now: {biome}!"
+    ],
+    "locate_far": [
+      "I looked {distance} blocks in every direction and found no {biome}. Maybe try again from somewhere else?",
+      "Hmm, no {biome} within {distance} blocks of you. Try again after traveling a bit!",
+      "I couldn't find {biome} anywhere within {distance} blocks. They must be rare around here.",
+      "No {biome} nearby, not even within {distance} blocks. Sorry, {user}!",
+      "I searched {distance} blocks around you, but no {biome}. Ask me again from somewhere else!",
+      "That's a rare one: no {biome} within {distance} blocks of you."
+    ],
+    "locate_other_dimension": [
+      "{biome} only grows in {dimension}. Ask me again once you're there!",
+      "You won't find {biome} here! That's in {dimension}. Ask me again when you're there.",
+      "{biome}? You'll find that in {dimension}. Ask me again from there!",
+      "You'll have to go to {dimension} for {biome}. Ask me again from there and I'll point the way!",
+      "Not in this dimension! {biome} is found in {dimension}."
+    ],
+    "locate_never": [
+      "{biome} doesn't generate in this world, sorry!",
+      "Hmm, {biome} can't generate anywhere in this world.",
+      "I don't think you'll find {biome} here. It doesn't generate in this world.",
+      "Sorry, {user}, {biome} isn't part of this world."
+    ],
+    "slime_found": [
+      "The closest slime chunk is about {distance} blocks {direction} of you:",
+      "Found one! A slime chunk about {distance} blocks {direction}:",
+      "There's a slime chunk {distance} blocks to the {direction}:",
+      "Head {direction} for about {distance} blocks for a slime chunk:",
+      "Boing! The nearest slime chunk is about {distance} blocks {direction}:",
+      "Your closest slime chunk is about {distance} blocks {direction}:",
+      "Slime time! About {distance} blocks {direction}:",
+      "I found a slime chunk about {distance} blocks {direction} of you:"
+    ],
+    "slime_here": [
+      "You're standing in a slime chunk right now! Slimes spawn here below Y {y}.",
+      "Yes! This is a slime chunk. Dig down below Y {y} and they'll come bouncing.",
+      "Boing! You're in a slime chunk. Slimes spawn here below Y {y}.",
+      "Lucky you, {user}: this chunk is a slime chunk! Below Y {y} is where they spawn.",
+      "This is a slime chunk! Build your slime farm below Y {y}."
+    ],
+    "slime_not_here_found": [
+      "Not this one, but the closest slime chunk is about {distance} blocks {direction}:",
+      "Nope, no slimes here. The nearest slime chunk is about {distance} blocks {direction}:",
+      "This isn't a slime chunk, sorry! Try about {distance} blocks {direction}:",
+      "No luck here, {user}, but there's one about {distance} blocks {direction}:"
+    ],
+    "slime_not_here": [
+      "This isn't a slime chunk, sorry!",
+      "Nope, no slimes in this chunk.",
+      "Not a slime chunk, I'm afraid."
+    ],
+    "slime_none": [
+      "I couldn't find a slime chunk anywhere near you. That's very unlucky!",
+      "No slime chunks within 500 blocks? Wow, that almost never happens.",
+      "Hmm, no slime chunk nearby. Try again from somewhere else!"
+    ],
+    "slime_wrong_dimension": [
+      "Slime chunks only exist in the Overworld. Ask me again from there!",
+      "There are no slime chunks in this dimension. Try the Overworld!",
+      "Slime chunks are an Overworld thing. Ask me there and I'll find you one!",
+      "Not here! Slime chunks are only in the Overworld."
+    ],
+    "slime_hint": [
+      "(The chunk goes from {x1}, {z1} to {x2}, {z2}. Slimes spawn there below Y {y}.)",
+      "(It covers {x1}, {z1} to {x2}, {z2}; dig below Y {y}.)",
+      "(Chunk corners: {x1}, {z1} and {x2}, {z2}. Slimes spawn below Y {y}, in any light.)",
+      "(From {x1}, {z1} to {x2}, {z2}. Clear out a big room below Y {y} and wait.)"
+    ],
+    "craft_list": [
+      "With what you're carrying, you could make {count} things:",
+      "You could craft {count} things right now, {user}:",
+      "Ooh, lots of options! {count} things you can craft:",
+      "Here's what your inventory can turn into:",
+      "Let me peek in your bag… you could make:",
+      "Your pockets are full of possibilities! You could craft:",
+      "Crafting time! With what you have, you could make:",
+      "I count {count} things you can craft right now:",
+      "Peanut Butter sniffed through your inventory. You could make:",
+      "From what you're carrying, you could craft:"
+    ],
+    "craft_list_held": [
+      "With your {item}, you could make:",
+      "Your {item} could become:",
+      "Ooh, {item}! With it you could craft:",
+      "Here's what you can make with that {item}:",
+      "With the {item} and the rest of your inventory, you could craft:",
+      "That {item} is good for {count} things right now:",
+      "Let's see… your {item} could turn into:"
+    ],
+    "craft_none": [
+      "Hmm, nothing to craft with what you have right now. Maybe gather some logs?",
+      "Your inventory can't make anything yet. Punch a tree, it's tradition!",
+      "Nothing craftable right now, {user}. Some wood and stone would open up lots of recipes!",
+      "I looked through your pockets and found nothing to craft. Time to go gathering!",
+      "Nope, nothing yet! Collect a few more things and ask me again."
+    ],
+    "craft_none_held": [
+      "You can't make anything with your {item} right now. You might need a few more ingredients!",
+      "Hmm, nothing to craft with that {item} yet. Gather a bit more and ask again!",
+      "Your {item} can't be crafted into anything with what you have right now.",
+      "No recipes for your {item} with what you're carrying, sorry, {user}!"
+    ],
+    "craft_nothing_held": [
+      "You're not holding anything! Hold the item and ask me again.",
+      "Your hands are empty, {user}! Hold the item you're curious about and ask again.",
+      "Hold something first, then ask me what you can make with it!"
     ]
   },
   "intents": [

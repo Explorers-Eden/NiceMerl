@@ -102,6 +102,10 @@ jobs:
           used |= {p for p, _, _ in personality.KEYWORD_INTENTS}
           used |= {f"feeling_{f}" for f in personality.FEELING_ORDER} | {"about_me"}
           used |= {f"followup_{t}" for t in personality.TOPICS} | {"friend_milestone", "friend_anniversary", "remember_topic"}
+          # The mod uses the same lines.
+          java = "".join(p.read_text() for p in pathlib.Path("../mod/src/main/java").rglob("*.java"))
+          used |= set(re.findall(r'pick\(\s*"([a-z_]+)"\s*[,)]', java))
+          used |= {f"stat_{s}" for s in json.loads(pathlib.Path("data/lines.json").read_text())["stat_milestones"] if not s.startswith("_")}
           missing = sorted(p for p in used if p not in pools)
           empty = sorted(p for p, lines in pools.items() if not lines)
           assert not missing, f"Pools used in code but missing in lines.json: {missing}"

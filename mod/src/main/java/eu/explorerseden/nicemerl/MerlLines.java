@@ -727,4 +727,29 @@ public final class MerlLines {
 		List<String> lines = fitting.get(ThreadLocalRandom.current().nextInt(fitting.size())).lines();
 		return forChat(lines.get(ThreadLocalRandom.current().nextInt(lines.size())));
 	}
+
+	/** "what can I craft", "anything I could make", "what can I make with my stuff". */
+	// Nothing but "with …", "now" or similar may follow, so "what do I need to craft a beacon" isn't one.
+	private static final Pattern CRAFT_QUESTION = Pattern.compile("\\b(what|which|anything|something)\\b.*\\b(craft|make)\\b"
+			+ "\\s*(right now|now|here|today|for me|from (my|what i).*|with .*)?\\s*[?!.]*\\s*$|\\bcraftable\\b");
+	private static final Pattern CRAFT_ASKER = Pattern.compile("\\b(i|we)\\b.*|\\bcraftable\\b");
+	private static final Pattern CRAFT_MODAL = Pattern.compile("\\b(can|could|should|to)\\b|\\bcraftable\\b");
+	/** "…with this?" means the item in hand; "…with my stuff" or nothing means the whole inventory. */
+	private static final Pattern CRAFT_WITH_HELD = Pattern.compile("\\bwith (this|that|it|the thing i'?m holding|what i'?m holding)\\b");
+	private static final Pattern CRAFT_WITH = Pattern.compile("\\bwith\\b");
+	private static final Pattern CRAFT_WITH_INVENTORY = Pattern.compile(
+			"\\bwith (my|what i (have|got|carry)|the stuff|these|all|everything|inventory|items)\\b");
+
+	/** True for inventory crafting questions, which Merl answers instead of searching the wiki. */
+	public static boolean craftingQuestion(String message) {
+		String text = message.toLowerCase(java.util.Locale.ROOT);
+		if (!CRAFT_QUESTION.matcher(text).find() || !CRAFT_ASKER.matcher(text).find() || !CRAFT_MODAL.matcher(text).find()) return false;
+		// "what can I make with copper" is about copper, so it goes to the wiki.
+		return !CRAFT_WITH.matcher(text).find() || CRAFT_WITH_HELD.matcher(text).find() || CRAFT_WITH_INVENTORY.matcher(text).find();
+	}
+
+	public static boolean craftingWithHeld(String message) {
+		return CRAFT_WITH_HELD.matcher(message.toLowerCase(java.util.Locale.ROOT)).find();
+	}
+
 }

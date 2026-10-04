@@ -47,6 +47,12 @@ public class MerlConfig {
 	 * Merl searches by keywords only.
 	 */
 	public boolean semanticSearch = true;
+	/** "Where's the closest cherry grove?" gets the coordinates of the closest one (any biome, from any pack). */
+	public boolean locateBiomes = true;
+	/** "Where's a slime chunk?" gets the coordinates of the closest one. Turn off if your seed is a secret. */
+	public boolean locateSlimeChunks = true;
+	/** "What can I craft?" lists what the player can make from their inventory right now. */
+	public boolean craftingHelp = true;
 	/** Minimum seconds between questions per player. */
 	public int cooldownSeconds = 5;
 	/** Command storages holding data pack settings that /merl can report on. */

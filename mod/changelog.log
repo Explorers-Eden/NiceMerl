@@ -1,53 +1,49 @@
 # Minecraft Version(s): 26.3
-## New: "What should I do next?"
-- Ask `/merl what should I do next` (or *any ideas?*, *what now*, *I'm out of ideas*…) and Merl suggests something to do, from over 1,200 ideas
-- In-game, she looks at your advancements first: never been to the Nether? She'll suggest a portal. Have blaze rods but no eye of ender? Time to find a stronghold. Killed the dragon? Go find an elytra!
+## New: "Where's the closest cherry grove?"
+- Ask where a biome is and Merl gives you the coordinates of the closest one, with how far and which way (*"about 1,290 blocks northwest"*). Click the coordinates to copy them (operators get a ready-made `/tp`)
+- Works with every biome on the server: vanilla, Terralith, Biomes O' Plenty and our packs (Katters Structures' Coralis, Dark Chasm and Deep Blue Plains). Ask by name (*"moonlight grove"*), by id (*"terralith:moonlight_grove"*), with the pack's name (*"bop lavender field"*), or loosely (*"a snowy biome"*, *"mushroom island"*)
+- Cave biomes like the Deep Dark come with their height, biomes from another dimension tell you where to go (*"Coralis grows in the Deep Blue"*), and she notices when you're already standing in one
+
+## New: "Where's a slime chunk?"
+- Merl finds the closest slime chunk, with its coordinates and corners, or tells you whether you're standing in one (*"is this a slime chunk?"*)
+
+## New: "What can I craft?"
+- Merl looks through your inventory and lists what you can make right now, things you don't have yet first. Hover over a name to see whether it needs a crafting table
+- *"What can I make with this?"* lists only what uses the item in your hand
+
+## New: Statistic milestones
+- Merl congratulates you on milestones: 10,000, 100,000, 500,000 and a million blocks mined (and more), mobs defeated, kilometers traveled, hours played, fish caught, animals bred, villager trades and jumps
+- Milestones you passed before this update are noted quietly, so nobody gets flooded
+- Advancement congratulations now say how rare they are (*"You're the very first explorer to do this!"*, *"only the 3rd"*), and cover our packs' big ones too: the Katters Structures bosses, Mythical, collecting every mob variant, Ten Tales Told and more
+
+## Smarter answers
+- **Other wordings work:** a small word-vector model helps Merl find pages that say the same thing in other words (*"how do I unlock the boss room"* → Boss Keys)
+- **A one-line answer:** above the pages, Merl quotes the sentence from the wiki that answers your question
+- **The right part of the page:** *"where is …"* jumps to "Where to Find", *"how do I get …"* to crafting and drops, *"what dungeons are there"* to the overview, and *"who is Katter"* to the project's home page
+- **Settings in plain words:** *"can I pvp"*, *"how many homes can I have"*, *"is keep inventory on"* or *"what can I change in Fabled Roots"* all find the right settings; a miss lists the packs Merl knows
+- **"it" and "him" work:** *"where do I find him?"* right after an answer about Raj Raksha searches for Raj Raksha
+- **Fewer out-of-place answers:** messages that aren't questions (*"NO! Stop!"*, *"what?"*, *"i like turtles"*) get a reply instead of a random wiki page, and a guess shows one page instead of three
+
+## Merl is your companion
+- **She remembers you:** when you met, how often you've talked, what you're up to, which page helped and which packs you ask about most, so her answers fit you better over time. She notices your 50th chat and your friendship anniversaries
+- Ask *"do you remember me?"*, or say *"forget me"* to erase it. She never saves what you write; it takes about a hundred bytes per player
+- *"thanks"* and *"that's not what I asked"* teach her what you meant
 
 ## Merl sounds more human
 - **Over 20,000 lines:** about ten times as many as before, with nearly 1,000 jokes, 650 tips, 600 fun facts and 4,500 ideas
-- **She doesn't repeat herself:** two replies in a row never start the same way, and she won't stack an opener on a line that already starts with *"Oh"* or *"Hmm"*
-- **She's your companion now:** Merl remembers you: when you met, how often you've talked, what you're up to and which page last helped. Come back after a while and she asks how the build is going or whether that page helped; she notices your 50th chat and your friendship anniversaries, and greets regulars like old friends. Ask *"do you remember me?"*, or say *"forget me"* to erase it. No messages are stored, and it takes about a hundred bytes per player
-- **Fewer out-of-place answers:** messages that aren't questions (*"NO! Stop!"*, *"what?"*, *"i like turtles"*) get a reply instead of a random wiki page, and *"that's not what I asked"* gets help asking better
-- **Better conversations:** two bits of small talk in one message (*"you're funny! tell me a joke"*), *"another one"* after a joke, *"so it's the bosses?"* after a confusing answer, *"have you met Alex?"* and *"who am I?"* all get a proper reply, and a guess shows one page instead of three
-- **Settings questions in plain words:** *"can I pvp"*, *"grave type"* or *"keep inventory settings"* now show the settings too, not only questions with words like *"enabled"*; a miss lists the packs Merl knows
-- **"No" is not "OK":** *"no thanks"* or *"nah"* get their own replies instead of a cheerful *"Yay!"*
-- **Understands you better:** small talk works in many more wordings, with stretched letters and small typos (*"can you tell me a joke please"*, *"thaaanks"*, *"im bored gimme ideas"*), while real questions still go to the wiki
-- **Mixed messages:** *"thanks! how do I get a boss key?"* or *"hi, where are trial chambers"* get a quick reply to the small talk and the answer
-- **She says how sure she is:** a perfect match gets *"Found it!"*, a close one *"I think this is it…"*, a long shot *"This is my best guess:"*
-- **She remembers you for a little while:** she notices when you ask the same thing twice, says *"Welcome back!"* after a few hours away, understands follow-ups like *"and in the nether?"*, and when you say thanks she knows which page helped
-- **She matches your energy:** CAPS and *"!!"* get an excited reply, *"help, I'm stuck"* gets a calm one, and one-word questions get short answers
-- **Moods:** she has a mood of the day, gets sleepy late at night, and Peanut Butter has moods too (sleepy, playful, grumpy, hungry)
-- **Peanut Butter:** pet her with `/merl pet peanut butter` (everyone's pets are counted), and sometimes she interrupts or walks over the keyboard
-- **Small slips:** very rarely Merl makes a typo and corrects herself
-- **She asks back:** after *"how are you?"* she sometimes asks what you're up to, and reacts to your answer (*"just building"* → *"Ooh, what are you building?"*)
-- **She asks how you are:** after a hello or *"how are you?"* she may ask how you're doing, and understands the answer: *"good, you?"*, *"not bad"*, *"not great"* or *"tired"* each get a fitting reply (no more *"good"* being taken as a compliment)
-- **Moods show in her answers:** on a cozy day *"how are you?"* and *"what are you doing?"* get cozy answers, on a sleepy day sleepy ones
-- **More to talk about:** *"what are you doing?"*, *"I'm tired"*, *"I beat the dragon!"*, hugs, songs, stories, her favorite food and biome, and a warm welcome for *"I'm new here"*
-- **She notices what you're doing:** now and then she comments on what you're holding (mace, trident, totem…), your elytra, the biome you're in, your death count or your play time
-- **She celebrates with you:** Merl congratulates you on big advancements like killing the dragon, finding an elytra or beating the Wither, and on the big ones from our packs: the Katters Structures bosses, Mythical, collecting every mob variant, Ten Tales Told and more (only you see it)
-
-## Smarter answers
-- **Other wordings work:** a small word-vector model helps Merl find pages that say the same thing in other words (*"how do I unlock the boss room"* → Boss Keys). It's downloaded once (about 31 MB) and needs no extra RAM to speak of; without it Merl searches by keywords as before
-- **A one-line answer:** above the pages, Merl now quotes the sentence from the wiki that answers your question (*"You get a boss key by defeating the mini bosses."*)
-- **The right part of the page:** *"where is …"* jumps to "Where to Find", *"how do I get …"* to crafting and drops, *"what dungeons are there"* to the overview, and *"who is Katter"* to the project's home page
-- **She learns what you're into:** Merl remembers which packs you ask about most (just their names) and leans toward them when a question fits several; *"thanks"* and *"that's not what I asked"* teach her too
-- **"it" and "him" work:** *"where do I find him?"* right after an answer about Raj Raksha searches for Raj Raksha
-- **Settings in plain words:** *"can I pvp"*, *"how many homes can I have"*, *"is keep inventory on"*, *"grave settings"* or *"what can I change in Fabled Roots"* all find the right settings
-
-## Statistics milestones
-- Merl congratulates you on milestones: 10,000, 100,000, 500,000 and a million blocks mined (and more), mobs defeated, kilometers traveled, hours played, fish caught, animals bred, villager trades and jumps
-- Milestones you'd already passed before the update are noted quietly, so nobody gets flooded
-- Advancement congratulations now say how rare it is: *"You're the very first explorer to do this!"*, *"only the 3rd"*, or *"12 explorers did this before you"*
-
-## Commands
-- `/nicemerl comments [on|off]`: turn Merl's comments about where you are and what you're doing on or off, just for you
-- `/nicemerl celebrate [on|off]`: turn Merl's congratulations on or off, just for you
-- New permission node `nicemerl.command.toggle` (default: everyone)
+- **She doesn't repeat herself:** two replies in a row never start the same way
+- **Better conversations:** two bits of small talk in one message (*"you're funny! tell me a joke"*), *"another one"* after a joke, *"so it's the bosses?"* after a confusing answer, *"have you met Alex?"* and *"who am I?"*
+- **She asks how you are**, and understands the answer: *"good, you?"*, *"not bad"*, *"not great"* or *"tired"* each get a fitting reply
+- **"No" is not "OK":** *"no thanks"* or *"nah"* get their own replies
+- **Understands you better:** small talk works in many more wordings, with stretched letters and small typos (*"thaaanks"*, *"im bored gimme ideas"*), while real questions still go to the wiki
+- **More to talk about:** *"what are you doing?"*, *"I'm tired"*, *"I beat the dragon!"*, hugs, songs, stories, her favorite food and biome, and a warm welcome for *"I'm new here"*. Her mood of the day shows in her answers
 
 ## Config
-- New option `playerComments` (default `true`): turns Merl's comments off for the whole server
-- New option `celebrate` (default `true`): turns congratulations off for the whole server
-- New option `celebrateStatistics` (default `true`): turns statistic milestones off for the whole server
-- New option `semanticSearch` (default `true`): understanding other wordings; downloads the model once to `config/nicemerl/model/` (checked against its known checksum)
-- New option `celebrateAdvancements`: which advancements Merl congratulates players on (vanilla milestones and our packs' bosses, challenges and collections; packs you don't have installed don't matter)
-- Players' choices and Peanut Butter's pet count are saved in `config/nicemerl/state.json`
+- New option `locateBiomes` (default `true`): coordinates for *"where's the closest …"* biome questions
+- New option `locateSlimeChunks` (default `true`): slime chunk coordinates. Turn it off if your world seed is a secret
+- New option `craftingHelp` (default `true`): *"what can I craft?"*
+- New option `celebrateStatistics` (default `true`): statistic milestones
+- New option `semanticSearch` (default `true`): understanding other wordings. Downloads the model (about 31 MB) once to `config/nicemerl/model/`, checked against its known checksum; until then, or if that fails, Merl searches by keywords as before
+
+## Permissions
+- New permission node `nicemerl.locate` (default: everyone): biome and slime chunk coordinates

@@ -9,10 +9,14 @@ Type `/merl` and your question:
 - `/merl how do I get a boss key`
 - `/merl how do I make a nether portal`
 - `/merl is pvp enabled` or `/merl keep inventory settings`
+- `/merl where is the closest cherry grove` or `/merl where's a slime chunk`
+- `/merl what can I craft`
 
 Ask in your own words: typos, abbreviations like tp or xp, and other wordings (*"how do I unlock the boss room"*) are fine. Merl answers in one line when she can, then shows up to three wiki pages with a link and a short excerpt. Spoilers stay hidden until you hover over them.
 
 ## More than answers
+- **Coordinates:** ask where the closest biome is (vanilla, Terralith, Biomes O' Plenty or our packs, by name or id like `terralith:moonlight_grove`) or the closest slime chunk, and Merl tells you how far, which way and the exact spot. Click the coordinates to copy them.
+- **Crafting:** `/merl what can I craft` lists what your inventory can make right now; `/merl what can I make with this` only what uses the item in your hand.
 - **Ideas:** `/merl what should I do next` suggests a next step based on your advancements, or one of over 4,500 ideas.
 - **Small talk:** jokes, tips, fun facts, stories, `/merl pet peanut butter` and more. Ask for `another one` after a joke.
 - **She remembers you:** when you met, what you're up to, which page helped and which packs you ask about most, so her answers fit you better over time. Ask `/merl do you remember me`, or say `/merl forget me` to erase it. She never saves what you write.
@@ -33,6 +37,7 @@ Everything works without a permissions mod. With LuckPerms:
 - **nicemerl.command.reindex**: use `/nicemerl reindex` (operators)
 - **nicemerl.bypass.cooldown**: skip the cooldown between questions (operators)
 - **nicemerl.settings**: see data pack settings in answers (everyone)
+- **nicemerl.locate**: get biome and slime chunk coordinates (everyone)
 
 # For server admins
 The config is in `config/nicemerl.json`, created on the first start. Restart the server after changing it. The most useful options:
@@ -44,6 +49,8 @@ The config is in `config/nicemerl.json`, created on the first start. Restart the
 - **playerComments** and **celebrate**: turn comments and congratulations off for everyone
 - **celebrateAdvancements**: which advancements she congratulates on
 - **celebrateStatistics**: turn statistic milestones off for everyone
+- **locateBiomes** and **locateSlimeChunks**: turn coordinates off for everyone (turn slime chunks off if your seed is a secret)
+- **craftingHelp**: turn "what can I craft?" off for everyone
 - **semanticSearch**: understanding other wordings. Downloads a small file (about 31 MB) once to `config/nicemerl/model/`
 
 What Merl remembers about players is saved in `config/nicemerl/state.json`: about a hundred bytes per player, no messages, and players gone for a year are forgotten.
@@ -71,6 +78,9 @@ This is `config/nicemerl.json` as it's created on the first start. Delete the fi
   "results": 3,
   "excerptLength": 160,
   "semanticSearch": true,
+  "locateBiomes": true,
+  "locateSlimeChunks": true,
+  "craftingHelp": true,
   "cooldownSeconds": 5,
   "settingsSources": [
     {
