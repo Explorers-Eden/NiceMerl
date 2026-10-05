@@ -157,6 +157,22 @@ public final class BiomeNames {
 		return out.toString();
 	}
 
+	private static final String[] DIRECTIONS = {"north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"};
+
+	/**
+	 * Like {@link #direction}, but keeps the last answer until the bearing is clearly past the next one (30° from
+	 * its middle instead of 22.5°), so a target right on the line between north and northwest doesn't flicker.
+	 */
+	public static String direction(double dx, double dz, String last) {
+		double angle = (Math.toDegrees(Math.atan2(dx, -dz)) + 360) % 360;
+		for (int i = 0; i < DIRECTIONS.length; i++) {
+			if (!DIRECTIONS[i].equals(last)) continue;
+			double off = Math.abs(((angle - i * 45) % 360 + 540) % 360 - 180);
+			if (off <= 30) return last;
+		}
+		return direction(dx, dz);
+	}
+
 	/** "north", "southeast", … for a step of dx blocks east and dz blocks south. */
 	public static String direction(double dx, double dz) {
 		String[] names = {"north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"};

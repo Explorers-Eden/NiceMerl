@@ -8,7 +8,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.network.chat.ClickEvent;
@@ -43,12 +42,13 @@ public final class MerlGuide {
 	/** Each guided player's planned stretch of path, and when it was planned (in ticks). */
 	private static final Map<UUID, List<BlockPos>> PATHS = new ConcurrentHashMap<>();
 	private static final Map<UUID, Long> PLANNED = new ConcurrentHashMap<>();
+	/** The direction last shown on each player's action bar, so it doesn't flicker between two. */
+	private static final Map<UUID, String> SHOWN_DIRECTION = new ConcurrentHashMap<>();
 	/** The path is planned again this often, or sooner when the player leaves it. */
 	private static final int REPLAN_TICKS = 40;
 	private static final double OFF_PATH = 3.0;
 	/** Sparkles shown ahead of the player, one per path step. */
 	private static final int SHOWN_STEPS = 24;
-	private static final DustParticleOptions DUST = new DustParticleOptions(0xF06EAA, 1.0f);
 	private static long ticks;
 
 	private MerlGuide() {}
@@ -85,13 +85,15 @@ public final class MerlGuide {
 	private static void forget(UUID player) {
 		PATHS.remove(player);
 		PLANNED.remove(player);
+		SHOWN_DIRECTION.remove(player);
 	}
 
 	/**
 	 * Sparkles along a walkable path on the ground toward the target. While flying or falling (no ground to plan
 	 * on), a short line of sparkles points the way instead.
 	 */
-	private static void drawPath(ServerPlayer player, Target target) {
+	/** True when there's a path to show; false when the player stands on the ground and no way was found. */
+	private static boolean drawPath(ServerPlayer player, Target target) {
 		UUID id = player.getUUID();
 		ServerLevel level = player.level();
 		BlockPos feet = player.blockPosition();
@@ -106,6 +108,9 @@ public final class MerlGuide {
 			nearest = path.isEmpty() ? -1 : 0;
 		}
 		if (path.size() < 2) {
+			// On the ground with no way found: say so rather than draw a line through the walls.
+			if (player.onGround() || player.isInWater()) return false;
+			// Flying or falling, there's no ground to follow: a short line points the way.
 			Vec3 eye = player.getEyePosition();
 			Vec3 goal = new Vec3(target.x(), target.y() != null ? target.y() : eye.y, target.z());
 			Vec3 step = goal.subtract(eye).normalize();
@@ -113,12 +118,13 @@ public final class MerlGuide {
 				Vec3 at = eye.add(0, -0.4, 0).add(step.scale(d));
 				level.sendParticles(player, ParticleTypes.END_ROD, true, false, at.x, at.y, at.z, 1, 0, 0, 0, 0);
 			}
-			return;
+			return true;
 		}
 		for (int i = Math.max(1, nearest + 1); i < Math.min(path.size(), nearest + 1 + SHOWN_STEPS); i++) {
 			BlockPos at = path.get(i);
-			level.sendParticles(player, DUST, true, false, at.getX() + 0.5, at.getY() + 0.15, at.getZ() + 0.5, 2, 0.12, 0.02, 0.12, 0);
+			level.sendParticles(player, ParticleTypes.END_ROD, true, false, at.getX() + 0.5, at.getY() + 0.35, at.getZ() + 0.5, 1, 0.05, 0.02, 0.05, 0);
 		}
+		return true;
 	}
 
 	private static int nearest(List<BlockPos> path, BlockPos feet) {
@@ -158,9 +164,12 @@ public final class MerlGuide {
 						MerlLines.pick("guide_arrived", "target", target.label(), "user", player.getName().getString())));
 				continue;
 			}
-			drawPath(player, target);
+			boolean found = drawPath(player, target);
+			String direction = BiomeNames.direction(goal.x - eye.x, goal.z - eye.z, SHOWN_DIRECTION.get(entry.getKey()));
+			SHOWN_DIRECTION.put(entry.getKey(), direction);
 			player.sendOverlayMessage(Component.literal(target.label() + ": " + String.format(Locale.ROOT, "%,d", Math.round(flat))
-					+ " blocks " + BiomeNames.direction(goal.x - eye.x, goal.z - eye.z)).withStyle(ChatFormatting.LIGHT_PURPLE));
+					+ " blocks " + direction + (found ? "" : " · no way found from here, try going around"))
+					.withStyle(ChatFormatting.LIGHT_PURPLE));
 		}
 	}
 }

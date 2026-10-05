@@ -63,7 +63,7 @@ class NiceMerl(discord.Client):
         # Recipe pictures: our packs' from the website, vanilla ones drawn from the Minecraft Wiki.
         self.recipes = recipes.Manifest(config.RECIPES_URL)
         self.drawer = recipes.Drawer()
-        self.http: aiohttp.ClientSession | None = None
+        self.web: aiohttp.ClientSession | None = None
 
     async def setup_hook(self):
         self.refresh_index.change_interval(hours=config.REINDEX_HOURS)
@@ -73,8 +73,8 @@ class NiceMerl(discord.Client):
     async def close(self):
         if self.vanilla:
             await self.vanilla.close()
-        if self.http:
-            await self.http.close()
+        if self.web:
+            await self.web.close()
         await super().close()
 
     @tasks.loop(hours=6)
@@ -106,9 +106,9 @@ class NiceMerl(discord.Client):
         return True
 
     def session(self) -> aiohttp.ClientSession:
-        if self.http is None or self.http.closed:
-            self.http = aiohttp.ClientSession(headers={"User-Agent": "NiceMerl (Explorer's Eden Discord bot)"})
-        return self.http
+        if self.web is None or self.web.closed:
+            self.web = aiohttp.ClientSession(headers={"User-Agent": "NiceMerl (Explorer's Eden Discord bot)"})
+        return self.web
 
     async def recipe_picture(self, question: str, results: list[Result]) -> recipes.Picture | None:
         """For "how do I craft X?": our packs' recipe picture from the website, else the vanilla crafting

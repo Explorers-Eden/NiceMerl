@@ -920,7 +920,7 @@ public final class MerlCommand {
 	private static MutableComponent framed(Component body) {
 		MerlConfig config = NiceMerl.config();
 		TextColor color = TextColor.parseColor(config.prefixColor).result().orElse(MERL_PINK);
-		MutableComponent message = Component.literal(config.messagePrefix).withStyle(Style.EMPTY.withColor(color).withBold(true).withItalic(false));
+		MutableComponent message = Component.literal(config.messagePrefix).withStyle(Style.EMPTY.withColor(color).withBold(false).withItalic(false));
 		message.append(Component.empty().withStyle(Style.EMPTY.withBold(false).withItalic(false).withColor(ChatFormatting.WHITE)).append(body));
 		return message;
 	}

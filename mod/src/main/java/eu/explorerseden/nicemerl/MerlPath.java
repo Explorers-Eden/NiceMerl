@@ -10,6 +10,7 @@ import java.util.PriorityQueue;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -23,7 +24,7 @@ final class MerlPath {
 	/** How far ahead one stretch is planned, in blocks. */
 	static final int STRETCH = 28;
 	/** Most spots looked at per search, so a maze or an ocean can't slow the server down. */
-	private static final int BUDGET = 2500;
+	private static final int BUDGET = 6000;
 	private static final int MAX_DROP = 3;
 	private static final int[][] STEPS = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
 
@@ -128,16 +129,23 @@ final class MerlPath {
 		BlockState ground = level.getBlockState(feet.below());
 		String groundId = ground.getBlock().builtInRegistryHolder().key().identifier().getPath();
 		if (groundId.equals("magma_block") || groundId.contains("campfire") || groundId.equals("cactus")) return false;
-		return !ground.getFluidState().is(FluidTags.LAVA) && !ground.getCollisionShape(level, feet.below()).isEmpty()
-				&& (ground.isFaceSturdy(level, feet.below(), Direction.UP) || ground.getCollisionShape(level, feet.below()).max(Direction.Axis.Y) > 0.4);
+		var shape = ground.getCollisionShape(level, feet.below());
+		// Fences and walls are taller than a block: you don't walk on top of those.
+		return !ground.getFluidState().is(FluidTags.LAVA) && !shape.isEmpty() && shape.max(Direction.Axis.Y) <= 1.0
+				&& (ground.isFaceSturdy(level, feet.below(), Direction.UP) || shape.max(Direction.Axis.Y) > 0.4);
 	}
 
-	/** Nothing to bump into, and nothing that hurts (lava, fire, powder snow, cactus or berry bushes). */
+	/**
+	 * Room to walk through: nothing to bump into, or something players walk through anyway (doors, fence gates and
+	 * trapdoors they open, carpet and thin snow), and nothing that hurts (lava, fire, powder snow, cactus, berry bushes).
+	 */
 	private static boolean open(ServerLevel level, BlockPos pos) {
 		BlockState state = level.getBlockState(pos);
 		if (state.getFluidState().is(FluidTags.LAVA)) return false;
 		String id = state.getBlock().builtInRegistryHolder().key().identifier().getPath();
 		if (id.contains("fire") || id.equals("powder_snow") || id.equals("cactus") || id.equals("sweet_berry_bush")) return false;
-		return state.getCollisionShape(level, pos).isEmpty();
+		if (state.is(BlockTags.DOORS) || state.is(BlockTags.FENCE_GATES) || state.is(BlockTags.TRAPDOORS)) return !id.contains("iron");
+		var shape = state.getCollisionShape(level, pos);
+		return shape.isEmpty() || shape.max(Direction.Axis.Y) <= 0.1875;
 	}
 }

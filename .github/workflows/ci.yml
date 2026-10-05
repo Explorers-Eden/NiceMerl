@@ -235,6 +235,24 @@ jobs:
           print("Recipe pictures work: pack recipes, mini blocks, vanilla grids")
           EOF
 
+      - name: Check that the bot starts (without logging in to Discord)
+        env:
+          DISCORD_TOKEN: ci
+          CHANNEL_ID: "1"
+          SEMANTIC_MODEL: ""
+        run: |
+          python - <<'EOF'
+          import asyncio, bot
+          async def main():
+              client = bot.NiceMerl()
+              # discord.py's own HTTP client must not be replaced by anything of ours.
+              assert type(client.http).__name__ == "HTTPClient", type(client.http)
+              await client._async_setup_hook()
+              await client.close()
+          asyncio.run(main())
+          print("The bot starts")
+          EOF
+
       - name: Check that the stack in SETUP.md matches portainer-stack.yml
         run: |
           python - <<'EOF'
