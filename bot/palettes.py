@@ -128,23 +128,21 @@ def random_base(colors: dict, rng: random.Random | None = None) -> str | None:
 PART_SUFFIXES = ("_stairs", "_slab", "_wall", "_fence_gate", "_fence", "_trapdoor", "_door", "_button", "_pressure_plate",
                  "_hanging_sign", "_sign", "_pane", "_carpet")
 FULL_SUFFIXES = ("", "s", "_planks", "_block", "_bricks", "_wool")
-# Blocks whose English name isn't just their id: "Block of Copper", "Block of Lapis Lazuli".
-BLOCK_OF = {"lapis_block": "Block of Lapis Lazuli", "quartz_block": "Block of Quartz"}
+# Blocks whose English name isn't just their id ("Block of Copper", "Hay Bale"); the rest are their id in title case.
+BLOCK_OF = ("iron", "gold", "diamond", "emerald", "redstone", "netherite", "coal", "copper", "quartz", "amethyst",
+            "raw_iron", "raw_copper", "raw_gold", "bamboo", "stripped_bamboo", "resin")
+NAMES = {"lapis_block": "Block of Lapis Lazuli", "hay_block": "Hay Bale", "jack_o_lantern": "Jack o'Lantern"}
 ICON_URL = "https://minecraft.wiki/images/Invicon_{}.png"
 
 
 def name(block: str) -> str:
     """The block's name as players see it: "deepslate_bricks" → "Deepslate Bricks", "copper_block" → "Block of Copper"."""
-    if block in BLOCK_OF:
-        return BLOCK_OF[block]
-    words = block.split("_")
-    if words[-1] == "block" and len(words) > 1 and block not in ("bone_block", "hay_block", "honey_block", "moss_block",
-                                                                "nether_wart_block", "warped_wart_block", "snow_block",
-                                                                "slime_block", "honeycomb_block", "packed_mud", "dried_kelp_block",
-                                                                "sculk_block", "pale_moss_block", "resin_block") \
-            and not block.endswith(("_coral_block", "_mushroom_block", "_concrete_block")):
-        return "Block of " + " ".join(w.capitalize() for w in words[:-1])
-    return " ".join(w.capitalize() for w in words)
+    if block in NAMES:
+        return NAMES[block]
+    if block.endswith("_block") and block[: -len("_block")] in BLOCK_OF:
+        block = block[: -len("_block")]
+        return "Block of " + " ".join(w.capitalize() for w in block.split("_"))
+    return " ".join(w.capitalize() for w in block.split("_"))
 
 
 def _singular(words: list[str]) -> list[str]:

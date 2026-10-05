@@ -832,13 +832,21 @@ public final class MerlLines {
 			+ "|(merl )?" + PALETTE_WORD + "( please| pls| idea| ideas| inspiration)?"
 			+ "|(.* )?" + PALETTE_WORD + " (ideas?|inspiration|suggestions?)( please| pls)?"
 			+ "|(.* )?(what|which|some|random) blocks (go|fit|match|look good|work)( well| nicely| great)? together");
+	private static final String PALETTE_THINGS = "(blocks?|materials?|colou?rs?)";
+	private static final String PALETTE_MODAL = "((should|could|can|would|will|do|does|might|shall) (i |we |you |one )?)?";
+	/** With "blocks" in the question any of these verbs counts; without, only the ones that can only mean "goes with". */
+	private static final String PALETTE_VERB = "(go|goes|fit|fits|match|matches|pair|pairs|work|works|look good|looks good|look nice|looks nice"
+			+ "|combine|blend|complement|complements|use|mix|put|build|pick|choose|add)";
+	private static final String PALETTE_LOOSE_VERB = "(go|goes|fit|fits|match|matches|pair|pairs|look good|looks good|complement|complements|combine|blend)";
+	private static final String PALETTE_HOW = "( it| them)?( well| nicely| best| good| great| together)*";
 	private static final Pattern PALETTE_WITH = Pattern.compile(
-			"(.* )?(what|which)( other| kind of| kinds of)? (blocks?|materials?) (would |could |will |do |does |might )?"
-			+ "(go|goes|fit|fits|match|matches|pair|pairs|work|works|look good|looks good|combine|blend|complement|complements)"
-			+ "( well| nicely| best| good| great)? (with|to|together with|alongside|next to|for) (?<block>.+)"
-			+ "|(.* )?(what|which) (would |could |will |do |does )?(go|goes|fit|fits|match|matches|pairs?|complements?)"
-			+ "( well| nicely| best| good)? (with|to) (?<block2>.+)"
-			+ "|(.* )?(blocks?|materials?) (that|which|to) (go|fit|match|pair|work|look good|complement)s?( well| nicely| best)? (with |to |next to )?(?<block3>.+)"
+			"(.* )?(what|which)( other| kind of| kinds of| type of| types of)? " + PALETTE_THINGS + " (to )?" + PALETTE_MODAL
+			+ PALETTE_VERB + PALETTE_HOW + " (with|to|together with|alongside|next to|around) (?<block>.+)"
+			+ "|(.* )?(what|which) " + PALETTE_MODAL + PALETTE_LOOSE_VERB + PALETTE_HOW + " (with|to|alongside|next to) (?<block2>.+)"
+			+ "|(.* )?" + PALETTE_THINGS + " (that|which|to) " + PALETTE_MODAL + PALETTE_VERB + "s?" + PALETTE_HOW
+			+ " (with |to |next to |alongside )?(?<block3>.+)"
+			+ "|(.* )?(recommend|suggest)( me)?( some| a few)? " + PALETTE_THINGS + " (for|to go with|that go with|with|matching|to match) (?<block6>.+)"
+			+ "|(.* )?" + PALETTE_THINGS + " (matching|similar to) (?<block7>.+)"
 			+ "|(.* )?" + PALETTE_WORD + " (for|with|around|using|based on|from|of|to go with|that goes with) (?<block4>.+)"
 			+ "|(merl )?(?<block5>[a-z ]{3,40}?) " + PALETTE_WORD + "( please| pls)?");
 	private static final Pattern THIS_BLOCK = Pattern.compile(
@@ -850,18 +858,18 @@ public final class MerlLines {
 	/** A palette question, or null. */
 	public static PaletteAsk palette(String message) {
 		String text = normalize(message);
-		if (!text.contains("palette") && !text.matches(".*\\b(blocks?|materials?|go|goes|fit|fits|match|matches|pairs?|complements?)\\b.*")) return null;
+		if (!text.contains("palette") && !text.matches(".*\\b(blocks?|materials?|colou?rs?|go|goes|fit|fits|match|matches|pairs?|complements?|looks?|combine|blend)\\b.*")) return null;
 		if (PALETTE_AGAIN.matcher(text).matches()) return new PaletteAsk(null, false, false, true);
 		if (PALETTE_RANDOM.matcher(text).matches()) return new PaletteAsk(null, false, true, false);
 		Matcher m = PALETTE_WITH.matcher(text);
 		if (!m.matches()) return null;
 		String block = null;
-		for (String group : List.of("block", "block2", "block3", "block4", "block5")) {
+		for (String group : List.of("block", "block2", "block3", "block4", "block5", "block6", "block7")) {
 			if (m.group(group) != null) block = m.group(group);
 		}
 		// "what goes with diamonds" is no palette question unless it says block or palette, or names this block.
-		boolean aboutBlocks = text.contains("palette") || text.matches(".*\\b(blocks?|materials?)\\b.*");
-		block = block.replaceAll("\\b(in minecraft|for (my|a) (build|house|base|wall|floor|roof)|for building|please|pls|merl|well|nicely)\\b", " ")
+		boolean aboutBlocks = text.contains("palette") || text.matches(".*\\b(blocks?|materials?|colou?rs?)\\b.*");
+		block = block.replaceAll("\\b(in minecraft|for (my|a|the) (build|house|base|wall|walls|floor|roof|castle|tower)|in (my|a) build|for building|please|pls|merl|well|nicely)\\b", " ")
 				.replaceAll("^(the|a|an|some|my) ", "").replaceAll("\\s+", " ").strip();
 		if (block.isEmpty() || NOT_PALETTE_BLOCKS.contains(block)) return aboutBlocks ? new PaletteAsk(null, false, true, false) : null;
 		if (HELD_BLOCK.matcher(block).find()) return new PaletteAsk(null, true, false, false);

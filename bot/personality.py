@@ -308,13 +308,21 @@ PALETTE_RANDOM = re.compile(
     r"|(merl )?" + _PALETTE_WORD + r"( please| pls| idea| ideas| inspiration)?"
     r"|(.* )?" + _PALETTE_WORD + r" (ideas?|inspiration|suggestions?)( please| pls)?"
     r"|(.* )?(what|which|some|random) blocks (go|fit|match|look good|work)( well| nicely| great)? together")
+_PALETTE_THINGS = r"(blocks?|materials?|colou?rs?)"
+_PALETTE_MODAL = r"((should|could|can|would|will|do|does|might|shall) (i |we |you |one )?)?"
+# With "blocks" in the question any of these verbs counts; without, only the ones that can only mean "goes with".
+_PALETTE_VERB = (r"(go|goes|fit|fits|match|matches|pair|pairs|work|works|look good|looks good|look nice|looks nice|combine|blend"
+                 r"|complement|complements|use|mix|put|build|pick|choose|add)")
+_PALETTE_LOOSE_VERB = r"(go|goes|fit|fits|match|matches|pair|pairs|look good|looks good|complement|complements|combine|blend)"
+_PALETTE_HOW = r"( it| them)?( well| nicely| best| good| great| together)*"
 PALETTE_WITH = re.compile(
-    r"(.* )?(what|which)( other| kind of| kinds of)? (blocks?|materials?) (would |could |will |do |does |might )?"
-    r"(go|goes|fit|fits|match|matches|pair|pairs|work|works|look good|looks good|combine|blend|complement|complements)"
-    r"( well| nicely| best| good| great)? (with|to|together with|alongside|next to|for) (?P<block>.+)"
-    r"|(.* )?(what|which) (would |could |will |do |does )?(go|goes|fit|fits|match|matches|pairs?|complements?)"
-    r"( well| nicely| best| good)? (with|to) (?P<block2>.+)"
-    r"|(.* )?(blocks?|materials?) (that|which|to) (go|fit|match|pair|work|look good|complement)s?( well| nicely| best)? (with |to |next to )?(?P<block3>.+)"
+    r"(.* )?(what|which)( other| kind of| kinds of| type of| types of)? " + _PALETTE_THINGS + r" (to )?" + _PALETTE_MODAL
+    + _PALETTE_VERB + _PALETTE_HOW + r" (with|to|together with|alongside|next to|around) (?P<block>.+)"
+    r"|(.* )?(what|which) " + _PALETTE_MODAL + _PALETTE_LOOSE_VERB + _PALETTE_HOW + r" (with|to|alongside|next to) (?P<block2>.+)"
+    r"|(.* )?" + _PALETTE_THINGS + r" (that|which|to) " + _PALETTE_MODAL + _PALETTE_VERB + r"s?" + _PALETTE_HOW
+    + r" (with |to |next to |alongside )?(?P<block3>.+)"
+    r"|(.* )?(recommend|suggest)( me)?( some| a few)? " + _PALETTE_THINGS + r" (for|to go with|that go with|with|matching|to match) (?P<block6>.+)"
+    r"|(.* )?" + _PALETTE_THINGS + r" (matching|similar to) (?P<block7>.+)"
     r"|(.* )?" + _PALETTE_WORD + r" (for|with|around|using|based on|from|of|to go with|that goes with) (?P<block4>.+)"
     r"|(merl )?(?P<block5>[a-z ]{3,40}?) " + _PALETTE_WORD + r"( please| pls)?")
 PALETTE_THIS = re.compile(
@@ -336,7 +344,7 @@ class PaletteAsk:
 def palette(text: str) -> PaletteAsk | None:
     """ "what blocks go with deepslate", "random palette", "another palette" (same as MerlLines.palette)."""
     t = normalize(text)
-    if "palette" not in t and not re.search(r"\b(blocks?|materials?|go|goes|fit|fits|match|matches|pairs?|complements?)\b", t):
+    if "palette" not in t and not re.search(r"\b(blocks?|materials?|colou?rs?|go|goes|fit|fits|match|matches|pairs?|complements?|looks?|combine|blend)\b", t):
         return None
     if PALETTE_AGAIN.fullmatch(t):
         return PaletteAsk(again=True)
@@ -345,9 +353,9 @@ def palette(text: str) -> PaletteAsk | None:
     m = PALETTE_WITH.fullmatch(t)
     if not m:
         return None
-    group = next(g for g in ("block5", "block4", "block3", "block2", "block") if m.group(g) is not None)
-    about_blocks = "palette" in t or bool(re.search(r"\b(blocks?|materials?)\b", t))
-    block = re.sub(r"\b(in minecraft|for (my|a) (build|house|base|wall|floor|roof)|for building|please|pls|merl|well|nicely)\b",
+    group = next(g for g in ("block7", "block6", "block5", "block4", "block3", "block2", "block") if m.group(g) is not None)
+    about_blocks = "palette" in t or bool(re.search(r"\b(blocks?|materials?|colou?rs?)\b", t))
+    block = re.sub(r"\b(in minecraft|for (my|a|the) (build|house|base|wall|walls|floor|roof|castle|tower)|in (my|a) build|for building|please|pls|merl|well|nicely)\b",
                    " ", m.group(group))
     block = re.sub(r"\s+", " ", re.sub(r"^(the|a|an|some|my) ", "", block)).strip()
     if not block or block in NOT_PALETTE_BLOCKS:

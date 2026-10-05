@@ -245,12 +245,19 @@ jobs:
           assert ask("give me a random palette").random and ask("surprise me with a palette").random
           assert ask("another palette").again and ask("what blocks go with this").block is None
           assert ask("what goes well with oak planks").loose and ask("how do i get a boss key") is None
+          assert ask("What blocks should I use with Poplar Logs").block == "poplar logs"
+          assert ask("what colors go with copper").block == "copper" and ask("blocks to use with cherry planks").block == "cherry planks"
+          assert ask("what looks good with blackstone").loose and ask("what blocks can i use for a nether portal") is None
+          assert ask("what blocks can endermen pick up") is None and ask("which blocks are blast resistant") is None
           colors = palettes.load()
           assert len(colors) > 300, len(colors)
           # Names: exact, partial blocks (stairs → planks), loose words; "diamonds" only loosely.
           assert palettes.by_name(colors, "oak stairs") == "oak_planks"
           assert palettes.by_name(colors, "stone brick wall") == "stone_bricks"
           assert palettes.by_name(colors, "copper") == "copper_block" and palettes.name("copper_block") == "Block of Copper"
+          # Names as in the game (the picture loads each block's icon from the Minecraft Wiki by name).
+          assert [palettes.name(b) for b in ("resin_block", "hay_block", "magma_block", "lapis_block", "jack_o_lantern")] == [
+              "Block of Resin", "Hay Bale", "Magma Block", "Block of Lapis Lazuli", "Jack o'Lantern"]
           assert palettes.by_name(colors, "diamonds", exact=True) is None and palettes.by_name(colors, "blorp") is None
           # Palettes: six different blocks from dark to light, one per color set, the start included.
           for base in ["deepslate_bricks", "oak_planks", "white_concrete", "copper_block", palettes.random_base(colors)]:
