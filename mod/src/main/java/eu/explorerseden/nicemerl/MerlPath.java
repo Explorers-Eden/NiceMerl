@@ -185,6 +185,13 @@ final class MerlPath {
 		return standable(level, feet.above()) ? feet.above() : null;
 	}
 
+	/** Block ids by block, so the search doesn't build a new string for every spot it looks at. */
+	private static final Map<net.minecraft.world.level.block.Block, String> IDS = new java.util.concurrent.ConcurrentHashMap<>();
+
+	private static String id(net.minecraft.world.level.block.Block block) {
+		return IDS.computeIfAbsent(block, b -> net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(b).getPath());
+	}
+
 	/** Something players climb or swim up and down in: ladders, vines, scaffolding, water. */
 	private static boolean climbable(ServerLevel level, BlockPos pos) {
 		BlockState state = level.getBlockState(pos);
@@ -196,7 +203,7 @@ final class MerlPath {
 		if (!open(level, feet) || !open(level, feet.above())) return false;
 		if (climbable(level, feet)) return true;
 		BlockState ground = level.getBlockState(feet.below());
-		String groundId = ground.getBlock().builtInRegistryHolder().key().identifier().getPath();
+		String groundId = id(ground.getBlock());
 		if (groundId.equals("magma_block") || groundId.contains("campfire") || groundId.equals("cactus")) return false;
 		var shape = ground.getCollisionShape(level, feet.below());
 		// Fences and walls are taller than a block: you don't walk on top of those.
@@ -212,7 +219,7 @@ final class MerlPath {
 	private static boolean open(ServerLevel level, BlockPos pos) {
 		BlockState state = level.getBlockState(pos);
 		if (state.getFluidState().is(FluidTags.LAVA)) return false;
-		String id = state.getBlock().builtInRegistryHolder().key().identifier().getPath();
+		String id = id(state.getBlock());
 		if (id.contains("fire") || id.equals("powder_snow") || id.equals("cactus") || id.equals("sweet_berry_bush")) return false;
 		if (state.is(BlockTags.DOORS) || state.is(BlockTags.FENCE_GATES) || state.is(BlockTags.TRAPDOORS)) return !id.contains("iron");
 		if (state.is(BlockTags.CLIMBABLE)) return true;

@@ -97,7 +97,7 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 
 To test the search without Discord, run `.venv/bin/python search.py "how do I get a boss key"`. The meaning-based search model is downloaded from Hugging Face on the first start (the Docker image has it built in).
 
-To measure the answers, run `.venv/bin/python evaluate.py` (add `-v` to list every miss). It asks 332 test questions from [`bot/eval/questions.json`](bot/eval/questions.json) and checks chatter, small talk, follow-ups and context too; `mod/eval/run.sh` does the same for the mod after a build, plus 109 settings questions. Both currently score the same: 91% right on the first page, 95% within the first three.
+To measure the answers, run `.venv/bin/python evaluate.py` (add `-v` to list every miss). It asks 332 test questions from [`bot/eval/questions.json`](bot/eval/questions.json) and checks chatter, small talk, follow-ups and context too; `mod/eval/run.sh` does the same for the mod after a build, plus 109 settings questions. Both currently score the same: 95% right on the first page, 98% within the first three, and the short answer line has the expected fact in 35 of 51 checks (`-v` lists the misses of each). `python check_placeholders.py` checks that every `{placeholder}` in Merl's lines gets a value in the bot and the mod.
 
 ### Configuration
 

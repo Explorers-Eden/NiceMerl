@@ -261,7 +261,9 @@ class VanillaWiki:
 # Vanilla names that are also everyday words: only counted when the question names nothing more specific.
 AMBIGUOUS_NAMES = {"light", "air", "fire", "end", "note", "target", "lead", "map", "book", "key", "sign", "bell", "test",
                    "vault", "spawn", "speed", "luck", "stone", "water", "glass", "string", "stick", "bowl", "paper",
-                   "arrow", "bread", "cake", "egg", "bone", "clock", "compass", "chain", "barrier", "jigsaw", "piston"}
+                   "arrow", "bread", "cake", "egg", "bone", "clock", "compass", "chain", "barrier", "jigsaw", "piston",
+                   # The game's names for technical things ("Item" is a dropped item).
+                   "item", "player", "marker", "interaction", "potion"}
 _NAMES: list[tuple[str, frozenset]] | None = None
 
 

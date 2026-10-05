@@ -24913,6 +24913,19 @@
       "{name}, you'll laugh at this one too:",
       "Just a little friendly teasing:",
       "All in good fun:"
+    ],
+    "online": [
+      "I can't see the server from Discord, but in game /merl who's online tells you!",
+      "From here I can't peek into the server. Ask me in game with /merl who's online!",
+      "Good question! I can only check that in game. Try /merl who's online there.",
+      "I can't see who's playing from Discord, sorry! In game, /merl who's online knows.",
+      "My window into the server only opens in game. Try /merl server info there!",
+      "Hmm, Discord doesn't show me the server. In game I can tell you who's on with /merl who's online."
+    ],
+    "online_ingame": [
+      "Press Tab to see everyone who's on right now!",
+      "Hold Tab and you'll see the whole player list.",
+      "The player list is just a Tab away!"
     ]
   },
   "intents": [
@@ -25063,6 +25076,10 @@
     {
       "pool": "creeper_song",
       "pattern": "(creeper )?a+w+ man+"
+    },
+    {
+      "pool": "online",
+      "pattern": "(merl |nicemerl )?(hey |so )?(is )?(anyone|anybody|someone|somebody|any ?one) (on|online|playing|here on the server|on the server)( right now| rn| now| today| at the moment)?|(merl )?(who|whos|who is) (on|online|playing)( right now| rn| now| today)?|(merl )?how many (people|players) are (on|online|playing)( right now| rn| now)?|(merl )?is the server (up|online|down|running)( right now| rn)?"
     }
   ],
   "moods": [

@@ -1,10 +1,14 @@
 # Minecraft Version(s): 26.3
-## Block palettes
-- **Several blocks at once:** *"a palette with prismarine and gold"* puts both of them in the palette
-- **Any block works as a start:** ores (*"deepslate lapis ore"*), cactus, flowers, leaves, slabs and more, not just full building blocks. Suggestions are still building blocks
-- *"Gold"* means the Block of Gold, not gold ore
-- Grass, leaves and water have their real colors
+## Merl understands questions better
+- *"Cat variants"* or *"what wolf variants are there"* gets the list of all of them, not one random variant
+- *"Graveyard katters"* finds the Katters Structures page, not pages that only mention it, and *"does katters structures work with terralith"* finds the right page too
+- Summon commands, block counts and structure file lists no longer crowd out real answers, unless you ask about commands or blocks
+- More words understood: *"die"* means death, *"move enchantments"* means transferring them, *"name tag tricks"*, *"last longer"*, *"break"* (durability)
+- Words like *"didn't"* or *"wasn't"* no longer make Merl unsure, so *"the resource pack didn't load"* gets an answer
+- The short answer at the top uses those words too: *"how do I move enchantments?"* now says *"Transfers enchantments from the item in the Offhand…"*
+- *"Anyone online?"* or *"is anybody on?"* shows who's on the server
+- Questions about an *"item"* don't get the Minecraft Wiki page about dropped items anymore
 
-## Better answers about vanilla things
-- Real Minecraft words aren't "corrected" anymore: *"how do I craft a minecart?"* no longer turns into *"minecraft"*
-- A question that names a vanilla block, item, mob, biome, enchantment or effect (*"how many uses are there for iron ingots?"*) always gets the Minecraft Wiki page about it
+## Fixes
+- A few of Merl's lines about Peanut Butter and about being hurt could show *"{user}"* instead of your name
+- Faster path search for the guide

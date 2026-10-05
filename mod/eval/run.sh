@@ -6,7 +6,8 @@
 # and the meaning-based search model in bot/model if it's there (or pass --model <folder> yourself).
 set -e
 cd "$(dirname "$0")/.."
-JAR=$(ls build/libs/nice-merl-*.jar | grep -v sources | tail -1)
+# The newest jar, not the last one by name (1.5.9 sorts after 1.5.18).
+JAR=$(ls -t build/libs/nice-merl-*.jar | grep -v sources | head -1)
 GSON=$(find ~/.gradle/caches -name 'gson-2*.jar' | grep -v sources | head -1)
 MC=$(ls .gradle/loom-cache/minecraftMaven/net/minecraft/minecraft-merged-*/*/*.jar | head -1)
 OUT=build/eval

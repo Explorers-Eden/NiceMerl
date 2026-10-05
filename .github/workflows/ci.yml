@@ -113,6 +113,9 @@ jobs:
           print(f"{len(pools)} pools, {sum(map(len, pools.values()))} lines, all present")
           EOF
 
+      - name: Check that every placeholder in Merl's lines gets a value (bot and mod)
+        run: python check_placeholders.py
+
       - name: Check that small talk and questions are told apart
         run: |
           python - <<'EOF'
@@ -318,6 +321,7 @@ jobs:
           assert vanilla.named_thing("how many different uses are there for iron ingots?") == "Iron Ingot"
           assert vanilla.named_thing("How do i craft a minecart?") == "Minecart"
           assert vanilla.named_thing("how do i get a boss key") is None
+          assert vanilla.named_thing("how do i move enchantments to another item") is None
           print("Vanilla names work")
           EOF
 

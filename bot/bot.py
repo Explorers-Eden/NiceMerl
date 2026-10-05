@@ -433,7 +433,7 @@ class NiceMerl(discord.Client):
     def met_line(self, name: str, strict: bool, message: discord.Message, user: str) -> str | None:
         """ "have you met Alex?": whether Merl knows them, by Discord mention or display name."""
         if normalize_name(name) in ("peanut butter", "pb", "your cat"):
-            return personality.peanut_butter(self.now())
+            return personality.peanut_butter(self.now(), user)
         if normalize_name(name) in ("merl", "nicemerl"):
             return pick("who_are_you", community=COMMUNITY)
         mention = re.fullmatch(r"<@!?(\d+)>", name)
@@ -476,7 +476,7 @@ class NiceMerl(discord.Client):
         if talk == "thanks" and (page := visit.recent_page(now)):
             return pick("thanks_answered", page=page)
         if talk == "peanut_butter":
-            return personality.peanut_butter(self.now())
+            return personality.peanut_butter(self.now(), user)
         if talk == "pet_pb":
             count = self.state.bump("pets")
             if personality.pet_milestone(count):

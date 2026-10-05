@@ -64,5 +64,17 @@
   "trade": "trading",
   "trades": "trading",
   "totem": "totem undying",
-  "totems": "totem undying"
+  "totems": "totem undying",
+  "die": "death",
+  "died": "death",
+  "dies": "death",
+  "dying": "death",
+  "move": "transfer",
+  "moving": "transfer",
+  "tricks": "features",
+  "trick": "features",
+  "longer": "duration lifespan",
+  "server": "server realm recrafted",
+  "break": "break durability",
+  "breaks": "break durability"
 }

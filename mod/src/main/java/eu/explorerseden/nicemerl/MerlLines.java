@@ -662,8 +662,8 @@ public final class MerlLines {
 	}
 
 	/** An answer about Peanut Butter, often about how she's doing today. */
-	public static String peanutButter(LocalDate day) {
-		return chance(2) ? pick("pb_" + pbMood(day)) : pick("peanut_butter");
+	public static String peanutButter(LocalDate day, String user) {
+		return chance(2) ? pick("pb_" + pbMood(day), "user", user) : pick("peanut_butter", "user", user);
 	}
 
 	/** After some small talk, sometimes a question back ("What are you up to today?"), else null. */
@@ -1100,7 +1100,9 @@ public final class MerlLines {
 	private static final Pattern SERVER_DISTANCE = Pattern.compile("\\b(view|render|simulation|sim) ?distances?\\b");
 	private static final Pattern SERVER_INFO = Pattern.compile(
 			"\\b(server (properties|info|information|version|details|stats)|difficulty|game ?mode|max(imum)? players|player (limit|cap)"
-			+ "|how many players|players online|who is online|whos online|whitelist(ed)?|hardcore|motd|what version|which version)\\b");
+			+ "|how many players|players online|who is online|whos online|whitelist(ed)?|hardcore|motd|what version|which version"
+			+ "|(anyone|anybody|someone|somebody) (on|online|playing)|who(s| is) (on|playing)|how many (people|players) are (on|online|playing)"
+			+ "|is the server (up|online|running))\\b");
 
 	/** "tps", "mobs", "distance", "info" or null. How-to questions ("how do I reduce lag") go to the wiki. */
 	public static String serverInfo(String message) {

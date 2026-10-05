@@ -589,9 +589,9 @@ def aside(now: datetime, energy: str = "normal") -> str | None:
     return pick(random.choice(("asides", f"asides_{mood(now.date())}")))
 
 
-def peanut_butter(now: datetime) -> str:
+def peanut_butter(now: datetime, user: str) -> str:
     """An answer about Peanut Butter, often about how she's doing today."""
-    return pick(f"pb_{pb_mood(now.date())}") if chance(2) else pick("peanut_butter")
+    return pick(f"pb_{pb_mood(now.date())}", user=user) if chance(2) else pick("peanut_butter", user=user)
 
 
 def status(now: datetime) -> str:

@@ -173,7 +173,9 @@ public final class VanillaWiki {
 	/** Vanilla names that are also everyday words: only counted when the question names nothing more specific. */
 	private static final Set<String> AMBIGUOUS_NAMES = Set.of("light", "air", "fire", "end", "note", "target", "lead", "map",
 			"book", "key", "sign", "bell", "test", "vault", "spawn", "speed", "luck", "stone", "water", "glass", "string", "stick",
-			"bowl", "paper", "arrow", "bread", "cake", "egg", "bone", "clock", "compass", "chain", "barrier", "jigsaw", "piston");
+			"bowl", "paper", "arrow", "bread", "cake", "egg", "bone", "clock", "compass", "chain", "barrier", "jigsaw", "piston",
+			// The game's names for technical things ("Item" is a dropped item).
+			"item", "player", "marker", "interaction", "potion");
 	private static volatile List<String> names;
 
 	/** The English names of vanilla blocks, items, mobs, biomes, enchantments and effects (minecraft_names.json). */

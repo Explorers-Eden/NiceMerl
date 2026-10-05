@@ -23,7 +23,7 @@ the their them then there these they this those through to too under until up us
 want was way we were what when where which while who whom why will with would you your
 anyone anybody someone somebody something anything thing things find wiki explain explorer
 explorers eden hi hello hey hallo heya hiya yo sup moin servus merl nicemerl
-whats hows wheres whos whys im ive id dont cant isnt doesnt wont u ur pls plz
+whats hows wheres whos whys im ive id dont cant isnt doesnt wont u ur pls plz didnt wasnt werent arent hasnt havent hadnt wouldnt couldnt shouldnt youre theyre thats theres heres
 """.split())
 
 # Plurals the suffix rules below would get wrong.
@@ -82,6 +82,11 @@ GENERIC_TITLES = {"main", "home"}
 # Changelogs mention everything, so they only win when the question is about changes.
 CHANGELOG_FACTOR = 0.5
 CHANGELOG_WORDS = {"changelog", "change", "update", "patch", "new", "added", "release"}
+# Technical sections (summon commands, block counts, structure file lists) repeat a page's words over and over, so
+# they only count fully when the question is about commands, blocks or loot (same as SearchIndex.java).
+TECHNICAL_HEADINGS = {"summon command", "commands", "blocks", "entities", "loot tables", "per-structure file contents",
+                      "contents"}
+TECHNICAL_FACTOR = 0.4
 # Results scoring below this share of the best result are dropped.
 RELATIVE_CUTOFF = 0.35
 EXCERPT_LEN = 220
@@ -185,6 +190,17 @@ def edit_distance(a: str, b: str, limit: int) -> int:
     return prev[-1]
 
 
+_TECHNICAL_WORDS: set[str] | None = None
+
+
+def technical_words() -> set[str]:
+    global _TECHNICAL_WORDS
+    if _TECHNICAL_WORDS is None:
+        _TECHNICAL_WORDS = set(tokenize("command commands summon give block blocks entity entities loot table tables "
+                                        "contents made composed structure file nbt"))
+    return _TECHNICAL_WORDS
+
+
 _MINECRAFT_TERMS: set[str] | None = None
 
 
@@ -252,6 +268,8 @@ class Index:
         self.heading_terms: list[set[str]] = []
         self.hint_targets: list[set[str]] = []
         self.project_terms: list[set[str]] = []
+        # The words of each page's project folder ("katters_structures" → katter, structure).
+        self.folder_terms: list[set[str]] = []
         surface: dict[str, Counter] = {}
         df: Counter = Counter()
         bdf: Counter = Counter()
@@ -275,6 +293,7 @@ class Index:
             title = set(tokenize(s.page_title)) - GENERIC_TITLES
             self.title_terms.append(title | project if home else title)
             self.project_terms.append(project if home and not s.vanilla else set())
+            self.folder_terms.append(set() if s.vanilla else set(tokenize(s.path.split("/")[0].replace("_", " "))))
             # Headings answer kinds of questions ("Where to Find"); overview pages answer "what … are there".
             # A project's home page lists what the project has ("cat variants" → the Cat list on Nice Mob Variants).
             self.hint_targets.append(hint_terms(s.heading) | (hint_terms(s.page_title) & LIST_HINTS)
@@ -282,6 +301,7 @@ class Index:
             self.heading_terms.append(set(tokenize(s.heading)) if s.heading != s.page_title else set())
             df.update(counts.keys())
             bdf.update(pairs.keys())
+        self.all_folder_terms = set().union(*self.folder_terms) if self.folder_terms else set()
         n = len(sections)
         self.avg_len = sum(self.lengths) / n if n else 0
         self.idf = {t: math.log(1 + (n - f + 0.5) / (f + 0.5)) for t, f in df.items()}
@@ -347,7 +367,8 @@ class Index:
             groups.append(Group(term, alternatives, exact or bool(synonym)))
         return groups, corrections
 
-    def _score(self, i: int, groups: list[Group], query_terms: set[str], changelog_ok: bool, hints: set[str]) -> float:
+    def _score(self, i: int, groups: list[Group], query_terms: set[str], changelog_ok: bool, hints: set[str],
+               technical_ok: bool = True) -> float:
         active = [g for g in groups if g.alternatives]
         score = 0.0
         matched = 0
@@ -359,13 +380,21 @@ class Index:
         if not matched:
             return 0.0
         for a, b in zip(active, active[1:]):
-            pair = f"{a.alternatives[0][0][-1]} {b.alternatives[0][0][0]}"
+            # A pair with another project's name ("graveyard katters" on a Nice Mob Variants page that mentions
+            # "Graveyard (Katters Structures)") is about that other project.
+            first, second = a.alternatives[0][0][-1], b.alternatives[0][0][0]
+            if {first, second} & (self.all_folder_terms - self.folder_terms[i]):
+                continue
+            pair = f"{first} {second}"
             tf = self.bigrams[i].get(pair)
             if tf:
                 score += BIGRAM_WEIGHT * self.bigram_idf[pair] * tf * (K1 + 1) / (tf + K1)
         score *= math.sqrt(matched / len(active))
         if self._title_match(i, query_terms):
             score += TITLE_MATCH_BONUS
+            # "graveyard katters": the page named in the question, in the project named in the question.
+            if self.folder_terms[i] & query_terms:
+                score += TITLE_MATCH_BONUS
         if self.heading_terms[i] and self.heading_terms[i] <= query_terms:
             score += HEADING_MATCH_BONUS
         if self.hint_targets[i] & hints:
@@ -375,6 +404,8 @@ class Index:
         path = self.sections[i].path
         if not changelog_ok and "changelog" in path.lower():
             score *= CHANGELOG_FACTOR
+        if not technical_ok and self.sections[i].heading.lower() in TECHNICAL_HEADINGS:
+            score *= TECHNICAL_FACTOR
         return score + self.priors.get(path, 0.0)
 
     def _title_match(self, i: int, query_terms: set[str]) -> bool:
@@ -390,9 +421,10 @@ class Index:
             return Outcome([], corrections, uncertain=bool(groups))
         query_terms = {t for g in groups for terms, _ in g.alternatives for t in terms}
         changelog_ok = bool(query_terms & CHANGELOG_WORDS)
+        technical_ok = bool(query_terms & technical_words())
         best: dict[str, tuple[float, int]] = {}
         for i, s in enumerate(self.sections):
-            score = self._score(i, groups, query_terms, changelog_ok, hints)
+            score = self._score(i, groups, query_terms, changelog_ok, hints, technical_ok)
             if score and interests:
                 score += INTEREST_BONUS * interests.get(s.path.split("/")[0], 0.0)
             if score >= min_score and score > best.get(s.path, (0.0, -1))[0]:
@@ -400,6 +432,11 @@ class Index:
         ranked = sorted(best.values(), reverse=True)[:limit]
         if ranked:
             ranked = [r for r in ranked if r[0] >= ranked[0][0] * RELATIVE_CUTOFF]
+        # "cat variants": when the best matches are all pages of one kind (every cat variant has its own page), the
+        # question wants the overview, the home page section named after it (the Cat list on Nice Mob Variants).
+        if ranked and hints & LIST_HINTS and (overview := self._overview(ranked, query_terms)) is not None:
+            ranked = [(ranked[0][0] + 0.01, overview)] + [r for r in ranked if self.sections[r[1]].path != self.sections[overview].path]
+            ranked = ranked[:limit]
         # Meaning only helps when the keywords aren't sure: a strong match, or a page named in the
         # question, already is the answer ("curse of blindness" shouldn't drift to "color blindness").
         # So is a project's home page when the question names the project ("who is katter"), and a
@@ -421,6 +458,27 @@ class Index:
             for rank, (score, i) in enumerate(ranked)
         ]
         return Outcome(results, corrections if results else {}, uncertain)
+
+    def _overview(self, ranked: list[tuple[float, int]], query_terms: set[str]) -> int | None:
+        """The home page section named after what a list question asks about, when the top results are sibling
+        pages (same folder, a folder with several pages). None otherwise. Same as SearchIndex.overview."""
+        if len(ranked) < 2:
+            return None
+        parents = {self.sections[i].path.rsplit("/", 1)[0] for _, i in ranked}
+        if len(parents) != 1:
+            return None
+        parent = parents.pop()
+        project = parent.split("/")[0]
+        best, best_size = None, 0
+        for i, s in enumerate(self.sections):
+            if s.vanilla or s.path.split("/")[0] != project:
+                continue
+            if not (s.path.endswith("/home") or s.page_title.lower() in GENERIC_TITLES):
+                continue
+            heading = self.heading_terms[i]
+            if heading and heading <= query_terms and len(heading) > best_size:
+                best, best_size = i, len(heading)
+        return best
 
     def _hybrid(self, query: str, best: dict[str, tuple[float, int]], limit: int,
                 keyword_ranked: list[tuple[float, int]]) -> list[tuple[float, int]]:
@@ -509,12 +567,16 @@ def answer_line(question: str, results: list[Result], index: "Index | None" = No
     answer from "Where to Find" even though the page's intro was the search hit. Rare words count more
     than common ones, and with the meaning model a sentence that says the same in other words counts
     too ("how much xp do I lose" → "they lose 30% of their Experience Levels"). No spoiler text."""
-    terms = set(tokenize(question))
+    weight = (lambda t: index.idf.get(t, 1.0)) if index else (lambda t: 1.0)
+    # Each question word counts once, whether a sentence has it or one of its synonyms ("move" → "transfer").
+    groups: dict[str, set[str]] = {}
+    for word, term in words(question):
+        groups.setdefault(term, {term}).update(tokenize(SYNONYMS.get(word, "")))
+    terms = set().union(*groups.values()) if groups else set()
     if not terms:
         return ""
     hints = question_hints(question)
-    weight = (lambda t: index.idf.get(t, 1.0)) if index else (lambda t: 1.0)
-    total = sum(weight(t) for t in terms)
+    total = sum(weight(t) for t in groups)
     needed = total * ANSWER_COVERAGE
     candidates = []  # (text, matched, fits, is hit section, rank, n)
     for rank, r in enumerate(results[:ANSWER_PAGES]):
@@ -532,7 +594,8 @@ def answer_line(question: str, results: list[Result], index: "Index | None" = No
                     following = " ".join(w for w, _, _ in units[n + 1])
                     if len(text) + len(following) < max_chars:
                         text = f"{text} {following}"
-                matched = sum(weight(t) for t in {hit for _, hit, _ in unit if hit})
+                hits = {hit for _, hit, _ in unit if hit}
+                matched = sum(weight(t) for t, alternatives in groups.items() if alternatives & hits)
                 candidates.append((text, matched, fits, section is r.section, rank, n))
     if not candidates:
         return ""

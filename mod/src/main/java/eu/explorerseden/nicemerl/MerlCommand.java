@@ -268,7 +268,7 @@ public final class MerlCommand {
 	private static String metLine(MerlLines.Met met, CommandSourceStack source) {
 		String user = source.getTextName();
 		String key = met.name().toLowerCase(java.util.Locale.ROOT).replaceFirst("^@", "");
-		if (key.equals("peanut butter") || key.equals("pb") || key.equals("your cat")) return MerlLines.peanutButter(LocalDate.now());
+		if (key.equals("peanut butter") || key.equals("pb") || key.equals("your cat")) return MerlLines.peanutButter(LocalDate.now(), source.getTextName());
 		if (key.equals("merl") || key.equals("nicemerl")) {
 			return MerlLines.pick("who_are_you", "community", NiceMerl.config().communityName);
 		}
@@ -655,8 +655,10 @@ public final class MerlCommand {
 			return MerlLines.pick("thanks_answered", "page", page);
 		}
 		if (talk.equals("peanut_butter")) {
-			return MerlLines.peanutButter(LocalDate.now());
+			return MerlLines.peanutButter(LocalDate.now(), source.getTextName());
 		}
+		// "anyone online?" is answered from the server itself; with server info off, the player list it is.
+		if (talk.equals("online")) return MerlLines.pick("online_ingame", "user", source.getTextName());
 		if (talk.equals("pet_pb")) {
 			long count = MerlState.pet();
 			return MerlLines.petMilestone(count)
@@ -821,7 +823,7 @@ public final class MerlCommand {
 				|| !MerlLines.chance(CONTEXT_CHANCE)) {
 			return null;
 		}
-		if (player.getHealth() <= player.getMaxHealth() * 0.3f) return MerlLines.pick("context_hurt");
+		if (player.getHealth() <= player.getMaxHealth() * 0.3f) return MerlLines.pick("context_hurt", "user", player.getName().getString());
 
 		ServerLevel level = player.level();
 		List<Supplier<String>> options = new ArrayList<>();

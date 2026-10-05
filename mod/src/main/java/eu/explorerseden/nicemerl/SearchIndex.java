@@ -30,7 +30,7 @@ public class SearchIndex {
 			want was way we were what when where which while who whom why will with would you your
 			anyone anybody someone somebody something anything thing things find wiki explain explorer
 			explorers eden hi hello hey hallo heya hiya yo sup moin servus merl nicemerl
-			whats hows wheres whos whys im ive id dont cant isnt doesnt wont u ur pls plz
+			whats hows wheres whos whys im ive id dont cant isnt doesnt wont u ur pls plz didnt wasnt werent arent hasnt havent hadnt wouldnt couldnt shouldnt youre theyre thats theres heres
 			""".trim().split("\\s+")));
 
 	/** Plurals the suffix rules in {@link #stem} would get wrong. */
@@ -99,6 +99,24 @@ public class SearchIndex {
 	/** How much of a section is embedded (title, heading, description and the start of its text). */
 	private static final int SEMANTIC_TEXT_CHARS = 400;
 	private static final Set<String> CHANGELOG_WORDS = Set.of("changelog", "change", "update", "patch", "new", "added", "release");
+	/**
+	 * Technical sections (summon commands, block counts, structure file lists) repeat a page's words over and over, so
+	 * they only count fully when the question is about commands, blocks or loot (same as the bot's search).
+	 */
+	private static final Set<String> TECHNICAL_HEADINGS = Set.of("summon command", "commands", "blocks", "entities", "loot tables",
+			"per-structure file contents", "contents");
+	private static final double TECHNICAL_FACTOR = 0.4;
+	private static volatile Set<String> technicalWords;
+
+	private static Set<String> technicalWords() {
+		Set<String> words = technicalWords;
+		if (words == null) {
+			words = Set.copyOf(tokenize("command commands summon give block blocks entity entities loot table tables "
+					+ "contents made composed structure file nbt"));
+			technicalWords = words;
+		}
+		return words;
+	}
 	/** Results scoring below this share of the best result are dropped. */
 	private static final double RELATIVE_CUTOFF = 0.35;
 	private static final Pattern WORD = Pattern.compile("[a-z0-9]+");
@@ -149,6 +167,9 @@ public class SearchIndex {
 	private final List<Set<String>> hintTargets = new ArrayList<>();
 	/** The project words of a project's home page, else empty. */
 	private final List<Set<String>> projectTerms = new ArrayList<>();
+	/** The words of each page's project folder ("katters_structures" → katter, structure), and of all of them. */
+	private final List<Set<String>> folderTerms = new ArrayList<>();
+	private final Set<String> allFolderTerms = new HashSet<>();
 	private final Map<String, Double> idf = new HashMap<>();
 	/** The meaning-based search model and each section's vector, or null for keyword search only. */
 	private final SemanticModel model;
@@ -216,6 +237,9 @@ public class SearchIndex {
 			if (home) title.addAll(project);
 			titleTerms.add(title);
 			projectTerms.add(home && !s.vanilla() ? project : Set.of());
+			Set<String> folder = s.vanilla() ? Set.of() : new HashSet<>(tokenize(s.path().split("/")[0].replace('_', ' ')));
+			folderTerms.add(folder);
+			allFolderTerms.addAll(folder);
 			// Headings answer kinds of questions ("Where to Find"); overview pages answer "what … are there".
 			Set<String> targets = hintTerms(s.heading());
 			for (String t : hintTerms(s.pageTitle())) if (LIST_HINTS.contains(t)) targets.add(t);
@@ -324,12 +348,13 @@ public class SearchIndex {
 			for (Alternative a : g.alternatives()) queryTerms.addAll(a.terms());
 		}
 		boolean changelogOk = queryTerms.stream().anyMatch(CHANGELOG_WORDS::contains);
+		boolean technicalOk = queryTerms.stream().anyMatch(technicalWords()::contains);
 		Set<String> hints = new HashSet<>(headingHints);
 		hints.addAll(questionHints(query));
 
 		Map<String, double[]> best = new HashMap<>(); // page -> {score, section index}
 		for (int i = 0; i < sections.size(); i++) {
-			double score = score(i, groups, queryTerms, changelogOk, hints);
+			double score = score(i, groups, queryTerms, changelogOk, hints, technicalOk);
 			if (score > 0 && !interests.isEmpty()) {
 				score += INTEREST_BONUS * interests.getOrDefault(sections.get(i).path().split("/")[0], 0.0);
 			}
@@ -348,6 +373,18 @@ public class SearchIndex {
 		List<double[]> ranked = byScore.stream().limit(limit)
 				.filter(hit -> hit[0] >= byScore.get(0)[0] * RELATIVE_CUTOFF)
 				.toList();
+		// "cat variants": when the best matches are all pages of one kind (every cat variant has its own page), the
+		// question wants the overview, the home page section named after it (the Cat list on Nice Mob Variants).
+		if (!ranked.isEmpty() && hints.stream().anyMatch(LIST_HINTS::contains)) {
+			int overview = overview(ranked, queryTerms);
+			if (overview >= 0) {
+				String path = sections.get(overview).path();
+				List<double[]> withOverview = new ArrayList<>();
+				withOverview.add(new double[] {ranked.get(0)[0] + 0.01, overview});
+				for (double[] hit : ranked) if (!sections.get((int) hit[1]).path().equals(path)) withOverview.add(hit);
+				ranked = withOverview.subList(0, Math.min(limit, withOverview.size()));
+			}
+		}
 		// Meaning only helps when the keywords aren't sure: a strong match, or a page named in the
 		// question, already is the answer ("curse of blindness" shouldn't drift to "color blindness").
 		// So is a project's home page when the question names the project ("who is katter"), and a
@@ -472,7 +509,7 @@ public class SearchIndex {
 		return groups;
 	}
 
-	private double score(int i, List<Group> groups, Set<String> queryTerms, boolean changelogOk, Set<String> hints) {
+	private double score(int i, List<Group> groups, Set<String> queryTerms, boolean changelogOk, Set<String> hints, boolean technicalOk) {
 		List<Group> active = groups.stream().filter(g -> !g.alternatives().isEmpty()).toList();
 		double score = 0;
 		int matched = 0;
@@ -491,20 +528,57 @@ public class SearchIndex {
 		if (matched == 0) return 0;
 		for (int k = 0; k + 1 < active.size(); k++) {
 			List<String> left = active.get(k).alternatives().get(0).terms();
-			String pair = left.get(left.size() - 1) + " " + active.get(k + 1).alternatives().get(0).terms().get(0);
+			String first = left.get(left.size() - 1), second = active.get(k + 1).alternatives().get(0).terms().get(0);
+			// A pair with another project's name ("graveyard katters" on a Nice Mob Variants page that mentions
+			// "Graveyard (Katters Structures)") is about that other project. Same as the bot's search.
+			if ((allFolderTerms.contains(first) && !folderTerms.get(i).contains(first))
+					|| (allFolderTerms.contains(second) && !folderTerms.get(i).contains(second))) continue;
+			String pair = first + " " + second;
 			Integer tf = bigrams.get(i).get(pair);
 			if (tf != null) {
 				score += BIGRAM_WEIGHT * bigramIdf.get(pair) * tf * (K1 + 1) / (tf + K1);
 			}
 		}
 		score *= Math.sqrt((double) matched / active.size());
-		if (titleMatch(i, queryTerms)) score += TITLE_MATCH_BONUS;
+		if (titleMatch(i, queryTerms)) {
+			score += TITLE_MATCH_BONUS;
+			// "graveyard katters": the page named in the question, in the project named in the question.
+			if (folderTerms.get(i).stream().anyMatch(queryTerms::contains)) score += TITLE_MATCH_BONUS;
+		}
 		if (!headingTerms.get(i).isEmpty() && queryTerms.containsAll(headingTerms.get(i))) score += HEADING_MATCH_BONUS;
 		if (hintTargets.get(i).stream().anyMatch(hints::contains)) score += HEADING_HINT_BONUS;
 		if (!projectTerms.get(i).isEmpty() && projectTerms.get(i).containsAll(queryTerms)) score += PROJECT_BONUS;
 		String path = sections.get(i).path();
 		if (!changelogOk && path.toLowerCase(Locale.ROOT).contains("changelog")) score *= CHANGELOG_FACTOR;
+		if (!technicalOk && TECHNICAL_HEADINGS.contains(sections.get(i).heading().toLowerCase(Locale.ROOT))) score *= TECHNICAL_FACTOR;
 		return score + priors.getOrDefault(path, 0.0);
+	}
+
+	/**
+	 * The home page section named after what a list question asks about, when the top results are sibling pages
+	 * (all in one folder). -1 otherwise. Same as the bot's Index._overview.
+	 */
+	private int overview(List<double[]> ranked, Set<String> queryTerms) {
+		if (ranked.size() < 2) return -1;
+		Set<String> parents = new HashSet<>();
+		for (double[] hit : ranked) {
+			String path = sections.get((int) hit[1]).path();
+			parents.add(path.contains("/") ? path.substring(0, path.lastIndexOf('/')) : "");
+		}
+		if (parents.size() != 1) return -1;
+		String project = parents.iterator().next().split("/")[0];
+		int best = -1, bestSize = 0;
+		for (int i = 0; i < sections.size(); i++) {
+			Section s = sections.get(i);
+			if (s.vanilla() || !s.path().split("/")[0].equals(project)) continue;
+			if (!(s.path().endsWith("/home") || GENERIC_TITLES.contains(s.pageTitle().toLowerCase(Locale.ROOT)))) continue;
+			Set<String> heading = headingTerms.get(i);
+			if (!heading.isEmpty() && queryTerms.containsAll(heading) && heading.size() > bestSize) {
+				best = i;
+				bestSize = heading.size();
+			}
+		}
+		return best;
 	}
 
 	private boolean titleMatch(int i, Set<String> queryTerms) {
@@ -611,10 +685,15 @@ public class SearchIndex {
 	 * answer from "Where to Find". Rare words count more than common ones. No spoiler text.
 	 */
 	public String answerLine(String question, List<Result> results) {
-		Set<String> terms = new HashSet<>(tokenize(question));
-		if (terms.isEmpty()) return "";
+		// Each question word counts once, whether a sentence has it or one of its synonyms ("move" → "transfer").
+		Map<String, Set<String>> groups = new LinkedHashMap<>();
+		for (Word w : words(question)) {
+			Set<String> alternatives = groups.computeIfAbsent(w.term(), t -> new HashSet<>(Set.of(t)));
+			alternatives.addAll(tokenize(MerlLines.synonyms().getOrDefault(w.word(), "")));
+		}
+		if (groups.isEmpty()) return "";
 		Set<String> hints = questionHints(question);
-		double needed = terms.stream().mapToDouble(t -> idf.getOrDefault(t, 1.0)).sum() * ANSWER_COVERAGE;
+		double needed = groups.keySet().stream().mapToDouble(t -> idf.getOrDefault(t, 1.0)).sum() * ANSWER_COVERAGE;
 		float[] meaning = model == null ? null : model.embed(question);
 		String best = "";
 		double bestScore = 0;
@@ -627,8 +706,11 @@ public class SearchIndex {
 				for (int n = 0; n < units.size(); n++) {
 					String text = units.get(n);
 					if (text == null) continue;
+					Set<String> found = new HashSet<>(tokenize(text));
 					double matched = 0;
-					for (String t : new HashSet<>(tokenize(text))) if (terms.contains(t)) matched += idf.getOrDefault(t, 1.0);
+					for (Map.Entry<String, Set<String>> g : groups.entrySet()) {
+						if (g.getValue().stream().anyMatch(found::contains)) matched += idf.getOrDefault(g.getKey(), 1.0);
+					}
 					if (text.length() < ANSWER_MIN_CHARS || text.length() > ANSWER_CHARS) continue;
 					if (n + 1 < units.size() && units.get(n + 1) != null && text.length() + units.get(n + 1).length() < ANSWER_CHARS) {
 						text = text + " " + units.get(n + 1);

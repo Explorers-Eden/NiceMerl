@@ -72,7 +72,7 @@ public final class MerlWhatsThis {
 
 	private static Answer mob(Entity entity, String user) {
 		String type = MerlRecipes.readable(entity.getType().getDescription());
-		String typePath = entity.getType().builtInRegistryHolder().key().identifier().getPath();
+		String typePath = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).getPath();
 		String variant = null, pack = null, variantPage = null;
 		for (DataComponentType<?> component : VARIANTS) {
 			Object value = entity.get(component);

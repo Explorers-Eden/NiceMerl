@@ -77,6 +77,7 @@ def main():
     hit1 = hit3 = answered = 0
     has_answer = found_answer = 0
     misses = []
+    answer_misses = []
     for item in data["questions"]:
         kind, results, outcome = route(index, item["q"])
         paths = [r.section.path for r in results] if kind == "pages" else []
@@ -91,7 +92,10 @@ def main():
             has_answer += 1
             text = summarize(item["q"], results, index) if summarize else results[0].excerpt
             plain = (text or "").replace("**", "").replace("\\", "").lower()
-            found_answer += item["answer"].lower() in plain
+            if item["answer"].lower() in plain:
+                found_answer += 1
+            else:
+                answer_misses.append((item["q"], item["answer"], (text or "")[:140]))
 
     wrong_chatter = []
     for message in data["chatter"]:
@@ -139,6 +143,9 @@ def main():
         print("\nMisses (question, what happened, top pages):")
         for q, kind, got in misses:
             print(f"  {q!r}: {kind} {got}")
+        print("\nAnswer lines without the answer (question, expected, what Merl said):")
+        for q, expected, said in answer_misses:
+            print(f"  {q!r}: wanted {expected!r}, said {said!r}")
         print("\nChatter that got a page:")
         for message, path in wrong_chatter:
             print(f"  {message!r} -> {path}")
