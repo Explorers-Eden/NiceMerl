@@ -5,10 +5,12 @@ ranked with the same BM25 search as the community wiki. Mirrored in the mod's Va
 """
 
 import asyncio
+import json
 import logging
 import re
 import time
 from collections import OrderedDict
+from pathlib import Path
 from urllib.parse import quote
 
 import aiohttp
@@ -205,6 +207,23 @@ class VanillaWiki:
         self.pages_cache.put(key, grid or [])
         return grid
 
+    async def named_page(self, title: str, question: str) -> Result | None:
+        """The best section of the page with exactly this title ("Iron Ingot") for the question. Never raises."""
+        try:
+            sections = await self.page(title)
+        except (aiohttp.ClientError, asyncio.TimeoutError, KeyError, ValueError) as e:
+            log.debug("No Minecraft Wiki page %r: %s", title, e)
+            return None
+        if not sections or set(tokenize(sections[0].page_title)) != set(tokenize(title)):
+            return None  # redirected somewhere else
+        hints = HOW_TO_HEADINGS if HOW_TO.search(question) else set()
+        index = Index(sections, {sections[0].path: 1.5}, hints)
+        found = index.find(keywords(question), 1, 0).results or index.find(title, 1, 0).results
+        if not found:
+            return None
+        found[0].title_match = True
+        return found[0]
+
     async def search(self, question: str, limit: int = 2, require_title_match: bool = False) -> tuple[list[Result], bool]:
         """Best minecraft.wiki sections for the question, and whether the top page is named after
         what was asked. Never raises: errors mean no results."""
@@ -237,6 +256,39 @@ class VanillaWiki:
             priors[path] = (1.5, 0.75)[rank] if rank < 2 else 0.0
         hints = HOW_TO_HEADINGS if HOW_TO.search(question) else set()
         return Index(sections, priors, hints).find(query, limit, VANILLA_MIN_SCORE).results, titled
+
+
+# Vanilla names that are also everyday words: only counted when the question names nothing more specific.
+AMBIGUOUS_NAMES = {"light", "air", "fire", "end", "note", "target", "lead", "map", "book", "key", "sign", "bell", "test",
+                   "vault", "spawn", "speed", "luck", "stone", "water", "glass", "string", "stick", "bowl", "paper",
+                   "arrow", "bread", "cake", "egg", "bone", "clock", "compass", "chain", "barrier", "jigsaw", "piston"}
+_NAMES: list[tuple[str, frozenset]] | None = None
+
+
+def _vanilla_names() -> list[tuple[str, frozenset]]:
+    global _NAMES
+    if _NAMES is None:
+        try:
+            names = json.loads((Path(__file__).parent / "data" / "minecraft_names.json").read_text("utf-8"))
+        except (OSError, ValueError):
+            names = []
+        # Variants that aren't pages of their own ("Potted Fern", "Creeper Wall Head", "Pig Spawn Egg").
+        names = [n for n in names if not n.startswith("Potted ") and " Wall " not in n and not n.endswith("Spawn Egg")]
+        _NAMES = [(n, frozenset(tokenize(n))) for n in names if tokenize(n)]
+    return _NAMES
+
+
+def named_thing(question: str) -> str | None:
+    """The vanilla block, item, mob, biome, enchantment or effect a question names ("how many uses are there for iron
+    ingots?" → "Iron Ingot"): the name with the most words that are all in the question."""
+    asked = set(tokenize(question))
+    best = None
+    for name, terms in _vanilla_names():
+        if not terms <= asked or (len(terms) == 1 and (name.lower() in AMBIGUOUS_NAMES or len(name) < 4)):
+            continue
+        if best is None or len(terms) > len(best[1]) or (len(terms) == len(best[1]) and len(name) < len(best[0])):
+            best = (name, terms)
+    return best[0] if best else None
 
 
 def extract_sections(html: str, title: str) -> list[Section]:

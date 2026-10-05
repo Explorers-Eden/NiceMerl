@@ -185,6 +185,22 @@ def edit_distance(a: str, b: str, limit: int) -> int:
     return prev[-1]
 
 
+_MINECRAFT_TERMS: set[str] | None = None
+
+
+def minecraft_terms() -> set[str]:
+    """Every search term in the names of vanilla blocks, items, mobs, biomes, enchantments and effects
+    (data/minecraft_names.json, from the game's language file)."""
+    global _MINECRAFT_TERMS
+    if _MINECRAFT_TERMS is None:
+        try:
+            names = json.loads((Path(__file__).parent / "data" / "minecraft_names.json").read_text("utf-8"))
+        except (OSError, ValueError):
+            names = []
+        _MINECRAFT_TERMS = {t for n in names for t in tokenize(n)}
+    return _MINECRAFT_TERMS
+
+
 @dataclass
 class Result:
     section: Section
@@ -321,6 +337,10 @@ class Index:
                 weight = TYPO_WEIGHT
                 if guess is None:
                     guess, weight = self._prefix(term), PREFIX_WEIGHT
+                # A real Minecraft word isn't a typo, even if this wiki never uses it: "minecart" doesn't become
+                # "minecraft". Another form of the same word is fine ("friend" → "friendly").
+                if guess is not None and term in minecraft_terms() and not (guess.startswith(term) or term.startswith(guess)):
+                    guess = None
                 if guess is not None:
                     alternatives.append(((guess,), weight))
                     corrections[word] = self.display.get(guess, guess)

@@ -24,6 +24,7 @@ from search import SURE_TITLE_SCORE, Index, Outcome, Result, tokenize
 from search import answer_line as search_answer_line
 from state import State
 from vanilla import VanillaWiki, combine, confidence, plan
+from vanilla import named_thing as vanilla_named
 from wiki import fetch_sections
 
 log = logging.getLogger("nicemerl")
@@ -67,7 +68,7 @@ class NiceMerl(discord.Client):
         self.web: aiohttp.ClientSession | None = None
         # Block palettes: the blocks' colors, each person's last palette start, and the block icons drawn so far.
         self.block_colors = palettes.load()
-        self.last_palette: dict[int, str] = {}
+        self.last_palette: dict[int, list[str]] = {}
         self.palette_icons: dict = {}
 
     async def setup_hook(self):
@@ -299,6 +300,15 @@ class NiceMerl(discord.Client):
                 found, titled = await self.vanilla.search(
                     search, limit=2, require_title_match=plan(search, outcome) == "check")
             results = combine(search, outcome, found, titled, config.RESULTS)
+            # "uses for iron ingots": the Minecraft Wiki page about exactly that, unless it's already there.
+            named = vanilla_named(search)
+            if named and not any(r.section.vanilla and r.section.page_title.lower() == named.lower() for r in results):
+                if page := await self.vanilla.named_page(named, search):
+                    results = [r for r in results if r.section.path != page.section.path]
+                    # Behind an Eden page named after the same thing, ahead of everything else.
+                    eden_named = bool(results) and not results[0].section.vanilla \
+                        and set(tokenize(named)) <= set(tokenize(results[0].section.page_title))
+                    results = ([results[0], page, *results[1:]] if eden_named else [page, *results])[:config.RESULTS]
 
         all_matched = bool(results) and results[0].matched >= len(set(tokenize(search)))
         if not asking and not personality.clearly_about(confidence(results, outcome) if results else None,
@@ -371,12 +381,13 @@ class NiceMerl(discord.Client):
         if not colors:
             return False
         if ask.again:
-            base = self.last_palette.get(message.author.id, "")
+            named = self.last_palette.get(message.author.id, [])
         elif ask.random:
-            base = ""
+            named = []
         elif ask.block:
-            base = palettes.by_name(colors, ask.block, exact=ask.loose)
-            if base is None:
+            # "prismarine and gold": every block named is in the palette.
+            named = palettes.blocks_by_name(colors, ask.block, exact=ask.loose)
+            if not named:
                 # "what goes with diamonds?", "what blocks go with the castle?": not about a block after all.
                 if ask.loose or not ask.said_palette:
                     return False
@@ -386,11 +397,12 @@ class NiceMerl(discord.Client):
             # "what goes with this?": Discord has no block to look at.
             await self.say(message, started, content=pick("palette_name_needed", user=user))
             return True
-        self.last_palette[message.author.id] = base
-        start = base or palettes.random_base(colors)
-        blocks = palettes.palette(colors, start)
-        title = pick("palette_intro", block=palettes.name(start), user=user) if base else pick("palette_random", user=user)
-        names = " · ".join(f"**{palettes.name(b)}**" if b == start else palettes.name(b) for b in blocks)
+        self.last_palette[message.author.id] = named
+        start = named[0] if named else palettes.random_base(colors)
+        blocks = palettes.palette(colors, start, include=tuple(named[1:]))
+        shown = " and ".join(palettes.name(b) for b in named)
+        title = pick("palette_intro", block=shown, user=user) if named else pick("palette_random", user=user)
+        names = " · ".join(f"**{palettes.name(b)}**" if b in named else palettes.name(b) for b in blocks)
         embed = self.text_embed(f"{title}\n\n{names}\n\n-# {pick('palette_more_hint')}")
         picture = None
         try:

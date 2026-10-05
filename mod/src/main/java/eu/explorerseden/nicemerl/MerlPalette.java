@@ -71,12 +71,12 @@ final class MerlPalette {
 	private static final List<String> FULL_SUFFIXES = List.of("", "s", "_planks", "_block", "_bricks", "_wool");
 	/** Looking at a block counts this far away, so you can ask about a wall across the room. */
 	private static final double REACH = 20;
-	/** Each player's last palette start (a block id, or RANDOM), for "another palette". */
-	private static final Map<UUID, String> LAST = new ConcurrentHashMap<>();
-	private static final String RANDOM = "";
+	/** The blocks each player last asked a palette for (empty for a random one), for "another palette". */
+	private static final Map<UUID, List<String>> LAST = new ConcurrentHashMap<>();
 	private static final Random RNG = new Random();
 
-	record Shade(double l, double a, double b, double contrast, boolean seeThrough, int rgb) {}
+	/** A block's average color; pick is false for blocks a palette can start from but never suggests (ores, plants…). */
+	record Shade(double l, double a, double b, double contrast, boolean seeThrough, int rgb, boolean pick) {}
 
 	private static volatile Map<String, Shade> shades;
 	private static volatile Map<String, String> names;
@@ -88,31 +88,39 @@ final class MerlPalette {
 		String user = player.getName().getString();
 		Map<String, Shade> all = shades();
 		if (all.isEmpty()) return Component.literal(MerlLines.pick("palette_unknown", "block", "that", "user", user));
-		String base;
+		List<String> named;
 		if (ask.again()) {
-			base = LAST.getOrDefault(player.getUUID(), RANDOM);
+			named = LAST.getOrDefault(player.getUUID(), List.of());
 		} else if (ask.random()) {
-			base = RANDOM;
+			named = List.of();
 		} else if (ask.block() != null) {
-			String id = byName(ask.block());
-			if (id == null) return Component.literal(MerlLines.pick("palette_unknown_name", "block", ask.block(), "user", user));
-			base = fullBlock(id);
-			if (base == null) return Component.literal(MerlLines.pick("palette_unknown", "block", name(id), "user", user));
+			// "prismarine and gold": every block named is in the palette.
+			List<String> found = new ArrayList<>();
+			for (String part : ask.block().split(",| and | & | plus | with ")) {
+				if (part.isBlank()) continue;
+				String id = byName(part.strip());
+				if (id == null) return Component.literal(MerlLines.pick("palette_unknown_name", "block", part.strip(), "user", user));
+				String full = fullBlock(id);
+				if (full == null) return Component.literal(MerlLines.pick("palette_unknown", "block", name(id), "user", user));
+				if (!found.contains(full)) found.add(full);
+			}
+			named = List.copyOf(found);
 		} else {
 			String id = ask.holding() ? held(player) : lookedAt(player);
 			if (id == null && !ask.holding()) id = held(player);
 			if (id == null) return Component.literal(MerlLines.pick("palette_nothing", "user", user));
-			base = fullBlock(id);
-			if (base == null) return Component.literal(MerlLines.pick("palette_unknown", "block", name(id), "user", user));
+			String full = fullBlock(id);
+			if (full == null) return Component.literal(MerlLines.pick("palette_unknown", "block", name(id), "user", user));
+			named = List.of(full);
 		}
-		LAST.put(player.getUUID(), base);
-		boolean random = base.equals(RANDOM);
-		String start = random ? randomBase(all) : base;
+		LAST.put(player.getUUID(), named);
+		boolean random = named.isEmpty();
+		String start = random ? randomBase(all) : named.get(0);
 		if (start == null) return Component.literal(MerlLines.pick("palette_unknown", "block", "that", "user", user));
-		List<String> blocks = palette(all, start, RNG);
+		List<String> blocks = palette(all, start, RNG, named.size() > 1 ? named.subList(1, named.size()) : List.of());
 		MutableComponent message = Component.literal(random
 				? MerlLines.pick("palette_random", "user", user)
-				: MerlLines.pick("palette_intro", "block", name(start), "user", user));
+				: MerlLines.pick("palette_intro", "block", String.join(" and ", named.stream().map(MerlPalette::name).toList()), "user", user));
 		message.append("\n ");
 		for (String id : blocks) {
 			Shade shade = all.get(id);
@@ -127,7 +135,7 @@ final class MerlPalette {
 			message.append(Component.literal("■ ").withStyle(Style.EMPTY.withColor(TextColor.fromRgb(shade.rgb()))));
 			// Click a block for a palette around it instead.
 			message.append(Component.literal(name(id)).withStyle(Style.EMPTY
-					.withColor(id.equals(start) ? ChatFormatting.WHITE : ChatFormatting.GRAY).withBold(id.equals(start))
+					.withColor(named.contains(id) ? ChatFormatting.WHITE : ChatFormatting.GRAY).withBold(named.contains(id))
 					.withHoverEvent(new HoverEvent.ShowText(Component.literal("minecraft:" + id + "\nClick for a palette around it")))
 					.withClickEvent(new ClickEvent.RunCommand("/merl palette for " + name(id).toLowerCase(java.util.Locale.ROOT)))));
 		}
@@ -141,10 +149,14 @@ final class MerlPalette {
 				.withClickEvent(new ClickEvent.RunCommand(command)).withHoverEvent(new HoverEvent.ShowText(Component.literal(hover))));
 	}
 
-	/** Six blocks from dark to light that go with base (base included). */
-	static List<String> palette(Map<String, Shade> all, String base, Random rng) {
+	/**
+	 * Six blocks from dark to light that go with base (base and the blocks in include as well). Only full building
+	 * blocks are suggested; any block can be the start or included.
+	 */
+	static List<String> palette(Map<String, Shade> all, String base, Random rng, List<String> include) {
 		Shade b = all.get(base);
 		if (b == null) return List.of();
+		List<String> extra = include.stream().filter(id -> all.containsKey(id) && !id.equals(base)).distinct().limit(4).toList();
 		double chroma0 = Math.hypot(b.a(), b.b());
 		double lo = Math.max(DARKEST, b.l() - SPREAD), hi = Math.min(LIGHTEST, b.l() + SPREAD);
 		// Near the darkest or lightest end, the palette reaches further the other way.
@@ -154,10 +166,17 @@ final class MerlPalette {
 		}
 		List<Double> points = new ArrayList<>();
 		for (int i = 0; i < 5; i++) points.add(lo + (hi - lo) * i / 4);
-		points.remove(points.stream().min(Comparator.comparingDouble(p -> Math.abs(p - b.l()))).orElseThrow());
+		// The lightness the start and each included block already cover isn't filled again.
+		List<Double> covered = new ArrayList<>(List.of(b.l()));
+		extra.forEach(id -> covered.add(all.get(id).l()));
+		for (double l : covered) {
+			if (!points.isEmpty()) points.remove(points.stream().min(Comparator.comparingDouble(p -> Math.abs(p - l))).orElseThrow());
+		}
 
 		List<String> chosen = new ArrayList<>(List.of(base));
-		Map<String, Integer> counts = new HashMap<>(Map.of(family(base), 1));
+		chosen.addAll(extra);
+		Map<String, Integer> counts = new HashMap<>();
+		chosen.forEach(id -> counts.merge(family(id), 1, Integer::sum));
 		for (double target : points) {
 			String best = null;
 			double bestScore = Double.MAX_VALUE;
@@ -187,13 +206,13 @@ final class MerlPalette {
 				accentScore = score;
 			}
 		}
-		if (accent != null) take(accent, chosen, counts);
+		if (accent != null && chosen.size() < 6) take(accent, chosen, counts);
 		chosen.sort(Comparator.comparingDouble(id -> all.get(id).l()));
 		return chosen;
 	}
 
 	private static boolean allowed(Map<String, Shade> all, String id, List<String> chosen, Map<String, Integer> counts) {
-		if (chosen.contains(id) || NEVER.contains(id)) return false;
+		if (chosen.contains(id) || NEVER.contains(id) || !all.get(id).pick()) return false;
 		String family = family(id);
 		if (counts.getOrDefault(family, 0) >= (ONE_PER_PALETTE.contains(family) ? 1 : 2)) return false;
 		Shade s = all.get(id);
@@ -234,14 +253,20 @@ final class MerlPalette {
 
 	/** A block that makes a good start for a random palette (not see-through, not too busy or patterned). */
 	private static String randomBase(Map<String, Shade> all) {
-		List<String> good = all.entrySet().stream().filter(e -> !e.getValue().seeThrough() && e.getValue().contrast() < 20
+		List<String> good = all.entrySet().stream().filter(e -> e.getValue().pick() && !e.getValue().seeThrough() && e.getValue().contrast() < 20
 				&& !NEVER.contains(e.getKey()) && LESS_USED.stream().noneMatch(e.getKey()::contains)).map(Map.Entry::getKey).toList();
 		return good.isEmpty() ? null : good.get(RNG.nextInt(good.size()));
 	}
 
-	/** The full block whose colors we know for a block id: itself, or oak stairs → oak planks. Null if none. */
+	/**
+	 * The block whose colors we know for a block id: itself, the original of a copy (waxed copper → copper), or the
+	 * full block of a partial one (oak stairs → oak planks). Null if none.
+	 */
 	static String fullBlock(String id) {
 		Map<String, Shade> all = shades();
+		for (String prefix : List.of("waxed_", "infested_")) {
+			if (id.startsWith(prefix) && all.containsKey(id.substring(prefix.length()))) return id.substring(prefix.length());
+		}
 		if (all.containsKey(id)) return id;
 		for (String suffix : PART_SUFFIXES) {
 			if (!id.endsWith(suffix)) continue;
@@ -255,6 +280,14 @@ final class MerlPalette {
 			if (all.containsKey(id.replaceAll("_(log|wood|stem|hyphae)$", "") + full)) return id.replaceAll("_(log|wood|stem|hyphae)$", "") + full;
 		}
 		return null;
+	}
+
+	/** Whether every name in a list ("prismarine and gold") is a block. */
+	static boolean allNamed(String asked) {
+		for (String part : asked.split(",| and | & | plus | with ")) {
+			if (!part.isBlank() && byName(part.strip()) == null) return false;
+		}
+		return true;
 	}
 
 	/** The full block an exact block name means ("stone", not "diamonds"), or null when it isn't one we know. */
@@ -297,7 +330,9 @@ final class MerlPalette {
 			List<String> own = singular(SearchIndex.tokenize(e.getValue()));
 			boolean all = loosely ? words.stream().allMatch(w -> own.stream().anyMatch(o -> close(w, o))) : own.containsAll(words);
 			if (!all) continue;
-			boolean known = shades().containsKey(e.getKey());
+			// "gold" means the Block of Gold rather than gold ore: building blocks first.
+			Shade shade = shades().get(e.getKey());
+			boolean known = shade != null && shade.pick();
 			if ((known && !bestKnown) || (known == bestKnown && e.getValue().length() < bestLength)) {
 				best = e.getKey();
 				bestLength = e.getValue().length();
@@ -375,7 +410,8 @@ final class MerlPalette {
 						var lab = o.getAsJsonArray("lab");
 						out.put(e.getKey(), new Shade(lab.get(0).getAsDouble(), lab.get(1).getAsDouble(), lab.get(2).getAsDouble(),
 								o.get("contrast").getAsDouble(), o.has("seeThrough") && o.get("seeThrough").getAsBoolean(),
-								Integer.parseInt(o.get("color").getAsString().substring(1), 16)));
+								Integer.parseInt(o.get("color").getAsString().substring(1), 16),
+								!o.has("pick") || o.get("pick").getAsBoolean()));
 					}
 				}
 			}

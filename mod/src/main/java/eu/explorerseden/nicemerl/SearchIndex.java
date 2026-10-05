@@ -457,6 +457,11 @@ public class SearchIndex {
 					guess = prefix(term);
 					weight = PREFIX_WEIGHT;
 				}
+				// A real Minecraft word isn't a typo, even if this wiki never uses it: "minecart" doesn't become
+				// "minecraft". Another form of the same word is fine ("friend" → "friendly"). Same as the bot's search.
+				if (guess != null && minecraftTerms().contains(term) && !(guess.startsWith(term) || term.startsWith(guess))) {
+					guess = null;
+				}
 				if (guess != null) {
 					alternatives.add(new Alternative(List.of(guess), weight));
 					corrections.put(w.word(), display.getOrDefault(guess, guess));
@@ -511,6 +516,21 @@ public class SearchIndex {
 		if (tf == null) return 0;
 		double norm = K1 * (1 - B + B * lengths[i] / avgLength);
 		return idf.get(term) * tf * (K1 + 1) / (tf + norm);
+	}
+
+	private static volatile Set<String> minecraftTerms;
+
+	/**
+	 * Every search term in the names of vanilla blocks, items, mobs, biomes, enchantments and effects
+	 * (minecraft_names.json, from the game's language file, shared with the bot).
+	 */
+	static Set<String> minecraftTerms() {
+		Set<String> terms = minecraftTerms;
+		if (terms != null) return terms;
+		Set<String> out = new java.util.HashSet<>();
+		for (String name : VanillaWiki.names()) out.addAll(tokenize(name));
+		minecraftTerms = Set.copyOf(out);
+		return minecraftTerms;
 	}
 
 	private String typo(String term) {

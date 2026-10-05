@@ -58,11 +58,13 @@ def _distance(x: dict, y: dict) -> float:
     return math.dist(x["lab"], y["lab"])
 
 
-def palette(colors: dict, base: str, rng: random.Random | None = None) -> list[str]:
-    """Six blocks from dark to light that go with base (base included), or [] when its colors are unknown."""
+def palette(colors: dict, base: str, rng: random.Random | None = None, include: tuple[str, ...] = ()) -> list[str]:
+    """Six blocks from dark to light that go with base (base and the blocks in include as well), or [] when its colors
+    are unknown. Only full building blocks are suggested; any block can be the start or included."""
     rng = rng or random.Random()
     if base not in colors:
         return []
+    include = tuple(dict.fromkeys(b for b in include if b in colors and b != base))[:4]
     b = colors[base]
     l0, a0, b0 = b["lab"]
     chroma0 = math.hypot(a0, b0)
@@ -71,13 +73,18 @@ def palette(colors: dict, base: str, rng: random.Random | None = None) -> list[s
     if hi - lo < SPREAD * 1.5:
         lo, hi = (lo, min(LIGHTEST, lo + SPREAD * 1.5)) if lo == DARKEST else (max(DARKEST, hi - SPREAD * 1.5), hi)
     points = [lo + (hi - lo) * i / 4 for i in range(5)]
-    points.remove(min(points, key=lambda p: abs(p - l0)))
+    # The lightness the start and each included block already cover isn't filled again.
+    for l in [l0] + [colors[block]["lab"][0] for block in include]:
+        if points:
+            points.remove(min(points, key=lambda p: abs(p - l)))
 
-    chosen = [base]
-    counts = {family(base): 1}
+    chosen = [base, *include]
+    counts = {}
+    for block in chosen:
+        counts[family(block)] = counts.get(family(block), 0) + 1
 
     def allowed(block):
-        if block in chosen or block in NEVER:
+        if block in chosen or block in NEVER or not colors[block].get("pick", True):
             return False
         fam = family(block)
         if counts.get(fam, 0) >= (1 if fam in ONE_PER_PALETTE else 2):
@@ -107,7 +114,7 @@ def palette(colors: dict, base: str, rng: random.Random | None = None) -> list[s
             return near + 0.6 * chroma  # a colorful block: a calm, gray-ish accent
         return near + 0.5 * abs(chroma - 28) + (6 if bb < 0 else 0)  # a gray block: a warm, colorful accent
     options = [k for k in colors if allowed(k) and abs(colors[k]["lab"][0] - l0) <= 25]
-    if options:
+    if options and len(chosen) < 6:
         take(min(options, key=accent_score))
     return sorted(chosen, key=lambda k: colors[k]["lab"][0])
 
@@ -119,8 +126,8 @@ def _penalty(block: str, c: dict) -> float:
 def random_base(colors: dict, rng: random.Random | None = None) -> str | None:
     """A block that makes a good start for a random palette (not see-through, not too busy or patterned)."""
     rng = rng or random.Random()
-    good = [k for k, c in colors.items() if not c.get("seeThrough") and c["contrast"] < 20 and k not in NEVER
-            and not any(w in k for w in LESS_USED)]
+    good = [k for k, c in colors.items() if c.get("pick", True) and not c.get("seeThrough") and c["contrast"] < 20
+            and k not in NEVER and not any(w in k for w in LESS_USED)]
     return rng.choice(good) if good else None
 
 
@@ -131,7 +138,16 @@ FULL_SUFFIXES = ("", "s", "_planks", "_block", "_bricks", "_wool")
 # Blocks whose English name isn't just their id ("Block of Copper", "Hay Bale"); the rest are their id in title case.
 BLOCK_OF = ("iron", "gold", "diamond", "emerald", "redstone", "netherite", "coal", "copper", "quartz", "amethyst",
             "raw_iron", "raw_copper", "raw_gold", "bamboo", "stripped_bamboo", "resin")
-NAMES = {"lapis_block": "Block of Lapis Lazuli", "hay_block": "Hay Bale", "jack_o_lantern": "Jack o'Lantern"}
+NAMES = {"lapis_block": "Block of Lapis Lazuli", "hay_block": "Hay Bale", "jack_o_lantern": "Jack o'Lantern",
+         "lapis_ore": "Lapis Lazuli Ore", "deepslate_lapis_ore": "Deepslate Lapis Lazuli Ore",
+         "nether_quartz_ore": "Nether Quartz Ore", "short_grass": "Short Grass", "tnt": "TNT",
+         "comparator": "Redstone Comparator", "repeater": "Redstone Repeater", "redstone_wire": "Redstone Dust",
+         "spawner": "Monster Spawner", "vine": "Vines", "kelp_plant": "Kelp", "cave_vines_plant": "Cave Vines",
+         "twisting_vines_plant": "Twisting Vines", "weeping_vines_plant": "Weeping Vines"}
+# Small words that stay lower case in names: "Lily of the Valley".
+SMALL_WORDS = {"of", "the", "on", "a", "and", "with"}
+# Copies of other blocks that block_colors.py leaves out: waxed copper looks like copper, infested stone like stone.
+COPY_PREFIXES = ("waxed_", "infested_")
 WIKI_API = "https://minecraft.wiki/api.php"
 ICON_FILE = "File:Invicon_{}.png"
 
@@ -143,7 +159,8 @@ def name(block: str) -> str:
     if block.endswith("_block") and block[: -len("_block")] in BLOCK_OF:
         block = block[: -len("_block")]
         return "Block of " + " ".join(w.capitalize() for w in block.split("_"))
-    return " ".join(w.capitalize() for w in block.split("_"))
+    words = block.split("_")
+    return " ".join(w if i and w in SMALL_WORDS else w.capitalize() for i, w in enumerate(words))
 
 
 def _singular(words: list[str]) -> list[str]:
@@ -156,7 +173,11 @@ def _words(text: str) -> set[str]:
 
 
 def full_block(colors: dict, block: str) -> str | None:
-    """The full block whose colors are known for a block id: itself, or oak stairs → oak planks."""
+    """The block whose colors are known for a block id: itself, the original of a copy (waxed copper → copper), or
+    the full block of a partial one (oak stairs → oak planks)."""
+    for prefix in COPY_PREFIXES:
+        if block.startswith(prefix) and block[len(prefix):] in colors:
+            return block[len(prefix):]
     if block in colors:
         return block
     for suffix in PART_SUFFIXES:
@@ -173,12 +194,6 @@ def by_name(colors: dict, asked: str, exact: bool = False) -> str | None:
     """The full block a name means ("deepslate bricks", "oak stairs", "copper"): exact names first, then partial
     blocks, then the shortest name with all the words. With exact, only a block called exactly that (or a partial
     block of one), so "what goes with diamonds" isn't taken for the Block of Diamond."""
-    if " and " in asked:
-        # "a palette with prismarine and sea lanterns": the first block found.
-        for part in asked.split(" and "):
-            if found := by_name(colors, part, exact):
-                return found
-        return None
     words = _words(asked)
     if not words:
         return None
@@ -196,7 +211,16 @@ def by_name(colors: dict, asked: str, exact: bool = False) -> str | None:
     if not containing:
         # Typos: "prismarin", "deepslat brick".
         containing = [b for b in colors if all(any(_close(w, own) for own in _words(b) | _words(name(b))) for w in words)]
-    return min(containing, key=lambda b: len(name(b))) if containing else None
+    # "gold" means the Block of Gold rather than gold ore: building blocks first, then short names.
+    return min(containing, key=lambda b: (not colors[b].get("pick", True), len(name(b)))) if containing else None
+
+
+def blocks_by_name(colors: dict, asked: str, exact: bool = False) -> list[str]:
+    """Every block a list of names means: "prismarine and gold" → prismarine and the Block of Gold. A name that
+    isn't a block makes the whole list empty, so "what goes with the castle and the moon" isn't taken for blocks."""
+    parts = [p for p in re.split(r",| and | & | plus | with ", asked) if p.strip()]
+    found = [by_name(colors, p.strip(), exact) for p in parts]
+    return list(dict.fromkeys(found)) if found and all(found) else []
 
 
 def _close(typed: str, word: str) -> bool:

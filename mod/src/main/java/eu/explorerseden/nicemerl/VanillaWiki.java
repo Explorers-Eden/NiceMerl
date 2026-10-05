@@ -170,6 +170,95 @@ public final class VanillaWiki {
 		return baseUrl;
 	}
 
+	/** Vanilla names that are also everyday words: only counted when the question names nothing more specific. */
+	private static final Set<String> AMBIGUOUS_NAMES = Set.of("light", "air", "fire", "end", "note", "target", "lead", "map",
+			"book", "key", "sign", "bell", "test", "vault", "spawn", "speed", "luck", "stone", "water", "glass", "string", "stick",
+			"bowl", "paper", "arrow", "bread", "cake", "egg", "bone", "clock", "compass", "chain", "barrier", "jigsaw", "piston");
+	private static volatile List<String> names;
+
+	/** The English names of vanilla blocks, items, mobs, biomes, enchantments and effects (minecraft_names.json). */
+	static List<String> names() {
+		List<String> loaded = names;
+		if (loaded != null) return loaded;
+		List<String> out = new ArrayList<>();
+		try (java.io.InputStream in = VanillaWiki.class.getResourceAsStream("/nicemerl/minecraft_names.json")) {
+			if (in != null) {
+				com.google.gson.JsonParser.parseReader(new java.io.InputStreamReader(in, StandardCharsets.UTF_8))
+						.getAsJsonArray().forEach(e -> out.add(e.getAsString()));
+			}
+		} catch (IOException | RuntimeException e) {
+			NiceMerl.LOGGER.warn("Could not read the vanilla names: {}", e.toString());
+		}
+		names = List.copyOf(out);
+		return names;
+	}
+
+	/**
+	 * The vanilla block, item, mob, biome, enchantment or effect a question names ("how many uses are there for iron
+	 * ingots?" → "Iron Ingot"): the name with the most words that are all in the question. Same as the bot's.
+	 */
+	static String namedThing(String question) {
+		Set<String> asked = new HashSet<>(SearchIndex.tokenize(question));
+		String best = null;
+		int bestTerms = 0;
+		for (String name : names()) {
+			// Variants that aren't pages of their own ("Potted Fern", "Creeper Wall Head", "Pig Spawn Egg").
+			if (name.startsWith("Potted ") || name.contains(" Wall ") || name.endsWith("Spawn Egg")) continue;
+			Set<String> terms = new HashSet<>(SearchIndex.tokenize(name));
+			if (terms.isEmpty() || !asked.containsAll(terms)) continue;
+			if (terms.size() == 1 && (AMBIGUOUS_NAMES.contains(name.toLowerCase(java.util.Locale.ROOT)) || name.length() < 4)) continue;
+			if (terms.size() > bestTerms || (terms.size() == bestTerms && name.length() < best.length())) {
+				best = name;
+				bestTerms = terms.size();
+			}
+		}
+		return best;
+	}
+
+	/** The best section of the page with exactly this title ("Iron Ingot") for the question, or null. */
+	SearchIndex.Result namedPage(String title, String question) {
+		try {
+			List<Section> sections = page(title).join();
+			if (sections.isEmpty() || !new HashSet<>(SearchIndex.tokenize(sections.get(0).pageTitle()))
+					.equals(new HashSet<>(SearchIndex.tokenize(title)))) {
+				return null; // redirected somewhere else
+			}
+			Set<String> hints = HOW_TO.matcher(question).find() ? HOW_TO_HEADINGS : Set.of();
+			SearchIndex index = new SearchIndex(sections, Map.of(sections.get(0).path(), 1.5), hints);
+			List<SearchIndex.Result> found = index.find(keywords(question), 1, excerptLength, 0).results();
+			if (found.isEmpty()) found = index.find(title, 1, excerptLength, 0).results();
+			if (found.isEmpty()) return null;
+			SearchIndex.Result r = found.get(0);
+			return new SearchIndex.Result(r.section(), r.score(), r.excerpt(), true, r.matched());
+		} catch (RuntimeException e) {
+			NiceMerl.LOGGER.debug("No Minecraft Wiki page {}: {}", title, e.toString());
+			return null;
+		}
+	}
+
+	/**
+	 * The answer's pages: our wiki and the Minecraft Wiki together, plus the Minecraft Wiki page about the vanilla
+	 * thing the question names ("uses for iron ingots"), unless it's already there. Runs off the server thread.
+	 */
+	public static List<SearchIndex.Result> answer(List<VanillaWiki> wikis, String question, SearchIndex.Outcome eden, int limit,
+			boolean requireTitleMatch, int total) {
+		List<SearchIndex.Result> results = new ArrayList<>(combine(question, eden, searchAll(wikis, question, limit, requireTitleMatch), total));
+		String named = namedThing(question);
+		VanillaWiki wiki = wikis.stream().filter(w -> w.baseUrl().contains("minecraft.wiki")).findFirst().orElse(null);
+		if (named == null || wiki == null
+				|| results.stream().anyMatch(r -> r.section().vanilla() && r.section().pageTitle().equalsIgnoreCase(named))) {
+			return results;
+		}
+		SearchIndex.Result page = wiki.namedPage(named, question);
+		if (page == null) return results;
+		results.removeIf(r -> r.section().path().equals(page.section().path()));
+		// Behind an Eden page named after the same thing, ahead of everything else.
+		boolean edenNamed = !results.isEmpty() && !results.get(0).section().vanilla()
+				&& new HashSet<>(SearchIndex.tokenize(results.get(0).section().pageTitle())).containsAll(SearchIndex.tokenize(named));
+		results.add(edenNamed ? 1 : 0, page);
+		return List.copyOf(results.subList(0, Math.min(total, results.size())));
+	}
+
 	/** Searches several wikis and merges their answers, best score first. */
 	public static Answer searchAll(List<VanillaWiki> wikis, String question, int limit, boolean requireTitleMatch) {
 		List<SearchIndex.Result> results = new ArrayList<>();

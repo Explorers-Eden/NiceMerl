@@ -1,9 +1,10 @@
 # Minecraft Version(s): 26.3
-## A much bigger fun fact library
-- Over 400 new fun facts, now over 1,200 in total
-- Mobs and their habits: villagers, piglins, raids, pets, farm animals and more
-- Blocks, plants, ores and redstone: what they do and how they're made
-- Enchantments, potions, food and game mechanics like fall damage, light levels and hunger
-- Biomes, structures, the Nether and the End
-- Minecraft's history, music and Easter eggs
-- Ask for a topic (*"fun fact about villagers"*, *"funfact about redstone"*) and there's a lot more to pick from
+## Block palettes
+- **Several blocks at once:** *"a palette with prismarine and gold"* puts both of them in the palette
+- **Any block works as a start:** ores (*"deepslate lapis ore"*), cactus, flowers, leaves, slabs and more, not just full building blocks. Suggestions are still building blocks
+- *"Gold"* means the Block of Gold, not gold ore
+- Grass, leaves and water have their real colors
+
+## Better answers about vanilla things
+- Real Minecraft words aren't "corrected" anymore: *"how do I craft a minecart?"* no longer turns into *"minecraft"*
+- A question that names a vanilla block, item, mob, biome, enchantment or effect (*"how many uses are there for iron ingots?"*) always gets the Minecraft Wiki page about it

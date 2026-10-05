@@ -397,7 +397,7 @@ public final class MerlCommand {
 		// "what goes with diamonds?" or "what blocks go with the castle?" aren't about a block after all.
 		if (paletteAsk != null && paletteAsk.block() != null && (paletteAsk.loose()
 				? MerlPalette.fullBlockByExactName(paletteAsk.block()) == null
-				: !paletteAsk.saidPalette() && MerlPalette.byName(paletteAsk.block()) == null)) paletteAsk = null;
+				: !paletteAsk.saidPalette() && !MerlPalette.allNamed(paletteAsk.block()))) paletteAsk = null;
 		if (paletteAsk != null) {
 			reply(source, MerlPalette.answer(player, paletteAsk));
 			visit.talk = "palette";
@@ -595,9 +595,8 @@ public final class MerlCommand {
 		}
 		MinecraftServer server = source.getServer();
 		NiceMerl.lookupAsync(
-				() -> VanillaWiki.searchAll(live, query, config.mediaWikiResults, mode == VanillaWiki.Mode.CHECK),
-				found -> server.execute(() -> respond(source, List.of(), eden,
-						VanillaWiki.combine(query, eden, found, config.results), answer)));
+				() -> VanillaWiki.answer(live, query, eden, config.mediaWikiResults, mode == VanillaWiki.Mode.CHECK, config.results),
+				results -> server.execute(() -> respond(source, List.of(), eden, results, answer)));
 		return 1;
 	}
 

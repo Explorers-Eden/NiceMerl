@@ -267,6 +267,14 @@ jobs:
                   assert [colors[b]["lab"][0] for b in p] == sorted(colors[b]["lab"][0] for b in p)
                   sets = [palettes.family(b) for b in p if palettes.family(b) in palettes.ONE_PER_PALETTE]
                   assert len(sets) == len(set(sets)), (base, p)
+          # Several blocks in one palette, any block as a start (ores, plants), building blocks for loose names.
+          assert palettes.blocks_by_name(colors, "prismarin and gold") == ["prismarine", "gold_block"]
+          assert palettes.blocks_by_name(colors, "deepslate lapis ore") == ["deepslate_lapis_ore"]
+          assert palettes.blocks_by_name(colors, "cactus") == ["cactus"] and palettes.blocks_by_name(colors, "prismarine and the moon") == []
+          p = palettes.palette(colors, "prismarine", random.Random(1), ("gold_block",))
+          assert "gold_block" in p and len(p) == 6, p
+          p = palettes.palette(colors, "cactus", random.Random(1))
+          assert all(colors[b].get("pick", True) for b in p if b != "cactus"), p
           # The picture, without the wiki's icons (swatches only).
           class NoWeb:
               def get(self, *a, **k):
@@ -293,6 +301,24 @@ jobs:
           people = personality.LINES["pools"]["joke_about"]
           assert len(people) >= 480 and all("{name}" in j for j in people), len(people)
           print("Facts and jokes about things and people work")
+          EOF
+
+      - name: Check vanilla names (no typo fixes for real Minecraft words, the page for a named thing)
+        run: |
+          python - <<'EOF'
+          import search, vanilla
+          from wiki import Section
+          # "minecart" isn't a typo of "minecraft", but real typos are still fixed.
+          pages = [("Minecraft", "minecraft server rules and tips"), ("Livestock Breeder", "crafting a livestock breeder")]
+          index = search.Index([Section(path=f"p{i}", page_title=t, heading="", anchor="", text=x, vanilla=False, meta="")
+                                for i, (t, x) in enumerate(pages)], {}, set())
+          assert index.find("how do i craft a minecart", 3).corrections == {}
+          assert index.find("livestok breder", 3).corrections == {"livestok": "livestock", "breder": "breeder"}
+          # The vanilla thing a question names.
+          assert vanilla.named_thing("how many different uses are there for iron ingots?") == "Iron Ingot"
+          assert vanilla.named_thing("How do i craft a minecart?") == "Minecart"
+          assert vanilla.named_thing("how do i get a boss key") is None
+          print("Vanilla names work")
           EOF
 
       - name: Check that the bot starts (without logging in to Discord)

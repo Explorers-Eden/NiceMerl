@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Average colors of Minecraft's full blocks, for Merl's block palettes.
+"""Average colors of Minecraft's blocks, for Merl's block palettes.
 
-Reads the block states, models and textures from a Minecraft jar that has the client assets (Loom's merged jar),
-keeps the full cubes (no slabs, stairs, plants or technical blocks) and writes each block's average color to
-bot/data/block_colors.json, which the mod bundles. Run it again after a Minecraft update:
+Reads the block states, models and textures from a Minecraft jar that has the client assets (Loom's merged jar) and
+writes each block's average color to bot/data/block_colors.json, which the mod bundles. Full building blocks are
+suggested in palettes; everything else (ores, workstations, plants, slabs…) has "pick": false, so a palette can start
+from it ("a palette with cactus") but never suggests it. Run it again after a Minecraft update:
 
     python mod/tools/scripts/block_colors.py ~/.gradle/caches/fabric-loom/minecraftMaven/net/minecraft/minecraft-merged-deobf/26.3/minecraft-merged-deobf-26.3.jar
 
@@ -20,12 +21,40 @@ from PIL import Image
 
 OUT = Path(__file__).resolve().parents[3] / "bot" / "data" / "block_colors.json"
 FACES = ("up", "down", "north", "south", "east", "west")
-# Technical blocks and copies of other blocks (infested stone looks exactly like stone).
-SKIP_EXACT = {"light", "barrier", "furnace", "blast_furnace", "smoker", "crafting_table", "cartography_table",
-              "fletching_table", "smithing_table", "loom", "dispenser", "dropper", "observer", "tnt", "jukebox", "note_block",
-              "beehive", "bee_nest", "sculk_catalyst", "crafter", "respawn_anchor", "target", "lodestone", "frosted_ice"}
-SKIP = ("command_block", "structure_block", "jigsaw", "test_", "infested_", "waxed_", "spawner",
-        "trial_spawner", "vault", "reinforced_deepslate", "budding_amethyst", "petrified")
+# Not real blocks you can build with or look at.
+TECHNICAL = {"air", "cave_air", "void_air", "light", "barrier", "structure_void", "moving_piston", "piston_head", "jigsaw",
+             "structure_block", "test_block", "test_instance_block", "end_gateway", "end_portal", "nether_portal", "fire",
+             "soul_fire", "bubble_column", "frosted_ice"}
+# Copies of other blocks (infested stone looks exactly like stone): left out, their names lead to the original.
+COPIES = ("infested_", "waxed_", "command_block", "petrified")
+# Full blocks a palette never suggests: workstations, ores and oddities.
+NOT_PICKED = {"furnace", "blast_furnace", "smoker", "crafting_table", "cartography_table", "fletching_table",
+              "smithing_table", "loom", "dispenser", "dropper", "observer", "tnt", "jukebox", "note_block", "beehive",
+              "bee_nest", "sculk_catalyst", "crafter", "respawn_anchor", "target", "lodestone", "spawner", "trial_spawner",
+              "vault", "reinforced_deepslate", "budding_amethyst", "bedrock", "suspicious_sand", "suspicious_gravel",
+              "sponge", "wet_sponge", "magma_block", "end_portal_frame", "piston", "sticky_piston", "mycelium",
+              "crimson_nylium", "warped_nylium", "muddy_mangrove_roots", "creaking_heart"}
+# Biome colors in a plains biome, for blocks colored by the biome (grass, leaves, water…).
+TINTS = {"birch_leaves": (0x80, 0xA7, 0x55), "spruce_leaves": (0x61, 0x99, 0x61), "lily_pad": (0x20, 0x80, 0x30),
+         "water": (0x3F, 0x76, 0xE4), "water_cauldron": (0x3F, 0x76, 0xE4), "redstone_wire": (0xC0, 0x00, 0x00),
+         "attached_melon_stem": (0xE0, 0xC7, 0x1C), "attached_pumpkin_stem": (0xE0, 0xC7, 0x1C),
+         "melon_stem": (0xE0, 0xC7, 0x1C), "pumpkin_stem": (0xE0, 0xC7, 0x1C)}
+GRASS, FOLIAGE = (0x91, 0xBD, 0x59), (0x77, 0xAB, 0x2F)
+GRASS_BLOCKS = {"grass_block", "short_grass", "tall_grass", "fern", "large_fern", "potted_fern", "sugar_cane", "bush"}
+FOLIAGE_BLOCKS = {"oak_leaves", "jungle_leaves", "acacia_leaves", "dark_oak_leaves", "mangrove_leaves", "vine"}
+# For blocks that aren't cubes: the texture that shows most of them.
+MAIN_TEXTURES = ("particle", "side", "all", "texture", "cross", "plant", "flower", "crop", "stem", "top", "end", "front")
+
+
+def tint_for(block: str):
+    """The biome color mixed into a block's texture, or None for blocks with their own colors (cherry leaves…)."""
+    if block in TINTS:
+        return TINTS[block]
+    if block in GRASS_BLOCKS:
+        return GRASS
+    if block in FOLIAGE_BLOCKS:
+        return FOLIAGE
+    return None
 
 
 def main(jar_path: str) -> None:
@@ -70,64 +99,76 @@ def main(jar_path: str) -> None:
 
     image_cache = {}
 
-    def stats(ref):
-        """Mean color (sRGB) and how much of the texture is see-through, of the first animation frame."""
-        if ref in image_cache:
-            return image_cache[ref]
+    def stats(ref, tint=None):
+        """Mean color (sRGB) and how much of the texture is see-through, of the first animation frame (with the
+        biome color mixed in for tinted faces)."""
+        if (ref, tint) in image_cache:
+            return image_cache[ref, tint]
         path = f"assets/minecraft/textures/{ref.split(':', 1)[-1]}.png"
         if path not in names:
-            image_cache[ref] = None
+            image_cache[ref, tint] = None
             return None
         img = Image.open(io.BytesIO(jar.read(path))).convert("RGBA")
         img = img.crop((0, 0, img.width, img.width))
         pixels = list(img.get_flattened_data() if hasattr(img, "get_flattened_data") else img.getdata())
         solid = [p for p in pixels if p[3] > 128]
+        if tint:
+            solid = [(p[0] * tint[0] // 255, p[1] * tint[1] // 255, p[2] * tint[2] // 255, p[3]) for p in solid]
         if not solid:
-            image_cache[ref] = None
+            image_cache[ref, tint] = None
             return None
         mean = tuple(sum(p[i] for p in solid) / len(solid) for i in range(3))
         lights = [lab(p[:3])[0] for p in solid]
         avg_l = sum(lights) / len(lights)
         contrast = math.sqrt(sum((l - avg_l) ** 2 for l in lights) / len(lights))
-        image_cache[ref] = (mean, 1 - len(solid) / len(pixels), contrast)
-        return image_cache[ref]
+        image_cache[ref, tint] = (mean, 1 - len(solid) / len(pixels), contrast)
+        return image_cache[ref, tint]
+
+    def model_of(state):
+        """The model a block shows most: standing logs rather than lying ones; for fences and walls, their post."""
+        variants = state.get("variants")
+        if variants:
+            first = variants.get("axis=y") or next(iter(variants.values()))
+        else:
+            first = (state.get("multipart") or [{}])[0].get("apply")
+        if isinstance(first, list):
+            first = first[0]
+        return (first or {}).get("model")
 
     blocks = {}
     seen_textures = {}
     for path in sorted(n for n in names if n.startswith("assets/minecraft/blockstates/") and n.endswith(".json")):
         block = path.rsplit("/", 1)[1][:-5]
-        # Workstations and ores aren't building blocks.
-        if block in SKIP_EXACT or any(s in block for s in SKIP) or block.endswith("_ore"):
+        if block in TECHNICAL or block.startswith(COPIES):
             continue
-        state = read_json(path)
-        variants = state.get("variants")
-        if not variants:
-            continue  # multipart: fences, walls, panes, redstone
-        # Standing logs and pillars rather than lying ones.
-        first = variants.get("axis=y") or next(iter(variants.values()))
-        if isinstance(first, list):
-            first = first[0]
-        chain, textures, elements, tinted = resolve(first["model"])
-        # Only full blocks: one cube from corner to corner. Biome-colored ones (grass, leaves) have no fixed color.
-        if tinted or not elements or len(elements) != 1:
+        ref = model_of(read_json(path))
+        if not ref:
             continue
-        cube = elements[0]
-        if cube.get("from") != [0, 0, 0] or cube.get("to") != [16, 16, 16] or len(cube.get("faces", {})) != 6:
-            continue
-        faces = [texture({**textures, "_face": cube["faces"][f].get("texture")}, "_face") for f in FACES]
+        chain, textures, elements, tinted = resolve(ref)
+        tint = tint_for(block)
+        # A full block: cubes from corner to corner (grass blocks have a second one for the colored overlay).
+        full = bool(elements) and all(e.get("from") == [0, 0, 0] and e.get("to") == [16, 16, 16] for e in elements) \
+            and len(elements[0].get("faces", {})) == 6
+        if full:
+            cube = elements[0]
+            faces = [texture({**textures, "_face": cube["faces"][f].get("texture")}, "_face") for f in FACES]
+            tints = [tint if "tintindex" in cube["faces"][f] else None for f in FACES]
+            # Sides count twice as much as the top and bottom: that's what you see of a wall. A grass block is its top.
+            weights = [6, 1, 1, 1, 1, 1] if block in GRASS_BLOCKS else [1, 1, 2, 2, 2, 2]
+        else:
+            main = next((texture(textures, k) for k in MAIN_TEXTURES if texture(textures, k)), None)
+            faces, tints, weights = [main], [tint if tinted or block in TINTS else None], [1]
         if any(f is None for f in faces):
             continue
-        key = tuple(faces)
-        found = [stats(f) for f in faces]
-        if any(s is None for s in found):
+        found = [stats(f, t) for f, t in zip(faces, tints)]
+        if any(x is None for x in found):
             continue
-        # Sides count twice as much as the top and bottom: that's what you see of a wall.
-        weights = [1, 1, 2, 2, 2, 2]
+        key = (tuple(faces), tuple(tints), full)
         total = sum(weights)
-        rgb = tuple(sum(s[0][i] * w for s, w in zip(found, weights)) / total for i in range(3))
-        clear = sum(s[1] * w for s, w in zip(found, weights)) / total
-        contrast = sum(s[2] * w for s, w in zip(found, weights)) / total
-        # The same look twice (copper and waxed copper, …): keep the shorter name.
+        rgb = tuple(sum(x[0][i] * w for x, w in zip(found, weights)) / total for i in range(3))
+        clear = sum(x[1] * w for x, w in zip(found, weights)) / total
+        contrast = sum(x[2] * w for x, w in zip(found, weights)) / total
+        # The same look twice (two kinds of the same block): keep the shorter name.
         if key in seen_textures:
             other = seen_textures[key]
             if len(other) <= len(block):
@@ -135,15 +176,17 @@ def main(jar_path: str) -> None:
             del blocks[other]
         seen_textures[key] = block
         l, a, b = lab(rgb)
+        picked = full and block not in NOT_PICKED and not block.endswith("_ore")
         blocks[block] = {
             "color": "#%02X%02X%02X" % tuple(round(c) for c in rgb),
             "lab": [round(l, 1), round(a, 1), round(b, 1)],
             "contrast": round(contrast, 1),
             **({"seeThrough": True} if clear > 0.2 else {}),
+            **({} if picked else {"pick": False}),
         }
 
     OUT.write_text(json.dumps(dict(sorted(blocks.items())), indent=1) + "\n")
-    print(f"{len(blocks)} blocks written to {OUT}")
+    print(f"{len(blocks)} blocks written to {OUT}, {sum('pick' not in b for b in blocks.values())} of them suggested in palettes")
 
 
 def lab(rgb):
