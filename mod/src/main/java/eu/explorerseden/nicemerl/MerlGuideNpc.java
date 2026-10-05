@@ -50,6 +50,11 @@ final class MerlGuideNpc {
 	private static final double SNAP_DISTANCE = 10.0;
 	/** After the player arrives she looks at them this long before leaving, in ticks. */
 	private static final int GOODBYE_TICKS = 60;
+	/** While the player glides, she flies this far ahead of them, toward the target. */
+	private static final double FLY_AHEAD = 6.0;
+	/** Entity flag for gliding with an elytra (Entity.FLAG_FALL_FLYING). */
+	private static final int FLAG_FALL_FLYING = 7;
+	private static java.lang.reflect.Method setSharedFlag;
 
 	private static final class Npc {
 		ServerPlayer owner;
@@ -59,7 +64,17 @@ final class MerlGuideNpc {
 		/** The path step she's at, so the sparkles can stop at her. */
 		int step;
 		int goodbyeTicks = -1;
+		boolean flying;
+		/** Ticks the player has been too far behind, and when she last said something (in update ticks). */
+		int waiting;
+		long ticks;
+		final Map<String, Long> lastSaid = new java.util.HashMap<>();
 	}
+
+	/** She says each kind of remark (taking off, landing, waiting) at most this often, in ticks. */
+	private static final long REMARK_PAUSE = 400;
+	/** She mentions waiting after the player has been behind this long, in ticks. */
+	private static final int WAIT_BEFORE_REMARK = 60;
 
 	private static final Map<UUID, Npc> NPCS = new ConcurrentHashMap<>();
 
@@ -75,14 +90,25 @@ final class MerlGuideNpc {
 	 * Moves her one tick along the path. {@code nearest} is the step the player is at; an empty path leaves
 	 * her where she is (flying, or no way found).
 	 */
-	static void update(ServerPlayer player, List<BlockPos> path, int nearest) {
+	static void update(ServerPlayer player, List<BlockPos> path, int nearest, Vec3 destination) {
 		Npc npc = NPCS.computeIfAbsent(player.getUUID(), id -> new Npc());
 		if (npc.goodbyeTicks >= 0) return;
+		npc.ticks++;
 		// A new player object (after respawning) or a new dimension needs her to be sent again.
 		if (npc.owner != player) {
 			if (npc.owner != null && npc.body != null && !npc.owner.hasDisconnected()) remove(npc);
 			npc.owner = player;
 			npc.body = null;
+			npc.flying = false;
+		}
+		// The player glides: she puts on an elytra and flies ahead of them.
+		if (player.isFallFlying()) {
+			fly(npc, player, destination);
+			return;
+		}
+		if (npc.flying && npc.body != null) {
+			setFlying(npc, false);
+			remark(npc, "guide_landing");
 		}
 		if (path == null || path.size() < 2 || nearest < 0) {
 			if (npc.body != null && npc.pos.distanceTo(player.position()) > 24) remove(npc);
@@ -98,6 +124,8 @@ final class MerlGuideNpc {
 		}
 		double behind = npc.pos.distanceTo(target);
 		boolean playerFar = npc.pos.distanceTo(player.position()) > WAIT_DISTANCE && behind < SNAP_DISTANCE;
+		npc.waiting = playerFar ? npc.waiting + 1 : 0;
+		if (npc.waiting == WAIT_BEFORE_REMARK) remark(npc, "guide_wait");
 		Vec3 next = npc.pos;
 		if (behind > SNAP_DISTANCE) {
 			next = target;
@@ -111,6 +139,61 @@ final class MerlGuideNpc {
 		float pitch = moving ? 0f : (float) Math.max(-40, Math.min(40, -Math.toDegrees(Math.atan2(facing.y, Math.hypot(facing.x, facing.z)))));
 		move(npc, next, yaw, pitch);
 		npc.step = moving ? closestStep(path, next) : npc.step;
+	}
+
+	/** Flying with the player: a few blocks ahead of them, at their height, toward the destination. */
+	private static void fly(Npc npc, ServerPlayer player, Vec3 destination) {
+		Vec3 here = player.position();
+		Vec3 toward = new Vec3(destination.x - here.x, 0, destination.z - here.z);
+		double far = toward.length();
+		Vec3 wanted = far < FLY_AHEAD ? new Vec3(destination.x, here.y, destination.z)
+				: here.add(toward.scale(FLY_AHEAD / far)).add(0, 0.5, 0);
+		if (npc.body == null) {
+			spawn(npc, player, wanted);
+			if (npc.body == null) return;
+		}
+		if (!npc.flying) {
+			setFlying(npc, true);
+			remark(npc, "guide_takeoff");
+		}
+		double gap = npc.pos.distanceTo(wanted);
+		// Elytras are fast: she keeps up, and just appears ahead if she's far behind.
+		Vec3 next = gap > 30 ? wanted : npc.pos.add(wanted.subtract(npc.pos).scale(Math.min(1.0, 0.35)));
+		Vec3 step = next.subtract(npc.pos);
+		Vec3 heading = step.lengthSqr() > 1e-4 ? step : toward;
+		float yaw = (float) (Math.toDegrees(Math.atan2(heading.z, heading.x)) - 90.0);
+		float pitch = (float) Math.max(-30, Math.min(45, -Math.toDegrees(Math.atan2(heading.y, Math.hypot(heading.x, heading.z)))));
+		move(npc, next, yaw, pitch);
+	}
+
+	/** A short remark in chat ("Wait for me!"), each kind at most every 20 seconds. */
+	private static void remark(Npc npc, String pool) {
+		Long last = npc.lastSaid.get(pool);
+		if (last != null && npc.ticks - last < REMARK_PAUSE) return;
+		npc.lastSaid.put(pool, npc.ticks);
+		MerlCommand.replyTo(npc.owner.createCommandSourceStack(),
+				net.minecraft.network.chat.Component.literal(MerlLines.pick(pool, "user", npc.owner.getName().getString())));
+	}
+
+	/** Gliding with an elytra on, or back on her feet without it. */
+	private static void setFlying(Npc npc, boolean flying) {
+		npc.flying = flying;
+		Entity body = npc.body;
+		try {
+			if (setSharedFlag == null) {
+				setSharedFlag = Entity.class.getDeclaredMethod("setSharedFlag", int.class, boolean.class);
+				setSharedFlag.setAccessible(true);
+			}
+			setSharedFlag.invoke(body, FLAG_FALL_FLYING, flying);
+		} catch (ReflectiveOperationException | RuntimeException e) {
+			NiceMerl.LOGGER.debug("Could not set the guide Merl's gliding flag", e);
+		}
+		body.setPose(flying ? net.minecraft.world.entity.Pose.FALL_FLYING : net.minecraft.world.entity.Pose.STANDING);
+		var connection = npc.owner.connection;
+		var dirty = body.getEntityData().packDirty();
+		if (dirty != null && !dirty.isEmpty()) connection.send(new ClientboundSetEntityDataPacket(body.getId(), dirty));
+		connection.send(new ClientboundSetEquipmentPacket(body.getId(), List.of(
+				Pair.of(EquipmentSlot.CHEST, flying ? new ItemStack(Items.ELYTRA) : ItemStack.EMPTY))));
 	}
 
 	/** The player arrived: she turns to them for a moment, then leaves. */

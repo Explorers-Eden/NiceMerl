@@ -193,7 +193,8 @@ public final class MerlGuide {
 			}
 			if (merl) {
 				List<BlockPos> path = PATHS.get(entry.getKey());
-				MerlGuideNpc.update(player, path, path == null ? -1 : nearest(path, player.blockPosition()));
+				MerlGuideNpc.update(player, path, path == null ? -1 : nearest(path, player.blockPosition()),
+						new Vec3(target.x(), target.y() != null ? target.y() : player.getY(), target.z()));
 			}
 			if (!frame) continue;
 			boolean found = drawPath(player, target);
