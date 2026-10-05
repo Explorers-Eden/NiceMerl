@@ -15,6 +15,7 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 
 import org.slf4j.Logger;
@@ -75,6 +76,12 @@ public class NiceMerl implements ModInitializer {
 		ServerTickEvents.END_SERVER_TICK.register(MerlStats::tick);
 		// Sparkle trails for players Merl is guiding somewhere.
 		ServerTickEvents.END_SERVER_TICK.register(MerlGuide::tick);
+		// A guided player firing a rocket mid-glide: guide Merl fires one too.
+		UseItemCallback.EVENT.register((player, level, hand) -> {
+			if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer && serverPlayer.isFallFlying()
+					&& player.getItemInHand(hand).is(net.minecraft.world.item.Items.FIREWORK_ROCKET)) MerlGuideNpc.boost(serverPlayer);
+			return net.minecraft.world.InteractionResult.PASS;
+		});
 		// Reminders: due ones every second, missed ones when the player comes back.
 		ServerTickEvents.END_SERVER_TICK.register(MerlReminders::tick);
 		// Merl mannequins: right-click messages, and they never end up in boats.

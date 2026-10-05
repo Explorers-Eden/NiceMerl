@@ -13,11 +13,14 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.TagParser;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
+import net.minecraft.network.protocol.game.ClientboundAnimatePacket;
 import net.minecraft.network.protocol.game.ClientboundEntityPositionSyncPacket;
 import net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket;
 import net.minecraft.network.protocol.game.ClientboundRotateHeadPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
+import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.level.ServerLevel;
@@ -36,7 +39,8 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * Merl herself as the guide: she walks along the path a few steps ahead of the player, holding a map, waits when
- * they fall behind and looks at them when they arrive. She only exists on that player's screen (the server sends
+ * they fall behind and looks at them when they arrive. When they glide she flies along with an elytra and rockets,
+ * and when they fly in creative mode she floats ahead of them. She only exists on that player's screen (the server sends
  * them the packets of a mannequin that isn't in the world), so nobody else sees her and nothing is left behind.
  */
 final class MerlGuideNpc {
@@ -50,8 +54,16 @@ final class MerlGuideNpc {
 	private static final double SNAP_DISTANCE = 10.0;
 	/** After the player arrives she looks at them this long before leaving, in ticks. */
 	private static final int GOODBYE_TICKS = 60;
-	/** While the player glides, she flies this far ahead of them, toward the target. */
-	private static final double FLY_AHEAD = 6.0;
+	/** While the player flies, she stays this far ahead of them toward the target, plus a bit more the faster they go. */
+	private static final double FLY_AHEAD = 6.0, FLY_AHEAD_PER_SPEED = 2.0;
+	/** How much of the gap to where she should be she closes each tick, on top of matching the player's speed. */
+	private static final double FLY_CATCH_UP = 0.3;
+	/** Further than this behind while flying, she just appears where she should be. */
+	private static final double FLY_SNAP = 30.0;
+	/** After the player fires a rocket she trails firework sparks this long, in ticks. */
+	private static final int BOOST_TICKS = 25;
+	/** ClientboundAnimatePacket action for swinging the off hand. */
+	private static final int SWING_OFF_HAND = 3;
 	/** Entity flag for gliding with an elytra (Entity.FLAG_FALL_FLYING). */
 	private static final int FLAG_FALL_FLYING = 7;
 	private static java.lang.reflect.Method setSharedFlag;
@@ -64,7 +76,12 @@ final class MerlGuideNpc {
 		/** The path step she's at, so the sparkles can stop at her. */
 		int step;
 		int goodbyeTicks = -1;
-		boolean flying;
+		/** On her feet, gliding with an elytra, or flying like in creative mode. */
+		Air air = Air.WALKING;
+		/** Where the player was last tick and how fast they're going (smoothed), for keeping up in flight. */
+		Vec3 playerLast;
+		Vec3 playerSpeed = Vec3.ZERO;
+		int boostTicks;
 		/** Ticks the player has been too far behind, and when she last said something (in update ticks). */
 		int waiting;
 		long ticks;
@@ -75,6 +92,8 @@ final class MerlGuideNpc {
 	private static final long REMARK_PAUSE = 400;
 	/** She mentions waiting after the player has been behind this long, in ticks. */
 	private static final int WAIT_BEFORE_REMARK = 60;
+
+	private enum Air { WALKING, GLIDING, HOVERING }
 
 	private static final Map<UUID, Npc> NPCS = new ConcurrentHashMap<>();
 
@@ -99,15 +118,17 @@ final class MerlGuideNpc {
 			if (npc.owner != null && npc.body != null && !npc.owner.hasDisconnected()) remove(npc);
 			npc.owner = player;
 			npc.body = null;
-			npc.flying = false;
+			npc.air = Air.WALKING;
+			npc.playerLast = null;
 		}
-		// The player glides: she puts on an elytra and flies ahead of them.
-		if (player.isFallFlying()) {
-			fly(npc, player, destination);
+		trackSpeed(npc, player);
+		// The player glides or flies: she puts on an elytra (or just takes off) and flies ahead of them.
+		if (player.isFallFlying() || player.getAbilities().flying) {
+			fly(npc, player, destination, player.isFallFlying() ? Air.GLIDING : Air.HOVERING);
 			return;
 		}
-		if (npc.flying && npc.body != null) {
-			setFlying(npc, false);
+		if (npc.air != Air.WALKING && npc.body != null) {
+			setAir(npc, Air.WALKING);
 			remark(npc, "guide_landing");
 		}
 		if (path == null || path.size() < 2 || nearest < 0) {
@@ -135,35 +156,84 @@ final class MerlGuideNpc {
 		}
 		boolean moving = next.distanceToSqr(npc.pos) > 1e-4;
 		Vec3 facing = moving ? next.subtract(npc.pos) : player.getEyePosition().subtract(next.add(0, 1.62, 0));
-		float yaw = (float) (Math.toDegrees(Math.atan2(facing.z, facing.x)) - 90.0);
+		float yaw = yaw(facing);
 		float pitch = moving ? 0f : (float) Math.max(-40, Math.min(40, -Math.toDegrees(Math.atan2(facing.y, Math.hypot(facing.x, facing.z)))));
 		move(npc, next, yaw, pitch);
 		npc.step = moving ? closestStep(path, next) : npc.step;
 	}
 
-	/** Flying with the player: a few blocks ahead of them, at their height, toward the destination. */
-	private static void fly(Npc npc, ServerPlayer player, Vec3 destination) {
+	/** The player's speed in blocks per tick, from how far they moved (the server's own value lags for elytras). */
+	private static void trackSpeed(Npc npc, ServerPlayer player) {
+		Vec3 here = player.position();
+		Vec3 moved = npc.playerLast == null ? Vec3.ZERO : here.subtract(npc.playerLast);
+		// A teleport isn't speed.
+		if (moved.lengthSqr() > 100) moved = Vec3.ZERO;
+		npc.playerSpeed = npc.playerSpeed.scale(0.5).add(moved.scale(0.5));
+		npc.playerLast = here;
+	}
+
+	/**
+	 * Flying with the player, a few blocks ahead of them toward the destination: with an elytra and rockets while
+	 * they glide, or floating upright while they fly in creative mode. She moves as fast as they do, so she
+	 * doesn't fall behind, and faces the way she's going.
+	 */
+	private static void fly(Npc npc, ServerPlayer player, Vec3 destination, Air air) {
 		Vec3 here = player.position();
 		Vec3 toward = new Vec3(destination.x - here.x, 0, destination.z - here.z);
 		double far = toward.length();
-		Vec3 wanted = far < FLY_AHEAD ? new Vec3(destination.x, here.y, destination.z)
-				: here.add(toward.scale(FLY_AHEAD / far)).add(0, 0.5, 0);
+		double ahead = FLY_AHEAD + FLY_AHEAD_PER_SPEED * npc.playerSpeed.length();
+		double lift = air == Air.GLIDING ? 0.5 : 0.3 + 0.15 * Math.sin(npc.ticks * 0.15);
+		Vec3 wanted = (far < ahead ? new Vec3(destination.x, here.y, destination.z) : here.add(toward.scale(ahead / far))).add(0, lift, 0);
 		if (npc.body == null) {
 			spawn(npc, player, wanted);
 			if (npc.body == null) return;
 		}
-		if (!npc.flying) {
-			setFlying(npc, true);
-			remark(npc, "guide_takeoff");
+		if (npc.air != air) {
+			boolean wasWalking = npc.air == Air.WALKING;
+			setAir(npc, air);
+			if (wasWalking) remark(npc, air == Air.GLIDING ? "guide_takeoff" : "guide_hover");
 		}
-		double gap = npc.pos.distanceTo(wanted);
-		// Elytras are fast: she keeps up, and just appears ahead if she's far behind.
-		Vec3 next = gap > 30 ? wanted : npc.pos.add(wanted.subtract(npc.pos).scale(Math.min(1.0, 0.35)));
+		Vec3 next = npc.pos.distanceTo(wanted) > FLY_SNAP ? wanted
+				: npc.pos.add(npc.playerSpeed).add(wanted.subtract(npc.pos).scale(FLY_CATCH_UP));
 		Vec3 step = next.subtract(npc.pos);
-		Vec3 heading = step.lengthSqr() > 1e-4 ? step : toward;
-		float yaw = (float) (Math.toDegrees(Math.atan2(heading.z, heading.x)) - 90.0);
-		float pitch = (float) Math.max(-30, Math.min(45, -Math.toDegrees(Math.atan2(heading.y, Math.hypot(heading.x, heading.z)))));
+		boolean moving = step.horizontalDistanceSqr() > 0.0025;
+		float yaw, pitch;
+		if (moving) {
+			yaw = yaw(step);
+			pitch = air == Air.GLIDING ? (float) Math.max(-30, Math.min(45, -Math.toDegrees(Math.atan2(step.y, step.horizontalDistance())))) : 0f;
+		} else if (air == Air.HOVERING) {
+			// Floating in place: she looks at the player.
+			Vec3 look = player.getEyePosition().subtract(next.add(0, 1.62, 0));
+			yaw = yaw(look);
+			pitch = (float) Math.max(-40, Math.min(40, -Math.toDegrees(Math.atan2(look.y, look.horizontalDistance()))));
+		} else {
+			yaw = far > 1e-3 ? yaw(toward) : npc.yaw;
+			pitch = 0f;
+		}
 		move(npc, next, yaw, pitch);
+		if (air == Air.GLIDING) {
+			// Her real speed, so the client leans her into turns the way it does for players, not sideways.
+			npc.owner.connection.send(new ClientboundSetEntityMotionPacket(npc.body.getId(), step));
+			if (npc.boostTicks > 0) {
+				npc.boostTicks--;
+				Vec3 tail = next.subtract(step.normalize().scale(0.6));
+				player.level().sendParticles(player, ParticleTypes.FIREWORK, true, false, tail.x, tail.y + 0.3, tail.z, 1, 0.05, 0.05, 0.05, 0.02);
+			}
+		}
+	}
+
+	/** The player fired a rocket while gliding: so does she. */
+	static void boost(ServerPlayer player) {
+		Npc npc = NPCS.get(player.getUUID());
+		if (npc == null || npc.body == null || npc.air != Air.GLIDING || npc.goodbyeTicks >= 0) return;
+		boolean first = npc.boostTicks == 0;
+		npc.boostTicks = BOOST_TICKS;
+		npc.owner.connection.send(new ClientboundAnimatePacket(npc.body, SWING_OFF_HAND));
+		if (first && npc.owner.getRandom().nextInt(4) == 0) remark(npc, "guide_boost");
+	}
+
+	private static float yaw(Vec3 direction) {
+		return (float) (Math.toDegrees(Math.atan2(direction.z, direction.x)) - 90.0);
 	}
 
 	/** A short remark in chat ("Wait for me!"), each kind at most every 20 seconds. */
@@ -175,25 +245,32 @@ final class MerlGuideNpc {
 				net.minecraft.network.chat.Component.literal(MerlLines.pick(pool, "user", npc.owner.getName().getString())));
 	}
 
-	/** Gliding with an elytra on, or back on her feet without it. */
-	private static void setFlying(Npc npc, boolean flying) {
-		npc.flying = flying;
+	/**
+	 * Gliding (elytra on, a rocket in her off hand), flying like in creative mode, or back on her feet (map and
+	 * compass in her hands).
+	 */
+	private static void setAir(Npc npc, Air air) {
+		npc.air = air;
+		npc.boostTicks = 0;
 		Entity body = npc.body;
+		boolean gliding = air == Air.GLIDING;
 		try {
 			if (setSharedFlag == null) {
 				setSharedFlag = Entity.class.getDeclaredMethod("setSharedFlag", int.class, boolean.class);
 				setSharedFlag.setAccessible(true);
 			}
-			setSharedFlag.invoke(body, FLAG_FALL_FLYING, flying);
+			setSharedFlag.invoke(body, FLAG_FALL_FLYING, gliding);
 		} catch (ReflectiveOperationException | RuntimeException e) {
 			NiceMerl.LOGGER.debug("Could not set the guide Merl's gliding flag", e);
 		}
-		body.setPose(flying ? net.minecraft.world.entity.Pose.FALL_FLYING : net.minecraft.world.entity.Pose.STANDING);
+		body.setPose(gliding ? net.minecraft.world.entity.Pose.FALL_FLYING : net.minecraft.world.entity.Pose.STANDING);
 		var connection = npc.owner.connection;
 		var dirty = body.getEntityData().packDirty();
 		if (dirty != null && !dirty.isEmpty()) connection.send(new ClientboundSetEntityDataPacket(body.getId(), dirty));
 		connection.send(new ClientboundSetEquipmentPacket(body.getId(), List.of(
-				Pair.of(EquipmentSlot.CHEST, flying ? new ItemStack(Items.ELYTRA) : ItemStack.EMPTY))));
+				Pair.of(EquipmentSlot.CHEST, gliding ? new ItemStack(Items.ELYTRA) : ItemStack.EMPTY),
+				Pair.of(EquipmentSlot.OFFHAND, new ItemStack(gliding ? Items.FIREWORK_ROCKET : Items.COMPASS)))));
+		if (!gliding) connection.send(new ClientboundSetEntityMotionPacket(body.getId(), Vec3.ZERO));
 	}
 
 	/** The player arrived: she turns to them for a moment, then leaves. */
@@ -217,7 +294,7 @@ final class MerlGuideNpc {
 				continue;
 			}
 			Vec3 facing = npc.owner.getEyePosition().subtract(npc.pos.add(0, 1.62, 0));
-			move(npc, npc.pos, (float) (Math.toDegrees(Math.atan2(facing.z, facing.x)) - 90.0), 0f);
+			move(npc, npc.pos, yaw(facing), 0f);
 		}
 	}
 
