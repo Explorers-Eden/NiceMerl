@@ -8,7 +8,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
@@ -54,6 +56,16 @@ public final class MerlGuide {
 	private static final double OFF_PATH = 3.0;
 	/** Sparkles shown ahead of the player, one per path step. */
 	private static final int SHOWN_STEPS = 24;
+	/**
+	 * The trail's look: a floating pink stained glass square, the same kind of marker Get Off My Lawn uses to show
+	 * claim borders. Markers last about 4 seconds, so they're sent every other frame.
+	 */
+	/** The trail's colors in turn: pink, magenta, white, pink, magenta, white, … */
+	private static final BlockParticleOption[] MARKERS = {
+			new BlockParticleOption(ParticleTypes.BLOCK_MARKER, Blocks.STAINED_GLASS.pink().defaultBlockState()),
+			new BlockParticleOption(ParticleTypes.BLOCK_MARKER, Blocks.STAINED_GLASS.magenta().defaultBlockState()),
+			new BlockParticleOption(ParticleTypes.BLOCK_MARKER, Blocks.STAINED_GLASS.white().defaultBlockState())};
+	private static final int MARKER_EVERY = 2;
 	private static long ticks;
 
 	private MerlGuide() {}
@@ -131,7 +143,7 @@ public final class MerlGuide {
 			Vec3 step = goal.subtract(eye).normalize();
 			for (double d = START; d <= Math.min(LENGTH, goal.distanceTo(eye)); d += SPACING) {
 				Vec3 at = eye.add(0, -0.4, 0).add(step.scale(d));
-				level.sendParticles(player, ParticleTypes.END_ROD, true, false, at.x, at.y, at.z, 1, 0, 0, 0, 0);
+				if (drawMarkers()) level.sendParticles(player, MARKERS[(int) (Math.round(d / SPACING) % MARKERS.length)], true, false, at.x, at.y, at.z, 1, 0, 0, 0, 0);
 			}
 			return true;
 		}
@@ -140,9 +152,14 @@ public final class MerlGuide {
 		int last = merl > nearest ? merl : nearest + 1 + SHOWN_STEPS;
 		for (int i = Math.max(1, nearest + 1); i < Math.min(path.size(), last); i++) {
 			BlockPos at = path.get(i);
-			level.sendParticles(player, ParticleTypes.END_ROD, true, false, at.getX() + 0.5, at.getY() + 0.35, at.getZ() + 0.5, 1, 0.05, 0.02, 0.05, 0);
+			// By path step, so each spot keeps its color as the player walks.
+			if (drawMarkers()) level.sendParticles(player, MARKERS[i % MARKERS.length], true, false, at.getX() + 0.5, at.getY() + 0.3, at.getZ() + 0.5, 1, 0, 0, 0, 0);
 		}
 		return true;
+	}
+
+	private static boolean drawMarkers() {
+		return (ticks / TICKS) % MARKER_EVERY == 0;
 	}
 
 	private static int nearest(List<BlockPos> path, BlockPos feet) {
