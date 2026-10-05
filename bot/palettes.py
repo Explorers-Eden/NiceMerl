@@ -132,7 +132,8 @@ FULL_SUFFIXES = ("", "s", "_planks", "_block", "_bricks", "_wool")
 BLOCK_OF = ("iron", "gold", "diamond", "emerald", "redstone", "netherite", "coal", "copper", "quartz", "amethyst",
             "raw_iron", "raw_copper", "raw_gold", "bamboo", "stripped_bamboo", "resin")
 NAMES = {"lapis_block": "Block of Lapis Lazuli", "hay_block": "Hay Bale", "jack_o_lantern": "Jack o'Lantern"}
-ICON_URL = "https://minecraft.wiki/images/Invicon_{}.png"
+WIKI_API = "https://minecraft.wiki/api.php"
+ICON_FILE = "File:Invicon_{}.png"
 
 
 def name(block: str) -> str:
@@ -172,6 +173,12 @@ def by_name(colors: dict, asked: str, exact: bool = False) -> str | None:
     """The full block a name means ("deepslate bricks", "oak stairs", "copper"): exact names first, then partial
     blocks, then the shortest name with all the words. With exact, only a block called exactly that (or a partial
     block of one), so "what goes with diamonds" isn't taken for the Block of Diamond."""
+    if " and " in asked:
+        # "a palette with prismarine and sea lanterns": the first block found.
+        for part in asked.split(" and "):
+            if found := by_name(colors, part, exact):
+                return found
+        return None
     words = _words(asked)
     if not words:
         return None
@@ -186,7 +193,48 @@ def by_name(colors: dict, asked: str, exact: bool = False) -> str | None:
     if found := full_block(colors, joined) or full_block(colors, joined.rstrip("s")):
         return found
     containing = [b for b in colors if words <= _words(b) | _words(name(b))]
+    if not containing:
+        # Typos: "prismarin", "deepslat brick".
+        containing = [b for b in colors if all(any(_close(w, own) for own in _words(b) | _words(name(b))) for w in words)]
     return min(containing, key=lambda b: len(name(b))) if containing else None
+
+
+def _close(typed: str, word: str) -> bool:
+    """A word typed short or with a small typo: one wrong letter in short words, two in long ones (same as MerlPalette.close)."""
+    if typed == word or (len(typed) >= 4 and word.startswith(typed)):
+        return True  # also the start of a word: "cobble" for cobblestone
+    if len(typed) < 4 or abs(len(typed) - len(word)) > 2:
+        return False
+    allowed = 1 if len(word) < 7 else 2
+    previous = list(range(len(word) + 1))
+    for i, a in enumerate(typed, 1):
+        current = [i]
+        for j, b in enumerate(word, 1):
+            current.append(min(previous[j] + 1, current[j - 1] + 1, previous[j - 1] + (a != b)))
+        previous = current
+    return previous[-1] <= allowed
+
+
+async def icon_urls(session, blocks: list[str], cache: dict) -> dict[str, str | None]:
+    """Each block's icon on the Minecraft Wiki ("Invicon_Deepslate_Bricks.png"), asked from the wiki's API so
+    redirects count (Prismarine's icon is an animated GIF). None for blocks without one."""
+    import aiohttp
+
+    wanted = {ICON_FILE.format(name(b).replace(" ", "_")): b for b in blocks if b not in cache}
+    if wanted:
+        params = {"action": "query", "titles": "|".join(wanted), "redirects": "1", "prop": "imageinfo", "iiprop": "url",
+                  "format": "json", "formatversion": "2"}
+        async with session.get(WIKI_API, params=params, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+            resp.raise_for_status()
+            query = (await resp.json()).get("query", {})
+        # Titles as asked → as the wiki writes them → where redirects lead.
+        renamed = {n["from"]: n["to"] for n in query.get("normalized", [])}
+        redirected = {r["from"]: r["to"] for r in query.get("redirects", [])}
+        urls = {p["title"]: (p.get("imageinfo") or [{}])[0].get("url") for p in query.get("pages", [])}
+        for title, block in wanted.items():
+            title = renamed.get(title, title)
+            cache[block] = urls.get(redirected.get(title, title))
+    return {b: cache.get(b) for b in blocks}
 
 
 async def render(session, colors: dict, blocks: list[str], cache: dict | None = None) -> bytes:
@@ -198,6 +246,12 @@ async def render(session, colors: dict, blocks: list[str], cache: dict | None = 
     from PIL import Image, ImageDraw
 
     cache = cache if cache is not None else {}
+    urls = cache.setdefault("urls", {})
+    sprites = cache.setdefault("sprites", {})
+    try:
+        found = await icon_urls(session, blocks, urls)
+    except Exception:  # the wiki can't be reached: swatches only
+        found = {}
     cell, icon, pad, bar = 120, 96, 16, 14
     width, height = pad + len(blocks) * (cell + pad), pad * 2 + icon + 8 + bar
     image = Image.new("RGBA", (width, height), (43, 45, 49, 255))
@@ -205,16 +259,17 @@ async def render(session, colors: dict, blocks: list[str], cache: dict | None = 
     for i, block in enumerate(blocks):
         x = pad + i * (cell + pad)
         color = colors[block]["color"]
-        url = ICON_URL.format(name(block).replace(" ", "_"))
-        sprite = cache.get(url)
-        if sprite is None and url not in cache:
+        url = found.get(block)
+        sprite = sprites.get(url) if url else None
+        if url and url not in sprites:
             try:
                 async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as resp:
                     resp.raise_for_status()
+                    # An animated icon (GIF) shows its first frame.
                     sprite = Image.open(io.BytesIO(await resp.read())).convert("RGBA").resize((icon, icon), Image.NEAREST)
             except Exception:  # no icon: the swatch alone
                 sprite = None
-            cache[url] = sprite
+            sprites[url] = sprite
         if sprite is not None:
             image.alpha_composite(sprite, (x + (cell - icon) // 2, pad))
         else:

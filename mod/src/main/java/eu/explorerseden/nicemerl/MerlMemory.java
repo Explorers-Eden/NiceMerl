@@ -39,6 +39,8 @@ public final class MerlMemory {
 		/** The last small talk Merl answered, for "another one". */
 		public String talk = "";
 		public long talkedAt;
+		/** What the last fact or joke was about ("axolotls", "Katter"), for "another one". */
+		public String topic = "";
 		public long seenAt;
 		/** Last /merl question, for the cooldown. */
 		public long lastMessageAt;

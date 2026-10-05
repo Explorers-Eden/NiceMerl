@@ -1,0 +1,17 @@
+{
+  "_about": "Fun facts and jokes about something or someone: \"fun fact about axolotls\", \"tell me a joke about Katter\", \"make fun of Katter\". Read by the Discord bot (personality.topic_request) and the mod (MerlLines.topicRequest), on normalized text (lower case, no punctuation or apostrophes). A pattern must match the whole text; the subject is in the group named subject.",
+  "fact": [
+    "(.* )?(fun |cool |random |interesting |weird |crazy |surprising |little |good |nice |new )*(facts?|trivia|something (interesting|fun|cool|new|weird)|interesting things?|cool things?|fun things?)( you know)? (about|on|regarding|of|with|for) (?<subject>.+?)( please| pls| plz| merl)?"
+  ],
+  "joke": [
+    "(.* )?(funny |silly |good |bad |dad |cheesy |little |nice |new )*(jokes?|puns?)( you know)? (about|on|with|for|of) (?<subject>.+?)( please| pls| plz| merl)?",
+    "(.* )?(make fun of|roast|tease|poke fun at|joke about|laugh at) (?<subject>.+?)( a (bit|little))?( please| pls| plz| merl)?",
+    "(.* )?(say|tell me|tell us) something funny about (?<subject>.+?)( please| pls| plz| merl)?"
+  ],
+  "leading": "^(the|a|an|some|my|our|your) ",
+  "trailing": " (in minecraft|please|pls)$",
+  "me": ["me", "myself", "i"],
+  "merl": ["you", "yourself", "merl", "nicemerl", "u"],
+  "notSubjects": ["it", "that", "this", "them", "something", "anything", "stuff", "things", "everything", "minecraft", "the game"],
+  "maxWords": 4
+}

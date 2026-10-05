@@ -30,6 +30,7 @@ class Visit:
     asked_feeling_at: float = 0.0
     talk: str = ""            # the last small talk Merl answered, for "another one"
     talked_at: float = 0.0
+    topic: str = ""           # what the last fact or joke was about ("axolotls", "Katter"), for "another one"
     seen_at: float = 0.0
     said: str = ""            # the last question as written, for "what was I asking?" (memory only)
     said_at: float = 0.0

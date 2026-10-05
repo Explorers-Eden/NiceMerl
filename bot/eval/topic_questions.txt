@@ -1,0 +1,23 @@
+# Fun fact and joke questions and what they should give (personality.topic_request / MerlLines.topicRequest): kind:subject or none.
+tell me a fun fact about axolotls|fact:axolotls
+fun facts about the warden|fact:the warden
+give me some trivia about the ender dragon|fact:the ender dragon
+something interesting about copper|fact:copper
+whats a fun fact about endermen|fact:endermen
+do you know any facts about bees|fact:bees
+fun fact about minecraft|fact:
+fun fact about you|fact:@merl
+tell me a joke about Katter|joke:katter
+make fun of Katter|joke:katter
+roast me|joke:@me
+tease me a little|joke:@me
+joke about yourself|joke:@merl
+tell me a joke about creepers|joke:creepers
+say something funny about notniceron|joke:notniceron
+can you make fun of my cat|joke:my cat
+poke fun at peanut butter|joke:peanut butter
+got any jokes about pigs|joke:pigs
+tell me a joke|none
+tell me a fun fact|none
+how do i get a boss key|none
+what is the best enchantment for a sword|none

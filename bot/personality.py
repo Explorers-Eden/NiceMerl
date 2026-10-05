@@ -296,40 +296,32 @@ def recipe_item(text: str) -> str | None:
     return item if item and len(item.split()) <= 5 else None
 
 
-# Block palettes (same as MerlLines.palette in the mod).
-_PALETTE_WORD = r"(block |color |colour |building |build )?palettes?"
-PALETTE_AGAIN = re.compile(
-    r"(merl )?(give me |show me |try |can i get |i want )?(an ?other|a different|a new|different|new|more|one more|other) "
-    + _PALETTE_WORD + r"( please| pls)?")
-PALETTE_RANDOM = re.compile(
-    r"(.* )?(random|surprise|any|some) " + _PALETTE_WORD + r"( please| pls| idea| ideas)?"
-    r"|(.* )?surprise me( with)?( an?| some)? " + _PALETTE_WORD + r"( please| pls)?"
-    r"|(merl )?(give me |show me |suggest |make me |can you (give|make|suggest|show) me |i want |i need |got )?an? " + _PALETTE_WORD + r"( please| pls)?"
-    r"|(merl )?" + _PALETTE_WORD + r"( please| pls| idea| ideas| inspiration)?"
-    r"|(.* )?" + _PALETTE_WORD + r" (ideas?|inspiration|suggestions?)( please| pls)?"
-    r"|(.* )?(what|which|some|random) blocks (go|fit|match|look good|work)( well| nicely| great)? together")
-_PALETTE_THINGS = r"(blocks?|materials?|colou?rs?)"
-_PALETTE_MODAL = r"((should|could|can|would|will|do|does|might|shall) (i |we |you |one )?)?"
-# With "blocks" in the question any of these verbs counts; without, only the ones that can only mean "goes with".
-_PALETTE_VERB = (r"(go|goes|fit|fits|match|matches|pair|pairs|work|works|look good|looks good|look nice|looks nice|combine|blend"
-                 r"|complement|complements|use|mix|put|build|pick|choose|add)")
-_PALETTE_LOOSE_VERB = r"(go|goes|fit|fits|match|matches|pair|pairs|look good|looks good|complement|complements|combine|blend)"
-_PALETTE_HOW = r"( it| them)?( well| nicely| best| good| great| together)*"
-PALETTE_WITH = re.compile(
-    r"(.* )?(what|which)( other| kind of| kinds of| type of| types of)? " + _PALETTE_THINGS + r" (to )?" + _PALETTE_MODAL
-    + _PALETTE_VERB + _PALETTE_HOW + r" (with|to|together with|alongside|next to|around) (?P<block>.+)"
-    r"|(.* )?(what|which) " + _PALETTE_MODAL + _PALETTE_LOOSE_VERB + _PALETTE_HOW + r" (with|to|alongside|next to) (?P<block2>.+)"
-    r"|(.* )?" + _PALETTE_THINGS + r" (that|which|to) " + _PALETTE_MODAL + _PALETTE_VERB + r"s?" + _PALETTE_HOW
-    + r" (with |to |next to |alongside )?(?P<block3>.+)"
-    r"|(.* )?(recommend|suggest)( me)?( some| a few)? " + _PALETTE_THINGS + r" (for|to go with|that go with|with|matching|to match) (?P<block6>.+)"
-    r"|(.* )?" + _PALETTE_THINGS + r" (matching|similar to) (?P<block7>.+)"
-    r"|(.* )?" + _PALETTE_WORD + r" (for|with|around|using|based on|from|of|to go with|that goes with) (?P<block4>.+)"
-    r"|(merl )?(?P<block5>[a-z ]{3,40}?) " + _PALETTE_WORD + r"( please| pls)?")
-PALETTE_THIS = re.compile(
-    r"(this|that|it|here|this one|that one)( block)?( here| right here| right now)?|(the )?block (im|i am) looking at|what im looking at")
-PALETTE_HELD = re.compile(r"\b(holding|in my hand|my hand|held)\b")
-NOT_PALETTE_BLOCKS = {"a", "the", "my", "random", "any", "some", "another", "new", "different", "more", "one more", "other",
-                      "good", "nice", "cool", "best", "together", "each other"}
+# Block palettes: which questions ask for one, in data/palette_patterns.json (shared with the mod's MerlLines.palette).
+def _palette_patterns() -> dict:
+    raw = json.loads((Path(__file__).parent / "data" / "palette_patterns.json").read_text("utf-8"))
+    parts = raw["parts"]
+
+    def expand(pattern: str) -> str:
+        for _ in range(5):  # parts use other parts
+            for key, value in parts.items():
+                pattern = pattern.replace("{" + key + "}", value)
+        # Java writes named groups (?<name>…), Python (?P<name>…).
+        return re.sub(r"\(\?<([A-Za-z])", r"(?P<\1", pattern)
+
+    def compile_(pattern: str) -> re.Pattern:
+        return re.compile(expand(pattern))
+    return {
+        "mentioned": compile_(raw["mentioned"]), "prefilter": compile_(raw["prefilter"]),
+        "about": compile_(raw["aboutBlocks"]), "again": compile_(raw["again"]), "follow_up": compile_(raw["followUp"]),
+        "random": [compile_(p) for p in raw["random"]],
+        "with": [(compile_(w["pattern"]), w.get("loose", False), w.get("named", False)) for w in raw["with"]],
+        "this": compile_(raw["this"]), "held": compile_(raw["held"]), "remove": compile_(raw["remove"]),
+        "leading": compile_(raw["leading"]), "trailing": compile_(raw["trailing"]),
+        "not_blocks": set(raw["notBlocks"]), "not_named": compile_(raw["notNamed"]), "max_words": raw["maxWords"],
+    }
+
+
+PALETTE = _palette_patterns()
 
 
 @dataclass
@@ -339,36 +331,106 @@ class PaletteAsk:
     random: bool = False       # a palette around a random block
     again: bool = False        # another palette like the last one
     loose: bool = False        # "what goes with X" without saying block or palette: only when X is a block
+    said_palette: bool = False  # the question says "palette": an unknown block name gets "I don't know that block"
 
 
 def palette(text: str) -> PaletteAsk | None:
     """ "what blocks go with deepslate", "random palette", "another palette" (same as MerlLines.palette)."""
     t = normalize(text)
-    if "palette" not in t and not re.search(r"\b(blocks?|materials?|colou?rs?|go|goes|fit|fits|match|matches|pairs?|complements?|looks?|combine|blend)\b", t):
+    if not PALETTE["prefilter"].search(t):
         return None
-    if PALETTE_AGAIN.fullmatch(t):
+    if PALETTE["again"].fullmatch(t):
         return PaletteAsk(again=True)
-    if PALETTE_RANDOM.fullmatch(t):
+    if any(p.fullmatch(t) for p in PALETTE["random"]):
         return PaletteAsk(random=True)
-    m = PALETTE_WITH.fullmatch(t)
-    if not m:
+    for pattern, loose, named in PALETTE["with"]:
+        if m := pattern.fullmatch(t):
+            break
+    else:
         return None
-    group = next(g for g in ("block7", "block6", "block5", "block4", "block3", "block2", "block") if m.group(g) is not None)
-    about_blocks = "palette" in t or bool(re.search(r"\b(blocks?|materials?|colou?rs?)\b", t))
-    block = re.sub(r"\b(in minecraft|for (my|a|the) (build|house|base|wall|walls|floor|roof|castle|tower)|in (my|a) build|for building|please|pls|merl|well|nicely)\b",
-                   " ", m.group(group))
-    block = re.sub(r"\s+", " ", re.sub(r"^(the|a|an|some|my) ", "", block)).strip()
-    if not block or block in NOT_PALETTE_BLOCKS:
+    about_blocks = bool(PALETTE["about"].search(t))
+    block = re.sub(r"\s+", " ", PALETTE["remove"].sub(" ", m.group("block"))).strip()
+    block = PALETTE["trailing"].sub("", PALETTE["leading"].sub("", block)).strip()
+    if not block or block in PALETTE["not_blocks"]:
         return PaletteAsk(random=True) if about_blocks else None
-    if PALETTE_HELD.search(block):
+    if PALETTE["held"].search(block):
         return PaletteAsk(held=True)
-    if PALETTE_THIS.fullmatch(block):
+    if PALETTE["this"].fullmatch(block):
         return PaletteAsk()
-    if len(block.split()) > 5:
+    if len(block.split()) > PALETTE["max_words"] or (named and PALETTE["not_named"].search(block)):
         return None
-    if group == "block5" and re.search(r"\b(me|you|with|give|show|want|need|make|get|some|any)\b", block):
-        return PaletteAsk(random=True)
-    return PaletteAsk(block=block, loose=not about_blocks)
+    return PaletteAsk(block=block, loose=loose and not about_blocks, said_palette=bool(PALETTE["mentioned"].search(t)))
+
+
+def palette_follow_up(text: str) -> bool:
+    """ "shuffle", "another", "try again" right after a palette (same as MerlLines.paletteFollowUp)."""
+    return bool(PALETTE["follow_up"].fullmatch(normalize(text)))
+
+
+# Fun facts and jokes about something or someone, in data/topic_patterns.json (shared with MerlLines.topicRequest).
+def _topic_patterns() -> dict:
+    raw = json.loads((Path(__file__).parent / "data" / "topic_patterns.json").read_text("utf-8"))
+
+    def compile_(pattern: str) -> re.Pattern:
+        return re.compile(re.sub(r"\(\?<([A-Za-z])", r"(?P<\1", pattern))
+    return {"fact": [compile_(p) for p in raw["fact"]], "joke": [compile_(p) for p in raw["joke"]],
+            "leading": compile_(raw["leading"]), "trailing": compile_(raw["trailing"]), "me": set(raw["me"]),
+            "merl": set(raw["merl"]), "not_subjects": set(raw["notSubjects"]), "max_words": raw["maxWords"]}
+
+
+TOPIC_REQUESTS = _topic_patterns()
+ME, MERL = "@me", "@merl"
+# With this many jokes about a subject it's a thing (creepers); with fewer probably a person (Katter).
+MANY_TOPIC_JOKES = 12
+
+
+def topic_request(text: str) -> tuple[str, str] | None:
+    """ "fun fact about axolotls" → ("fact", "axolotls"), "make fun of Katter" → ("joke", "katter"); the subject is
+    ME or MERL for "me" and "you", "" for no particular subject (same as MerlLines.topicRequest)."""
+    t = normalize(text)
+    for kind in ("joke", "fact"):
+        for pattern in TOPIC_REQUESTS[kind]:
+            if m := pattern.fullmatch(t):
+                # Shown as asked ("the ender dragon"); "the", "my"… don't count for the checks.
+                subject = TOPIC_REQUESTS["trailing"].sub("", m.group("subject").strip()).strip()
+                bare = TOPIC_REQUESTS["leading"].sub("", subject).strip()
+                if bare in TOPIC_REQUESTS["me"]:
+                    return kind, ME
+                if bare in TOPIC_REQUESTS["merl"]:
+                    return kind, MERL
+                if not bare or bare in TOPIC_REQUESTS["not_subjects"]:
+                    return kind, ""
+                return (kind, subject) if len(bare.split()) <= TOPIC_REQUESTS["max_words"] else None
+    return None
+
+
+def original_case(text: str, subject: str) -> str:
+    """The subject as it was written ("katter" → "Katter" in "make fun of Katter")."""
+    words = re.findall(r"[a-z0-9]+", subject)
+    m = re.search(r"\W+".join(map(re.escape, words)), text, re.IGNORECASE) if words else None
+    return m.group(0) if m else subject
+
+
+def _topic_words(text: str) -> list[str]:
+    words = []
+    for w in re.findall(r"[a-z0-9]+", text.lower()):
+        w = w[:-3] + "man" if w.endswith("men") and len(w) > 4 else w  # endermen → enderman
+        words.append(w[:-1] if len(w) > 3 and w.endswith("s") and not w.endswith("ss") else w)
+    return words
+
+
+def about(pool: str, subject: str) -> list[str]:
+    """The lines of a pool that mention the subject: every word of it starts a word of the line ("axolotls" finds
+    "Axolotls play dead…", "ender dragon" finds "The Ender Dragon heals…") (same as MerlLines.about)."""
+    wanted = [w for w in _topic_words(subject) if w not in ("the", "a", "an", "of", "my", "our", "your", "some")]
+    if not wanted:
+        return []
+    found = []
+    for line in LINES["pools"].get(pool, []):
+        words = _topic_words(line)
+        if all(any(word.startswith(w) for word in words) for w in wanted):
+            found.append(line)
+    return found
 
 
 def split_small_talk(text: str) -> tuple[str | None, str]:

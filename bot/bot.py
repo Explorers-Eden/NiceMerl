@@ -194,6 +194,19 @@ class NiceMerl(discord.Client):
             await self.say(message, started, content=line)
             return
         # "what blocks go with deepslate?", "random palette": a block palette.
+        # "fun fact about axolotls", "make fun of @Katter" (mentions of others as their names)
+        named = raw
+        for member in message.mentions:
+            if not self.user or member.id != self.user.id:
+                named = re.sub(rf"<@!?{member.id}>", member.display_name, named)
+        if topic := personality.topic_request(named):
+            visit.talk, visit.talked_at, visit.topic = topic[0], now, topic[1]
+            await self.say(message, started, content=self.topic_line(*topic, named, user))
+            return
+        if visit.recent_talk(now) == "palette" and personality.palette_follow_up(question):
+            # "shuffle", "try again" right after a palette
+            await self.palette(message, started, personality.PaletteAsk(again=True), visit, user, now)
+            return
         if (ask := personality.palette(question)) and await self.palette(message, started, ask, visit, user, now):
             return
         talk = personality.small_talk(question)
@@ -230,6 +243,11 @@ class NiceMerl(discord.Client):
                 intro = friend.chats <= personality.INTRO_CHATS
                 await self.say(message, started, embed=self.hello_embed(greeting, extra, intro))
             return
+        if talk == "more" and visit.recent_talk(now) in ("fact", "joke") and visit.topic:
+            # "another one" after a fact or joke about something: another one about it
+            visit.talked_at = now
+            await self.say(message, started, content=self.topic_line(visit.talk, visit.topic, visit.topic, user))
+            return
         if talk == "more" and visit.recent_talk(now) == "palette":
             await self.palette(message, started, personality.PaletteAsk(again=True), visit, user, now)
             return
@@ -243,7 +261,7 @@ class NiceMerl(discord.Client):
             text = self.small_talk_line(talk, user, visit, friend, today, now)
             if talk_prefix:
                 text = f"{pick(talk_prefix, user=user)} {text}"
-            visit.talk, visit.talked_at = talk, now
+            visit.talk, visit.talked_at, visit.topic = talk, now, ""
             if extra := self.ask_back(talk, visit, now) or self.ask_feeling(talk, text, visit, now):
                 text += " " + extra
             await self.say(message, started, content=text)
@@ -324,6 +342,27 @@ class NiceMerl(discord.Client):
             visit.page = ""
             await self.say(message, started, embed=self.not_found_embed(), results=1)
 
+    def topic_line(self, kind: str, subject: str, text: str, user: str) -> str:
+        """A fun fact or a joke about something ("axolotls") or someone ("Katter", the asker, Merl). Jokes about
+        people are friendly little teases from the joke_about pool, never mean."""
+        if kind == "fact":
+            if not subject or subject in (personality.ME, personality.MERL):
+                return pick("fact")
+            shown = personality.original_case(text, subject)
+            if facts := personality.about("fact", subject):
+                return f"{pick('fact_topic_intro', subject=shown)} {random.choice(facts)}"
+            return f"{pick('fact_topic_none', subject=shown)} {pick('fact')}"
+        if not subject:
+            return pick("joke")
+        name = user if subject == personality.ME else "Merl" if subject == personality.MERL else personality.original_case(text, subject)
+        # Jokes that are already about it: always for things with many (creepers), sometimes for a person a joke
+        # happens to mention (Katter), so they get the friendly name jokes too.
+        jokes = [] if subject == personality.ME else personality.about("joke", "merl" if subject == personality.MERL else subject)
+        if len(jokes) >= personality.MANY_TOPIC_JOKES or (jokes and random.random() < 0.5):
+            return random.choice(jokes)
+        line = pick("joke_about", name=name)
+        return f"{pick('joke_about_intro', name=name)} {line}" if random.random() < 0.4 else line
+
     async def palette(self, message: discord.Message, started: float, ask: personality.PaletteAsk, visit: Visit,
                       user: str, now: float) -> bool:
         """A block palette with a picture of the blocks. False when it isn't one after all ("what goes with
@@ -338,7 +377,8 @@ class NiceMerl(discord.Client):
         elif ask.block:
             base = palettes.by_name(colors, ask.block, exact=ask.loose)
             if base is None:
-                if ask.loose:
+                # "what goes with diamonds?", "what blocks go with the castle?": not about a block after all.
+                if ask.loose or not ask.said_palette:
                     return False
                 await self.say(message, started, content=pick("palette_unknown_name", block=ask.block, user=user))
                 return True

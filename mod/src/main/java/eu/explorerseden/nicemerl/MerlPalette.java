@@ -265,18 +265,38 @@ final class MerlPalette {
 		return id == null ? null : fullBlock(id);
 	}
 
-	/** The block a name means ("deepslate bricks", "oak stairs"), by its English name; exact names first. Null if none. */
+	/** The block a name means ("deepslate bricks", "oak stairs", "prismarin"), by its English name; exact names first. Null if none. */
 	static String byName(String asked) {
+		if (asked.contains(" and ")) {
+			// "a palette with prismarine and sea lanterns": the first block found.
+			for (String part : asked.split(" and ")) {
+				String found = byName(part);
+				if (found != null) return found;
+			}
+			return null;
+		}
 		List<String> words = singular(SearchIndex.tokenize(asked));
 		if (words.isEmpty()) return null;
+		for (Map.Entry<String, String> e : names().entrySet()) {
+			if (singular(SearchIndex.tokenize(e.getValue())).equals(words)) return e.getKey();
+		}
+		String found = bestContaining(words, false);
+		// Typos and short forms: "prismarin", "cobble".
+		return found != null ? found : bestContaining(words, true);
+	}
+
+	/**
+	 * The block whose name has all the words: blocks we know the colors of first ("oak" means oak planks rather than
+	 * an oak button), then the shortest name.
+	 */
+	private static String bestContaining(List<String> words, boolean loosely) {
 		String best = null;
 		int bestLength = Integer.MAX_VALUE;
 		boolean bestKnown = false;
 		for (Map.Entry<String, String> e : names().entrySet()) {
 			List<String> own = singular(SearchIndex.tokenize(e.getValue()));
-			if (own.equals(words)) return e.getKey();
-			if (!own.containsAll(words)) continue;
-			// "oak" means oak planks rather than an oak button: blocks we know the colors of first, then short names.
+			boolean all = loosely ? words.stream().allMatch(w -> own.stream().anyMatch(o -> close(w, o))) : own.containsAll(words);
+			if (!all) continue;
 			boolean known = shades().containsKey(e.getKey());
 			if ((known && !bestKnown) || (known == bestKnown && e.getValue().length() < bestLength)) {
 				best = e.getKey();
@@ -285,6 +305,25 @@ final class MerlPalette {
 			}
 		}
 		return best;
+	}
+
+	/** A word typed short or with a small typo: one wrong letter in short words, two in long ones (same as palettes._close in the bot). */
+	static boolean close(String typed, String word) {
+		if (typed.equals(word) || (typed.length() >= 4 && word.startsWith(typed))) return true;
+		if (typed.length() < 4 || Math.abs(typed.length() - word.length()) > 2) return false;
+		int allowed = word.length() < 7 ? 1 : 2;
+		int[] previous = new int[word.length() + 1];
+		for (int j = 0; j <= word.length(); j++) previous[j] = j;
+		for (int i = 1; i <= typed.length(); i++) {
+			int[] current = new int[word.length() + 1];
+			current[0] = i;
+			for (int j = 1; j <= word.length(); j++) {
+				current[j] = Math.min(Math.min(previous[j] + 1, current[j - 1] + 1),
+						previous[j - 1] + (typed.charAt(i - 1) == word.charAt(j - 1) ? 0 : 1));
+			}
+			previous = current;
+		}
+		return previous[word.length()] <= allowed;
 	}
 
 	private static List<String> singular(List<String> words) {

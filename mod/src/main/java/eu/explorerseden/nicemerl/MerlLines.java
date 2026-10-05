@@ -808,78 +808,176 @@ public final class MerlLines {
 		return item.isEmpty() || item.split(" ").length > 5 ? null : item;
 	}
 
-	// Block palettes: "what blocks go with this", "palette for deepslate", "random palette", "another palette".
+	// Block palettes: which questions ask for one, in palette_patterns.json (shared with the Discord bot's personality.palette).
 	/**
 	 * @param block the block asked about by name, or null for the one looked at (or held)
 	 * @param holding about the block in the player's hand
 	 * @param random a palette around a random block
 	 * @param again another palette like the last one
 	 * @param loose "what goes with X" without saying block or palette: only a palette question when X is a block
+	 * @param saidPalette the question says "palette": an unknown block name gets "I don't know that block"
 	 */
-	public record PaletteAsk(String block, boolean holding, boolean random, boolean again, boolean loose) {
+	public record PaletteAsk(String block, boolean holding, boolean random, boolean again, boolean loose, boolean saidPalette) {
 		public PaletteAsk(String block, boolean holding, boolean random, boolean again) {
-			this(block, holding, random, again, false);
+			this(block, holding, random, again, false, false);
 		}
 	}
 
-	private static final String PALETTE_WORD = "(block |color |colour |building |build )?palettes?";
-	private static final Pattern PALETTE_AGAIN = Pattern.compile(
-			"(merl )?(give me |show me |try |can i get |i want )?(an ?other|a different|a new|different|new|more|one more|other) " + PALETTE_WORD + "( please| pls)?");
-	private static final Pattern PALETTE_RANDOM = Pattern.compile(
-			"(.* )?(random|surprise|any|some) " + PALETTE_WORD + "( please| pls| idea| ideas)?"
-			+ "|(.* )?surprise me( with)?( an?| some)? " + PALETTE_WORD + "( please| pls)?"
-			+ "|(merl )?(give me |show me |suggest |make me |can you (give|make|suggest|show) me |i want |i need |got )?an? " + PALETTE_WORD + "( please| pls)?"
-			+ "|(merl )?" + PALETTE_WORD + "( please| pls| idea| ideas| inspiration)?"
-			+ "|(.* )?" + PALETTE_WORD + " (ideas?|inspiration|suggestions?)( please| pls)?"
-			+ "|(.* )?(what|which|some|random) blocks (go|fit|match|look good|work)( well| nicely| great)? together");
-	private static final String PALETTE_THINGS = "(blocks?|materials?|colou?rs?)";
-	private static final String PALETTE_MODAL = "((should|could|can|would|will|do|does|might|shall) (i |we |you |one )?)?";
-	/** With "blocks" in the question any of these verbs counts; without, only the ones that can only mean "goes with". */
-	private static final String PALETTE_VERB = "(go|goes|fit|fits|match|matches|pair|pairs|work|works|look good|looks good|look nice|looks nice"
-			+ "|combine|blend|complement|complements|use|mix|put|build|pick|choose|add)";
-	private static final String PALETTE_LOOSE_VERB = "(go|goes|fit|fits|match|matches|pair|pairs|look good|looks good|complement|complements|combine|blend)";
-	private static final String PALETTE_HOW = "( it| them)?( well| nicely| best| good| great| together)*";
-	private static final Pattern PALETTE_WITH = Pattern.compile(
-			"(.* )?(what|which)( other| kind of| kinds of| type of| types of)? " + PALETTE_THINGS + " (to )?" + PALETTE_MODAL
-			+ PALETTE_VERB + PALETTE_HOW + " (with|to|together with|alongside|next to|around) (?<block>.+)"
-			+ "|(.* )?(what|which) " + PALETTE_MODAL + PALETTE_LOOSE_VERB + PALETTE_HOW + " (with|to|alongside|next to) (?<block2>.+)"
-			+ "|(.* )?" + PALETTE_THINGS + " (that|which|to) " + PALETTE_MODAL + PALETTE_VERB + "s?" + PALETTE_HOW
-			+ " (with |to |next to |alongside )?(?<block3>.+)"
-			+ "|(.* )?(recommend|suggest)( me)?( some| a few)? " + PALETTE_THINGS + " (for|to go with|that go with|with|matching|to match) (?<block6>.+)"
-			+ "|(.* )?" + PALETTE_THINGS + " (matching|similar to) (?<block7>.+)"
-			+ "|(.* )?" + PALETTE_WORD + " (for|with|around|using|based on|from|of|to go with|that goes with) (?<block4>.+)"
-			+ "|(merl )?(?<block5>[a-z ]{3,40}?) " + PALETTE_WORD + "( please| pls)?");
-	private static final Pattern THIS_BLOCK = Pattern.compile(
-			"(this|that|it|here|this one|that one)( block)?( here| right here| right now)?|(the )?block (im|i am) looking at|what im looking at");
-	private static final Pattern HELD_BLOCK = Pattern.compile("\\b(holding|in my hand|my hand|held)\\b");
-	private static final Set<String> NOT_PALETTE_BLOCKS = Set.of("a", "the", "my", "random", "any", "some", "another", "new",
-			"different", "more", "one more", "other", "good", "nice", "cool", "best", "together", "each other");
+	private record PaletteWith(Pattern pattern, boolean loose, boolean named) {}
 
-	/** A palette question, or null. */
+	private record PalettePatterns(Pattern mentioned, Pattern prefilter, Pattern about, Pattern again, Pattern followUp,
+			List<Pattern> random, List<PaletteWith> with, Pattern self, Pattern held, Pattern remove, Pattern leading,
+			Pattern trailing, Set<String> notBlocks, Pattern notNamed, int maxWords) {}
+
+	private static final PalettePatterns PALETTE = palettePatterns();
+
+	private static PalettePatterns palettePatterns() {
+		JsonObject raw = resource("palette_patterns.json");
+		JsonObject parts = raw.getAsJsonObject("parts");
+		java.util.function.Function<String, Pattern> compile = pattern -> {
+			for (int i = 0; i < 5; i++) {
+				for (Map.Entry<String, JsonElement> part : parts.entrySet()) {
+					pattern = pattern.replace("{" + part.getKey() + "}", part.getValue().getAsString());
+				}
+			}
+			return Pattern.compile(pattern);
+		};
+		List<Pattern> random = new ArrayList<>();
+		raw.getAsJsonArray("random").forEach(p -> random.add(compile.apply(p.getAsString())));
+		List<PaletteWith> with = new ArrayList<>();
+		raw.getAsJsonArray("with").forEach(e -> {
+			JsonObject w = e.getAsJsonObject();
+			with.add(new PaletteWith(compile.apply(w.get("pattern").getAsString()),
+					w.has("loose") && w.get("loose").getAsBoolean(), w.has("named") && w.get("named").getAsBoolean()));
+		});
+		Set<String> notBlocks = new java.util.HashSet<>();
+		raw.getAsJsonArray("notBlocks").forEach(e -> notBlocks.add(e.getAsString()));
+		return new PalettePatterns(compile.apply(raw.get("mentioned").getAsString()), compile.apply(raw.get("prefilter").getAsString()),
+				compile.apply(raw.get("aboutBlocks").getAsString()), compile.apply(raw.get("again").getAsString()),
+				compile.apply(raw.get("followUp").getAsString()), List.copyOf(random), List.copyOf(with),
+				compile.apply(raw.get("this").getAsString()), compile.apply(raw.get("held").getAsString()),
+				compile.apply(raw.get("remove").getAsString()), compile.apply(raw.get("leading").getAsString()),
+				compile.apply(raw.get("trailing").getAsString()), Set.copyOf(notBlocks),
+				compile.apply(raw.get("notNamed").getAsString()), raw.get("maxWords").getAsInt());
+	}
+
+	/** "what blocks go with deepslate", "random palette", "another palette"; null when it isn't a palette question. */
 	public static PaletteAsk palette(String message) {
 		String text = normalize(message);
-		if (!text.contains("palette") && !text.matches(".*\\b(blocks?|materials?|colou?rs?|go|goes|fit|fits|match|matches|pairs?|complements?|looks?|combine|blend)\\b.*")) return null;
-		if (PALETTE_AGAIN.matcher(text).matches()) return new PaletteAsk(null, false, false, true);
-		if (PALETTE_RANDOM.matcher(text).matches()) return new PaletteAsk(null, false, true, false);
-		Matcher m = PALETTE_WITH.matcher(text);
-		if (!m.matches()) return null;
-		String block = null;
-		for (String group : List.of("block", "block2", "block3", "block4", "block5", "block6", "block7")) {
-			if (m.group(group) != null) block = m.group(group);
+		if (!PALETTE.prefilter().matcher(text).find()) return null;
+		if (PALETTE.again().matcher(text).matches()) return new PaletteAsk(null, false, false, true);
+		if (PALETTE.random().stream().anyMatch(p -> p.matcher(text).matches())) return new PaletteAsk(null, false, true, false);
+		Matcher m = null;
+		PaletteWith matched = null;
+		for (PaletteWith with : PALETTE.with()) {
+			Matcher candidate = with.pattern().matcher(text);
+			if (candidate.matches()) {
+				m = candidate;
+				matched = with;
+				break;
+			}
 		}
-		// "what goes with diamonds" is no palette question unless it says block or palette, or names this block.
-		boolean aboutBlocks = text.contains("palette") || text.matches(".*\\b(blocks?|materials?|colou?rs?)\\b.*");
-		block = block.replaceAll("\\b(in minecraft|for (my|a|the) (build|house|base|wall|walls|floor|roof|castle|tower)|in (my|a) build|for building|please|pls|merl|well|nicely)\\b", " ")
-				.replaceAll("^(the|a|an|some|my) ", "").replaceAll("\\s+", " ").strip();
-		if (block.isEmpty() || NOT_PALETTE_BLOCKS.contains(block)) return aboutBlocks ? new PaletteAsk(null, false, true, false) : null;
-		if (HELD_BLOCK.matcher(block).find()) return new PaletteAsk(null, true, false, false);
-		if (THIS_BLOCK.matcher(block).matches()) return new PaletteAsk(null, false, false, false);
-		if (block.split(" ").length > 5) return null;
-		// "surprise me with a palette" and the like: no block named after all.
-		if (m.group("block5") != null && block.matches(".*\\b(me|you|with|give|show|want|need|make|get|some|any)\\b.*")) {
-			return new PaletteAsk(null, false, true, false);
+		if (m == null) return null;
+		boolean aboutBlocks = PALETTE.about().matcher(text).find();
+		String block = PALETTE.remove().matcher(m.group("block")).replaceAll(" ").replaceAll("\\s+", " ").strip();
+		block = PALETTE.trailing().matcher(PALETTE.leading().matcher(block).replaceAll("")).replaceAll("").strip();
+		if (block.isEmpty() || PALETTE.notBlocks().contains(block)) return aboutBlocks ? new PaletteAsk(null, false, true, false) : null;
+		if (PALETTE.held().matcher(block).find()) return new PaletteAsk(null, true, false, false);
+		if (PALETTE.self().matcher(block).matches()) return new PaletteAsk(null, false, false, false);
+		if (block.split(" ").length > PALETTE.maxWords() || (matched.named() && PALETTE.notNamed().matcher(block).find())) return null;
+		return new PaletteAsk(block, false, false, false, matched.loose() && !aboutBlocks, PALETTE.mentioned().matcher(text).find());
+	}
+
+	/** "shuffle", "another", "try again" right after a palette (same as personality.palette_follow_up in the bot). */
+	public static boolean paletteFollowUp(String message) {
+		return PALETTE.followUp().matcher(normalize(message)).matches();
+	}
+
+	// Fun facts and jokes about something or someone, in topic_patterns.json (shared with the bot's personality.topic_request).
+	/** "the asker" and "Merl" as joke subjects. */
+	public static final String ME = "@me", MERL = "@merl";
+	/** With this many jokes about a subject it's a thing (creepers); with fewer probably a person (Katter). */
+	public static final int MANY_TOPIC_JOKES = 12;
+
+	/** @param kind "fact" or "joke"; @param subject as asked ("the ender dragon"), ME, MERL, or "" for no particular one */
+	public record TopicRequest(String kind, String subject) {}
+
+	private record TopicPatterns(List<Pattern> fact, List<Pattern> joke, Pattern leading, Pattern trailing, Set<String> me,
+			Set<String> merl, Set<String> notSubjects, int maxWords) {}
+
+	private static final TopicPatterns TOPIC_REQUESTS = topicPatterns();
+
+	private static TopicPatterns topicPatterns() {
+		JsonObject raw = resource("topic_patterns.json");
+		java.util.function.Function<String, List<Pattern>> patterns = key -> {
+			List<Pattern> out = new ArrayList<>();
+			raw.getAsJsonArray(key).forEach(p -> out.add(Pattern.compile(p.getAsString())));
+			return List.copyOf(out);
+		};
+		java.util.function.Function<String, Set<String>> words = key -> {
+			Set<String> out = new java.util.HashSet<>();
+			raw.getAsJsonArray(key).forEach(e -> out.add(e.getAsString()));
+			return Set.copyOf(out);
+		};
+		return new TopicPatterns(patterns.apply("fact"), patterns.apply("joke"), Pattern.compile(raw.get("leading").getAsString()),
+				Pattern.compile(raw.get("trailing").getAsString()), words.apply("me"), words.apply("merl"), words.apply("notSubjects"),
+				raw.get("maxWords").getAsInt());
+	}
+
+	/** "fun fact about axolotls" → fact/axolotls, "make fun of Katter" → joke/katter; null when it's neither. */
+	public static TopicRequest topicRequest(String message) {
+		String text = normalize(message);
+		for (String kind : List.of("joke", "fact")) {
+			for (Pattern pattern : kind.equals("joke") ? TOPIC_REQUESTS.joke() : TOPIC_REQUESTS.fact()) {
+				Matcher m = pattern.matcher(text);
+				if (!m.matches()) continue;
+				// Shown as asked ("the ender dragon"); "the", "my"… don't count for the checks.
+				String subject = TOPIC_REQUESTS.trailing().matcher(m.group("subject").strip()).replaceAll("").strip();
+				String bare = TOPIC_REQUESTS.leading().matcher(subject).replaceAll("").strip();
+				if (TOPIC_REQUESTS.me().contains(bare)) return new TopicRequest(kind, ME);
+				if (TOPIC_REQUESTS.merl().contains(bare)) return new TopicRequest(kind, MERL);
+				if (bare.isEmpty() || TOPIC_REQUESTS.notSubjects().contains(bare)) return new TopicRequest(kind, "");
+				return bare.split(" ").length <= TOPIC_REQUESTS.maxWords() ? new TopicRequest(kind, subject) : null;
+			}
 		}
-		return new PaletteAsk(block, false, false, false, !aboutBlocks);
+		return null;
+	}
+
+	private static List<String> topicWords(String text) {
+		List<String> words = new ArrayList<>();
+		for (String w : text.toLowerCase(Locale.ROOT).split("[^a-z0-9]+")) {
+			if (w.isEmpty()) continue;
+			if (w.endsWith("men") && w.length() > 4) w = w.substring(0, w.length() - 3) + "man"; // endermen → enderman
+			words.add(w.length() > 3 && w.endsWith("s") && !w.endsWith("ss") ? w.substring(0, w.length() - 1) : w);
+		}
+		return words;
+	}
+
+	/** The lines of a pool that mention the subject: every word of it starts a word of the line (same as personality.about). */
+	public static List<String> about(String pool, String subject) {
+		List<String> wanted = topicWords(subject).stream()
+				.filter(w -> !Set.of("the", "a", "an", "of", "my", "our", "your", "some").contains(w)).toList();
+		if (wanted.isEmpty()) return List.of();
+		List<String> found = new ArrayList<>();
+		for (String line : POOLS.getOrDefault(pool, List.of())) {
+			List<String> words = topicWords(line);
+			if (wanted.stream().allMatch(w -> words.stream().anyMatch(word -> word.startsWith(w)))) found.add(line);
+		}
+		return found;
+	}
+
+	/** The subject as it was written ("katter" → "Katter" in "make fun of Katter"). */
+	public static String originalCase(String text, String subject) {
+		String[] words = subject.split("[^a-z0-9]+");
+		StringBuilder pattern = new StringBuilder();
+		for (String w : words) {
+			if (w.isEmpty()) continue;
+			if (pattern.length() > 0) pattern.append("\\W+");
+			pattern.append(Pattern.quote(w));
+		}
+		if (pattern.length() == 0) return subject;
+		Matcher m = Pattern.compile(pattern.toString(), Pattern.CASE_INSENSITIVE).matcher(text);
+		return m.find() ? m.group() : subject;
 	}
 
 	// "What can I enchant this with?"

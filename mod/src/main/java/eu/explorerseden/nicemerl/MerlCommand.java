@@ -379,10 +379,25 @@ public final class MerlCommand {
 			sendNote(source, meeting.note());
 			return 1;
 		}
+		// "fun fact about axolotls", "make fun of Katter": a fact or a friendly joke about something or someone.
+		MerlLines.TopicRequest aboutSomething = MerlLines.topicRequest(question);
+		if (aboutSomething != null) {
+			visit.talk = aboutSomething.kind();
+			visit.talkedAt = now;
+			visit.topic = aboutSomething.subject();
+			reply(source, Component.literal(topicLine(aboutSomething.kind(), aboutSomething.subject(), question, source)));
+			sendNote(source, meeting.note());
+			return 1;
+		}
 		// "what blocks go with this?", "give me a random palette": a block palette.
-		MerlLines.PaletteAsk paletteAsk = player != null && config.blockPalettes ? MerlLines.palette(question) : null;
-		// "what goes with diamonds?" isn't about blocks: only when it names one.
-		if (paletteAsk != null && paletteAsk.loose() && MerlPalette.fullBlockByExactName(paletteAsk.block()) == null) paletteAsk = null;
+		MerlLines.PaletteAsk paletteAsk = player == null || !config.blockPalettes ? null
+				// "shuffle", "try again" right after a palette
+				: "palette".equals(visit.recentTalk(now)) && MerlLines.paletteFollowUp(question) ? new MerlLines.PaletteAsk(null, false, false, true)
+				: MerlLines.palette(question);
+		// "what goes with diamonds?" or "what blocks go with the castle?" aren't about a block after all.
+		if (paletteAsk != null && paletteAsk.block() != null && (paletteAsk.loose()
+				? MerlPalette.fullBlockByExactName(paletteAsk.block()) == null
+				: !paletteAsk.saidPalette() && MerlPalette.byName(paletteAsk.block()) == null)) paletteAsk = null;
 		if (paletteAsk != null) {
 			reply(source, MerlPalette.answer(player, paletteAsk));
 			visit.talk = "palette";
@@ -461,6 +476,13 @@ public final class MerlCommand {
 		if ("more".equals(talk)) {
 			// "another one!" after a joke is another joke.
 			String last = visit.recentTalk(now);
+			if (("fact".equals(last) || "joke".equals(last)) && !visit.topic.isEmpty()) {
+				// "another one" after a fact or joke about something: another one about it
+				reply(source, Component.literal(topicLine(last, visit.topic, visit.topic, source)));
+				visit.talkedAt = now;
+				sendNote(source, meeting.note());
+				return 1;
+			}
 			if ("palette".equals(last) && player != null && config.blockPalettes) {
 				reply(source, MerlPalette.answer(player, new MerlLines.PaletteAsk(null, false, false, true)));
 				visit.talkedAt = now;
@@ -479,6 +501,7 @@ public final class MerlCommand {
 			if (talkPrefix != null) text = MerlLines.pick(talkPrefix, "user", source.getTextName()) + " " + text;
 			visit.talk = talk;
 			visit.talkedAt = now;
+			visit.topic = "";
 			String askBack = askBack(talk, visit, now);
 			if (askBack == null) askBack = askFeeling(talk, text, visit, now);
 			reply(source, Component.literal(askBack != null ? text + " " + askBack : text));
@@ -576,6 +599,40 @@ public final class MerlCommand {
 				found -> server.execute(() -> respond(source, List.of(), eden,
 						VanillaWiki.combine(query, eden, found, config.results), answer)));
 		return 1;
+	}
+
+	/**
+	 * A fun fact or a joke about something ("axolotls") or someone ("Katter", the asker, Merl). Jokes about people are
+	 * friendly little teases from the joke_about pool, never mean. Same as topic_line in the bot.
+	 */
+	private static String topicLine(String kind, String subject, String text, CommandSourceStack source) {
+		String user = source.getTextName();
+		java.util.concurrent.ThreadLocalRandom random = java.util.concurrent.ThreadLocalRandom.current();
+		if (kind.equals("fact")) {
+			if (subject.isEmpty() || subject.equals(MerlLines.ME) || subject.equals(MerlLines.MERL)) return MerlLines.pick("fact");
+			String shown = MerlLines.originalCase(text, subject);
+			List<String> facts = MerlLines.about("fact", subject);
+			return facts.isEmpty()
+					? MerlLines.pick("fact_topic_none", "subject", shown) + " " + MerlLines.pick("fact")
+					: MerlLines.pick("fact_topic_intro", "subject", shown) + " " + facts.get(random.nextInt(facts.size()));
+		}
+		if (subject.isEmpty()) return MerlLines.pick("joke");
+		String name;
+		if (subject.equals(MerlLines.ME)) name = user;
+		else if (subject.equals(MerlLines.MERL)) name = "Merl";
+		else {
+			// A player on the server, spelled the way they spell it.
+			ServerPlayer named = source.getServer().getPlayerList().getPlayerByName(subject.replace(" ", ""));
+			name = named != null ? named.getName().getString() : MerlLines.originalCase(text, subject);
+		}
+		// Jokes that are already about it: always for things with many (creepers), sometimes for a person a joke
+		// happens to mention (Katter), so they get the friendly name jokes too.
+		List<String> jokes = subject.equals(MerlLines.ME) ? List.of() : MerlLines.about("joke", subject.equals(MerlLines.MERL) ? "merl" : subject);
+		if (jokes.size() >= MerlLines.MANY_TOPIC_JOKES || (!jokes.isEmpty() && random.nextBoolean())) {
+			return jokes.get(random.nextInt(jokes.size()));
+		}
+		String line = MerlLines.pick("joke_about", "name", name);
+		return random.nextDouble() < 0.4 ? MerlLines.pick("joke_about_intro", "name", name) + " " + line : line;
 	}
 
 	private static String smallTalkLine(String talk, CommandSourceStack source, ServerPlayer player, MerlMemory.Visit visit, long now,

@@ -1,0 +1,80 @@
+# Palette questions and what they should give (personality.palette / MerlLines.palette): block=…, loose=…, this, held, random, again or none.
+Can u give me a block palett including prismarin?|block=prismarin
+Can u give me a block palette including prismarin?|block=prismarin
+palette with prismarine in it|block=prismarine
+i need a pallete with lots of deepslate|block=deepslate
+make me a palette featuring cherry planks|block=cherry planks
+give me a random palette with copper|block=copper
+a palette made of stone|block=stone
+pallet for oak planks|block=oak planks
+random pallete|random
+another palett|again
+What blocks should I use with Poplar Logs|block=poplar logs
+which blocks can i combine with deepslate|block=deepslate
+what blocks to use with oak planks|block=oak planks
+blocks to use with cherry planks|block=cherry planks
+what colors go with copper|block=copper
+what block pairs well with quartz|block=quartz
+what looks good with blackstone|loose=blackstone
+what goes well with oak planks|loose=oak planks
+what fits with stone|loose=stone
+recommend some blocks for mud bricks|block=mud bricks
+suggest blocks to go with tuff|block=tuff
+blocks matching spruce planks|block=spruce planks
+what materials would work well with polished andesite for my house|block=polished andesite
+which blocks go nicely together with bricks|block=bricks
+what other blocks could i put with dark oak planks|block=dark oak planks
+which blocks would look nice with calcite|block=calcite
+what are good blocks to pair with tuff|block=tuff
+what are some blocks that go with sandstone|block=sandstone
+whats a good block palette|random
+any good palettes|random
+give me a palette|random
+can you make me a nice palette|random
+suggest a palette|random
+palette please|random
+palette ideas|random
+i need some palette inspiration|random
+inspire me with a palette|random
+what blocks look good together|random
+blocks that go together|random
+generate a palette|random
+color scheme for deepslate|block=deepslate
+give me a colour scheme with birch planks|block=birch planks
+block combo with copper|block=copper
+complementary blocks for mud bricks|block=mud bricks
+matching blocks for spruce|block=spruce
+blocks similar to cobblestone|block=cobblestone
+im building with dark oak what else should i use|block=dark oak
+building with stone bricks what blocks go with it|block=stone bricks
+what should i use with poplar logs|loose=poplar logs
+what can i mix with andesite|loose=andesite
+what else goes with deepslate tiles|loose=deepslate tiles
+pick me some blocks for a cherry build|block=cherry
+a palette for my deepslate build|block=deepslate
+palette with deepslate blocks|block=deepslate
+prismarin palette|block=prismarin
+dark oak wood palette|block=dark oak wood
+what blocks should i use with this|this
+what blocks go with what im holding|held
+which blocks go with these|this
+palette for the block in front of me|this
+what blocks go well together|random
+another palette|again
+a different palette|again
+deepslate palette|block=deepslate
+how do i get a boss key|none
+what should i use with a lead|loose=lead
+what can i use with a stonecutter|loose=stonecutter
+what blocks can i use for a nether portal|none
+what blocks can endermen pick up|none
+which blocks are blast resistant|none
+how do i make a wooden pallet|none
+what blocks do i need for a beacon|none
+how do i get colors for my sheep|none
+which colors can a sheep have|none
+what goes in a brewing stand|none
+how do i build a castle|none
+where is the closest cherry grove|none
+whats the best block for a farm|none
+what is the palette of the underground village|none

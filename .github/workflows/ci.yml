@@ -239,16 +239,16 @@ jobs:
         run: |
           python - <<'EOF'
           import asyncio, random, palettes, personality
-          # Questions, like MerlLines.palette in the mod.
-          ask = personality.palette
-          assert ask("which blocks fit to deepslate bricks?").block == "deepslate bricks"
-          assert ask("give me a random palette").random and ask("surprise me with a palette").random
-          assert ask("another palette").again and ask("what blocks go with this").block is None
-          assert ask("what goes well with oak planks").loose and ask("how do i get a boss key") is None
-          assert ask("What blocks should I use with Poplar Logs").block == "poplar logs"
-          assert ask("what colors go with copper").block == "copper" and ask("blocks to use with cherry planks").block == "cherry planks"
-          assert ask("what looks good with blackstone").loose and ask("what blocks can i use for a nether portal") is None
-          assert ask("what blocks can endermen pick up") is None and ask("which blocks are blast resistant") is None
+          # Questions (the same patterns as MerlLines.palette in the mod: data/palette_patterns.json).
+          def got(q):
+              a = personality.palette(q)
+              return ("none" if a is None else "again" if a.again else "random" if a.random else "held" if a.held
+                      else "this" if a.block is None else ("loose=" if a.loose else "block=") + a.block)
+          for line in open("eval/palette_questions.txt"):
+              if line.strip() and not line.startswith("#"):
+                  q, want = line.rstrip("\n").split("|")
+                  assert got(q) == want, (q, got(q), want)
+          assert personality.palette_follow_up("shuffle") and not personality.palette_follow_up("what")
           colors = palettes.load()
           assert len(colors) > 300, len(colors)
           # Names: exact, partial blocks (stairs → planks), loose words; "diamonds" only loosely.
@@ -274,6 +274,25 @@ jobs:
           png = asyncio.run(palettes.render(NoWeb(), colors, palettes.palette(colors, "stone")))
           assert png.startswith(b"\x89PNG")
           print("Block palettes work: questions, names, palettes, picture")
+          EOF
+
+      - name: Check fun facts and jokes about something or someone
+        run: |
+          python - <<'EOF'
+          import personality
+          # Questions (the same patterns as MerlLines.topicRequest in the mod: data/topic_patterns.json).
+          for line in open("eval/topic_questions.txt"):
+              if line.strip() and not line.startswith("#"):
+                  q, want = line.rstrip("\n").split("|")
+                  r = personality.topic_request(q)
+                  assert ("none" if r is None else f"{r[0]}:{r[1]}") == want, (q, r, want)
+          # Facts and jokes found by what they mention.
+          assert personality.about("fact", "axolotls") and personality.about("fact", "the ender dragon")
+          assert len(personality.about("joke", "creepers")) >= personality.MANY_TOPIC_JOKES
+          # Jokes about people: friendly templates, each with the name in it, and plenty of them.
+          people = personality.LINES["pools"]["joke_about"]
+          assert len(people) >= 480 and all("{name}" in j for j in people), len(people)
+          print("Facts and jokes about things and people work")
           EOF
 
       - name: Check that the bot starts (without logging in to Discord)

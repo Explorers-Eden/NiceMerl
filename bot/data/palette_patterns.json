@@ -1,0 +1,94 @@
+{
+  "_about": "Which questions ask for a block palette. Read by the Discord bot (personality.palette) and the mod (MerlLines.palette), on normalized text (lower case, no punctuation or apostrophes). {NAME} is replaced by parts[NAME]; a pattern must match the whole text, and with patterns are tried in order, the block in the group named block.",
+  "parts": {
+    "NOUN": "(pall?ett?e?s?|colou?r schemes?|block combos?|block combinations?)",
+    "WORD": "(block |color |colour |building |build )?{NOUN}",
+    "THINGS": "(blocks?|materials?|colou?rs?|{WORD})",
+    "MODAL": "((should|could|can|would|will|do|does|might|shall) (i |we |you |u |one )?)?",
+    "VERB": "(go|goes|fit|fits|match|matches|pair|pairs|work|works|look good|looks good|look nice|looks nice|combine|blend|complement|complements|use|mix|put|build|pick|choose|add)",
+    "LOOSE_VERB": "(go|goes|fit|fits|match|matches|pair|pairs|look good|looks good|look nice|looks nice|complement|complements|combine|blend|mix)",
+    "HOW": "( it| them)?( well| nicely| best| good| great| together| nice)*",
+    "WHAT": "(what|which|wat)( are| r| would be| is| s)?( some| the| a few)?( good| nice| best| other| matching| fitting| complementary)*( kind of| kinds of| type of| types of)?",
+    "ADJ": "( good| nice| cool| new| random| pretty| fun| fresh| simple| neat| great| cute| cozy)*",
+    "END": "( please| pls| plz| for me| to build with| idea| ideas| merl)?",
+    "WITH": "(with|to|together with|alongside|next to|beside|around)"
+  },
+  "mentioned": "\\b{NOUN}\\b",
+  "prefilter": "\\b(blocks?|materials?|colou?rs?|go|goes|fit|fits|match|matches|pairs?|complements?|looks?|combine|blend|mix|building|build|use|{NOUN})\\b",
+  "aboutBlocks": "\\b(blocks?|materials?|colou?rs?|{NOUN})\\b",
+  "again": "(merl )?(give me |show me |try |can i get |i want |lets try |let me see )?(an ?other|a different|a new|different|new|more|one more|other|next){ADJ} {WORD}( please| pls| plz)?",
+  "followUp": "(merl )?(nah |no |hmm |ok |okay )?(shuffle|reroll|re roll|roll again|again|try again|one more|more|next|next one|new one|a new one|different one|a different one|another|another one|give me another( one)?|show me another( one)?|something else|other one|different|not that one|not this one)( please| pls| plz)?( merl)?",
+  "random": [
+    "(.* )?(random|surprise|any|some){ADJ} {WORD}{END}",
+    "(.* )?surprise me( with)?( an?| some)?{ADJ} {WORD}{END}",
+    "(.* )?(an?|some|any|your){ADJ} {WORD}{END}",
+    "(merl )?{WORD}{END}",
+    "(.* )?{WORD} (ideas?|inspiration|suggestions?|of the day){END}",
+    "(.* )?(what|which|some|random|any)( good| nice)? blocks (go|fit|match|look good|looks good|work)( well| nicely| great| good)? together",
+    "(.* )?blocks? (that|which) (go|fit|match|look good|work)( well| nicely| great| good)? together"
+  ],
+  "with": [
+    {
+      "pattern": "(.* )?(im |i am |i want to |i wanna |ill be |i will be |were |we are )?(building|build) (with|using|out of) (?<block>.+?) (what|which|wat)( else| other( blocks?| colou?rs?| materials?)?| blocks?| colou?rs?| materials?)( should| can| could| would| do| goes| go| fits| fit| matches| match)?( i| we| u)?( use| add| pair| combine| mix| go| fit| match)?( well)?( with( it| them)?)?"
+    },
+    {
+      "pattern": "(.* )?{WHAT} {THINGS} (to )?{MODAL}{VERB}{HOW} {WITH} (?<block>.+)"
+    },
+    {
+      "pattern": "(.* )?(what|which|wat)( else)? {MODAL}{LOOSE_VERB}{HOW} {WITH} (?<block>.+)",
+      "loose": true
+    },
+    {
+      "pattern": "(.* )?(what|which) (should|can|could) (i|we|u) (use|add) (with|alongside|next to) (?<block>.+)",
+      "loose": true
+    },
+    {
+      "pattern": "(.* )?{THINGS} (that|which|to|i can|i could|i should) {MODAL}{VERB}s?{HOW} (with |to |next to |alongside |beside )?(?<block>.+)"
+    },
+    {
+      "pattern": "(.* )?(recommend|suggest|pick|choose|find)( me)?( some| a few| a couple of)?{ADJ} {THINGS} (for|to go with|that go with|with|matching|to match|to use with) (?<block>.+)"
+    },
+    {
+      "pattern": "(.* )?(complementary|matching|fitting|similar){ADJ} {THINGS} (for|to|with|like) (?<block>.+)"
+    },
+    {
+      "pattern": "(.* )?{THINGS} (matching|similar to|like) (?<block>.+)"
+    },
+    {
+      "pattern": "(.* )?{WORD} (for|with|around|using|based on|from|to go with|that goes with|including|that includes|containing|that contains|featuring|that features|made of|made from|out of|with some|with lots of|centered on|built around|starting from) (?<block>.+)"
+    },
+    {
+      "pattern": "(merl )?(?<block>[a-z ]{3,40}?) {WORD}{END}",
+      "named": true
+    }
+  ],
+  "this": "(this|that|it|here|these|this one|that one|this stuff)( block| blocks)?( here| right here| right now)?|(the )?block (im|i am) looking at|what im looking at|(the )?block in front of me",
+  "held": "\\b(holding|in my hand|my hand|held)\\b",
+  "remove": "\\b(in minecraft|for (my|a|the|our) (build|house|base|wall|walls|floor|roof|castle|tower|interior|exterior|home|room)|in (my|a|our) build|for building|for a build|please|pls|plz|merl|well|nicely)\\b",
+  "leading": "^(the|a|an|some|lots of|my|our|those|these) ",
+  "trailing": " (in it|in there|in them|as well|too|and stuff|or something|maybe|blocks?|build|builds|house|base)$",
+  "notBlocks": [
+    "a",
+    "the",
+    "my",
+    "random",
+    "any",
+    "some",
+    "another",
+    "new",
+    "different",
+    "more",
+    "one more",
+    "other",
+    "good",
+    "nice",
+    "cool",
+    "best",
+    "together",
+    "each other",
+    "it",
+    "them"
+  ],
+  "notNamed": "\\b(me|you|u|with|give|show|want|need|make|get|some|any|whats|what|how|why|where|when|is|are|do|does|can|could|should|i|im|a|an|good|nice|cool|new|suggest|recommend|please|random|another|other|my|your|the|wooden)\\b",
+  "maxWords": 5
+}
