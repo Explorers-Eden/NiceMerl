@@ -958,10 +958,18 @@ public final class MerlLines {
 		List<String> wanted = topicWords(subject).stream()
 				.filter(w -> !Set.of("the", "a", "an", "of", "my", "our", "your", "some").contains(w)).toList();
 		if (wanted.isEmpty()) return List.of();
+		List<String> lines = POOLS.getOrDefault(pool, List.of());
 		List<String> found = new ArrayList<>();
-		for (String line : POOLS.getOrDefault(pool, List.of())) {
+		for (String line : lines) {
 			List<String> words = topicWords(line);
 			if (wanted.stream().allMatch(w -> words.stream().anyMatch(word -> word.startsWith(w)))) found.add(line);
+		}
+		if (found.isEmpty()) {
+			// Typos: "prismarin", "axolotel".
+			for (String line : lines) {
+				List<String> words = topicWords(line);
+				if (wanted.stream().allMatch(w -> words.stream().anyMatch(word -> MerlPalette.close(w, word)))) found.add(line);
+			}
 		}
 		return found;
 	}

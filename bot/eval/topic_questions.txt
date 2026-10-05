@@ -21,3 +21,7 @@ tell me a joke|none
 tell me a fun fact|none
 how do i get a boss key|none
 what is the best enchantment for a sword|none
+Can u give me a funfact about prismarin?|fact:prismarin
+give me a funfact about prismarine|fact:prismarine
+any funfacts on axolotls|fact:axolotls
+give me a funfact|none

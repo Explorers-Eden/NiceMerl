@@ -425,11 +425,12 @@ def about(pool: str, subject: str) -> list[str]:
     wanted = [w for w in _topic_words(subject) if w not in ("the", "a", "an", "of", "my", "our", "your", "some")]
     if not wanted:
         return []
-    found = []
-    for line in LINES["pools"].get(pool, []):
-        words = _topic_words(line)
-        if all(any(word.startswith(w) for word in words) for w in wanted):
-            found.append(line)
+    lines = LINES["pools"].get(pool, [])
+    found = [line for line in lines if all(any(word.startswith(w) for word in _topic_words(line)) for w in wanted)]
+    if not found:
+        # Typos: "prismarin", "axolotel".
+        import palettes
+        found = [line for line in lines if all(any(palettes._close(w, word) for word in _topic_words(line)) for w in wanted)]
     return found
 
 

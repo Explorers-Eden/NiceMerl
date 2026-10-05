@@ -38,7 +38,7 @@ Ask in your own words: typos, abbreviations like tp or xp, and other wordings (*
 - **Context:** *"say that again"* repeats her last answer, *"what was I asking?"* tells you your last question (she forgets both after half an hour). *"Take me to …"*, *"guide me to …"* or *"give me a route to …"* start the sparkle path straight away, and *"stop the route"*, *"turn off GPS"* or *"don't guide me"* turn it off.
 - **Reminders:** `/merl remind me in 10 minutes to …`, `/merl my reminders`, `/merl cancel my reminders`. Gone after a server restart.
 - **Ideas:** `/merl what should I do next` suggests a next step based on your advancements, or one of over 4,500 ideas.
-- **Small talk:** over 2,000 jokes (stories, dialogues, mob reviews and more), tips, over 800 fun facts, stories, `/merl pet peanut butter` and more. Ask for `another one` after a joke.
+- **Small talk:** over 2,000 jokes (stories, dialogues, mob reviews and more), tips, over 1,200 fun facts, stories, `/merl pet peanut butter` and more. Ask for `another one` after a joke.
 - **Facts and jokes about anything:** *"fun fact about axolotls"* or *"trivia about the ender dragon"* gets a fact about exactly that. *"Tell me a joke about Katter"*, *"make fun of Katter"* or *"roast me"* gets a friendly little tease (always lighthearted, never mean). `another one` stays on the same topic.
 - **She remembers you:** when you met, what you're up to, which page helped and which packs you ask about most, so her answers fit you better over time. Ask `/merl do you remember me`, or say `/merl forget me` to erase it. She never saves what you write.
 - **She comments now and then** on where you are and what you're doing.
