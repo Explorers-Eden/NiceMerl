@@ -44,6 +44,11 @@ public final class MerlGuide {
 	private static final Map<UUID, Long> PLANNED = new ConcurrentHashMap<>();
 	/** The direction last shown on each player's action bar, so it doesn't flicker between two. */
 	private static final Map<UUID, String> SHOWN_DIRECTION = new ConcurrentHashMap<>();
+	/** Players who asked to see what the path search did (/nicemerl guide debug), and its last result. */
+	private static final java.util.Set<UUID> DEBUG = ConcurrentHashMap.newKeySet();
+	private static final Map<UUID, String> LAST_PLAN = new ConcurrentHashMap<>();
+	/** A path that doesn't get through is only shown when it still gets this many blocks closer. */
+	private static final double USEFUL_PROGRESS = 10;
 	/** The path is planned again this often, or sooner when the player leaves it. */
 	private static final int REPLAN_TICKS = 40;
 	private static final double OFF_PATH = 3.0;
@@ -63,13 +68,15 @@ public final class MerlGuide {
 		return Component.literal(" " + MerlLines.pick("guide_offer") + " ").append(Component.literal("[Guide me]")
 				.withStyle(Style.EMPTY.withColor(ChatFormatting.LIGHT_PURPLE).withBold(true)
 						.withClickEvent(new ClickEvent.RunCommand(command))
-						.withHoverEvent(new HoverEvent.ShowText(Component.literal("Follow a trail of sparkles to " + label)))));
+						.withHoverEvent(new HoverEvent.ShowText(Component.literal((NiceMerl.config().guideMerl
+								? "Merl walks you to " : "Follow a trail of sparkles to ") + label)))));
 	}
 
 	/** "Follow the sparkles to …" after starting the trail for "lead me to …". */
 	static Component startNow(ServerPlayer player, double x, Double y, double z, String label) {
 		start(player, x, y, z, label);
-		return Component.literal(" " + MerlLines.pick("guide_start", "target", label, "user", player.getName().getString()))
+		return Component.literal(" " + MerlLines.pick(NiceMerl.config().guideMerl ? "guide_start_merl" : "guide_start",
+				"target", label, "user", player.getName().getString()))
 				.withStyle(ChatFormatting.LIGHT_PURPLE);
 	}
 
@@ -77,8 +84,16 @@ public final class MerlGuide {
 		GUIDED.put(player.getUUID(), new Target(x + 0.5, y, z + 0.5, player.level().dimension().identifier(), label, ticks));
 	}
 
+	/** /nicemerl guide debug: shows what the path search did on the action bar. Returns whether it's on now. */
+	static boolean toggleDebug(ServerPlayer player) {
+		if (DEBUG.remove(player.getUUID())) return false;
+		DEBUG.add(player.getUUID());
+		return true;
+	}
+
 	static boolean stop(ServerPlayer player) {
 		forget(player.getUUID());
+		MerlGuideNpc.stop(player.getUUID());
 		return GUIDED.remove(player.getUUID()) != null;
 	}
 
@@ -120,7 +135,10 @@ public final class MerlGuide {
 			}
 			return true;
 		}
-		for (int i = Math.max(1, nearest + 1); i < Math.min(path.size(), nearest + 1 + SHOWN_STEPS); i++) {
+		// With Merl walking ahead, the sparkles only show the way between the player and her.
+		int merl = NiceMerl.config().guideMerl ? MerlGuideNpc.step(id) : -1;
+		int last = merl > nearest ? merl : nearest + 1 + SHOWN_STEPS;
+		for (int i = Math.max(1, nearest + 1); i < Math.min(path.size(), last); i++) {
 			BlockPos at = path.get(i);
 			level.sendParticles(player, ParticleTypes.END_ROD, true, false, at.getX() + 0.5, at.getY() + 0.35, at.getZ() + 0.5, 1, 0.05, 0.02, 0.05, 0);
 		}
@@ -142,33 +160,48 @@ public final class MerlGuide {
 
 	/** Called every server tick: draws each guided player's trail and checks whether they've arrived. */
 	public static void tick(MinecraftServer server) {
-		if (++ticks % TICKS != 0 || GUIDED.isEmpty()) return;
+		ticks++;
+		MerlGuideNpc.tickGoodbyes();
+		if (GUIDED.isEmpty()) return;
+		boolean frame = ticks % TICKS == 0;
+		boolean merl = NiceMerl.config().guideMerl;
 		for (Map.Entry<UUID, Target> entry : GUIDED.entrySet()) {
 			ServerPlayer player = server.getPlayerList().getPlayer(entry.getKey());
 			Target target = entry.getValue();
 			if (player == null || ticks - target.startedAt() > MAX_TICKS) {
 				GUIDED.remove(entry.getKey());
 				forget(entry.getKey());
+				MerlGuideNpc.stop(entry.getKey());
 				continue;
 			}
 			// In another dimension the trail just waits until they're back.
-			if (!player.level().dimension().identifier().equals(target.dimension())) continue;
+			if (!player.level().dimension().identifier().equals(target.dimension())) {
+				MerlGuideNpc.stop(entry.getKey());
+				continue;
+			}
 			Vec3 eye = player.getEyePosition();
 			Vec3 goal = new Vec3(target.x(), target.y() != null ? target.y() : eye.y, target.z());
 			double flat = Math.hypot(goal.x - eye.x, goal.z - eye.z);
 			if (flat < ARRIVED && (target.y() == null || Math.abs(goal.y - eye.y) < ARRIVED)) {
 				GUIDED.remove(entry.getKey());
 				forget(entry.getKey());
+				MerlGuideNpc.arrived(player);
 				player.sendOverlayMessage(Component.empty());
 				MerlCommand.replyTo(player.createCommandSourceStack(), Component.literal(
 						MerlLines.pick("guide_arrived", "target", target.label(), "user", player.getName().getString())));
 				continue;
 			}
+			if (merl) {
+				List<BlockPos> path = PATHS.get(entry.getKey());
+				MerlGuideNpc.update(player, path, path == null ? -1 : nearest(path, player.blockPosition()));
+			}
+			if (!frame) continue;
 			boolean found = drawPath(player, target);
 			String direction = BiomeNames.direction(goal.x - eye.x, goal.z - eye.z, SHOWN_DIRECTION.get(entry.getKey()));
 			SHOWN_DIRECTION.put(entry.getKey(), direction);
 			player.sendOverlayMessage(Component.literal(target.label() + ": " + String.format(Locale.ROOT, "%,d", Math.round(flat))
-					+ " blocks " + direction + (found ? "" : " (no path)"))
+					+ " blocks " + direction + (found ? "" : " (no path)")
+					+ (DEBUG.contains(entry.getKey()) ? " · " + LAST_PLAN.getOrDefault(entry.getKey(), "") : ""))
 					.withStyle(ChatFormatting.LIGHT_PURPLE));
 		}
 	}

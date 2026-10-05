@@ -24,7 +24,7 @@ Type `/merl` and your question:
 Ask in your own words: typos, abbreviations like tp or xp, and other wordings (*"how do I unlock the boss room"*) are fine. Merl answers in one line when she can, then shows up to three wiki pages with a link and a short excerpt. Spoilers stay hidden until you hover over them.
 
 ## More than answers
-- **Coordinates:** ask where the closest biome is (vanilla, Terralith, Biomes O' Plenty or our packs, by name or id like `terralith:moonlight_grove`) or the closest slime chunk, and Merl tells you how far, which way and the exact spot. With Warping Wonders, she also finds the closest Waypoint Hub you can use, your own, or one by name. Click the coordinates to copy them, or click **[Guide me]** for a sparkle path on the ground that leads you there, around walls and over hills.
+- **Coordinates:** ask where the closest biome is (vanilla, Terralith, Biomes O' Plenty or our packs, by name or id like `terralith:moonlight_grove`) or the closest slime chunk, and Merl tells you how far, which way and the exact spot. With Warping Wonders, she also finds the closest Waypoint Hub you can use, your own, or one by name. Click the coordinates to copy them, or click **[Guide me]**: Merl herself walks ahead of you with a map, around walls and over hills, with a few sparkles between you and her (only you see her).
 - **Name Tag texts:** `/merl name tag phrases` lists every text Nice Name Tags reacts to, each one click to copy.
 - **Crafting:** `/merl what can I craft` lists what your inventory can make right now; `/merl what can I make with this` only what uses the item in your hand. `/merl how do I craft …` shows the real recipe (our packs' too) with a link to its picture, and she also answers *"what can I smelt / brew / enchant this with?"* for the item in your hand.
 - **What's this?** Look at a block or mob (or hold an item) and ask `/merl what is this`: she names it (for mobs with their variant, like *"Variant: Creamy (Nice Mob Variants)"*) and adds a short summary from the wiki page that's about exactly that thing, if there is one.
@@ -44,8 +44,8 @@ Ask in your own words: typos, abbreviations like tp or xp, and other wordings (*
 - `/merl <question>`: Ask Merl anything
 - `/nicemerl comments [on|off]`: Turn her comments on your situation on or off, just for you
 - `/nicemerl celebrate [on|off]`: Turn her congratulations on or off, just for you
-- `/nicemerl guide stop`: Stop the sparkle trail
-- `/nicemerl mannequin`: Place a Merl mannequin where you stand (operators). Right-clicking it shows a message; `/nicemerl mannequin remove` removes the closest one
+- `/nicemerl guide stop`: Stop the sparkle trail (`/nicemerl guide debug` shows what the path search did)
+- `/nicemerl mannequin`: Place a Merl mannequin where you stand (operators). It looks at players nearby, and clicking it (or looking it in the eyes up close) shows a message; `/nicemerl mannequin remove` removes the closest one
 - `/nicemerl reindex`: Read the wikis again right away (operators)
 
 # Permissions
@@ -73,12 +73,12 @@ The config is in `config/nicemerl.json`, created on the first start. Restart the
 - **celebrateStatistics**: turn statistic milestones off for everyone
 - **locateBiomes** and **locateSlimeChunks**: turn coordinates off for everyone (turn slime chunks off if your seed is a secret)
 - **locateWaypoints**: turn waypoint answers off for everyone
-- **particleGuide**: turn the sparkle trail off for everyone
+- **particleGuide**: turn the guide off for everyone; **guideMerl**: off means just the sparkle trail, without Merl walking ahead
 - **craftingHelp**: turn "what can I craft?" off for everyone
 - **recipeHelp**: turn real recipes, smelting, brewing and enchanting answers off for everyone; **recipesUrl** is where the recipe pictures come from
 - **whatsThis**, **locateHome**, **locateClaims** and **reminders**: turn "what's this?", bed and death, claims, and reminders off for everyone
 - **serverInfo** and **settingsGameRules**: turn server info, or game rules in settings answers, off for everyone
-- **mannequinMessage** and **mannequinMessageType**: what a Merl mannequin says when right-clicked, in `chat` or on the `actionbar`
+- **mannequinMessage** and **mannequinMessageType**: what a Merl mannequin says when clicked, in `chat` or on the `actionbar`; **mannequinGreetOnLook**: it also says it when you look it in the eyes from a few blocks away
 - **semanticSearch**: understanding other wordings. Downloads a small file (about 31 MB) once to `config/nicemerl/model/`
 
 What Merl remembers about players is saved in `config/nicemerl/state.json`: about a hundred bytes per player, no messages, and players gone for a year are forgotten.
@@ -107,6 +107,7 @@ This is `config/nicemerl.json` as it's created on the first start. Delete the fi
   "messageSoundVolume": 0.6,
   "messageSoundPitch": 2.0,
   "mannequinMessage": "Ask /merl anything at any time!",
+  "mannequinGreetOnLook": true,
   "mannequinMessageType": "actionbar",
   "communityName": "Explorer's Eden",
   "reindexHours": 6.0,
@@ -117,6 +118,7 @@ This is `config/nicemerl.json` as it's created on the first start. Delete the fi
   "locateSlimeChunks": true,
   "locateWaypoints": true,
   "particleGuide": true,
+  "guideMerl": true,
   "whatsThis": true,
   "recipeHelp": true,
   "recipesUrl": "https://explorerseden.eu/api/generated-data.php?key=recipes-manifest",

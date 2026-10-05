@@ -24,7 +24,9 @@ final class MerlPath {
 	/** How far ahead one stretch is planned, in blocks. */
 	static final int STRETCH = 28;
 	/** Most spots looked at per search, so a maze or an ocean can't slow the server down. */
-	private static final int BUDGET = 8000;
+	/** Spots looked at per search; a search that doesn't get through tries once more with the bigger budget. */
+	static final int BUDGET = 8000;
+	static final int BIG_BUDGET = 30000;
 	/** A stretch is done once it gets this much closer to a far target. */
 	private static final double PROGRESS = 20;
 	private static final int MAX_DROP = 3;
@@ -38,9 +40,23 @@ final class MerlPath {
 	 *
 	 * @param goalY the goal's height, or null when any height will do
 	 */
+	/**
+	 * @param path standing spots, start first
+	 * @param reached the stretch got through (to the target, or PROGRESS blocks closer to a far one)
+	 * @param progress how many blocks closer to the target the path's end is
+	 * @param looked spots looked at
+	 */
+	record Plan(List<BlockPos> path, boolean reached, double progress, int looked) {
+		static final Plan NONE = new Plan(List.of(), false, 0, 0);
+	}
+
 	static List<BlockPos> find(ServerLevel level, BlockPos from, double goalX, Integer goalY, double goalZ) {
+		return plan(level, from, goalX, goalY, goalZ, BUDGET).path();
+	}
+
+	static Plan plan(ServerLevel level, BlockPos from, double goalX, Integer goalY, double goalZ, int budget) {
 		BlockPos start = standingSpot(level, from);
-		if (start == null) return List.of();
+		if (start == null) return Plan.NONE;
 		// Always aim at the target itself. A far target only needs this stretch to get PROGRESS blocks closer:
 		// a fixed point part of the way could be inside a hill or a building, and the search would end at the wall
 		// facing it instead of going out the door.
@@ -57,7 +73,8 @@ final class MerlPath {
 		BlockPos best = start;
 		double bestGuess = guess(start, gx, goalY, gz, useHeight);
 		int looked = 0;
-		while (!open.isEmpty() && looked++ < BUDGET) {
+		boolean reached = false;
+		while (!open.isEmpty() && looked++ < budget) {
 			BlockPos at = open.poll().pos();
 			double left = guess(at, gx, goalY, gz, useHeight);
 			if (left < bestGuess) {
@@ -66,6 +83,7 @@ final class MerlPath {
 			}
 			if (left <= enough) {
 				best = at;
+				reached = true;
 				break;
 			}
 			for (int[] step : STEPS) {
@@ -84,7 +102,8 @@ final class MerlPath {
 		List<BlockPos> path = new ArrayList<>();
 		for (BlockPos at = best; at != null; at = cameFrom.get(at)) path.add(at);
 		Collections.reverse(path);
-		return path;
+		double progress = Math.hypot(gx - start.getX(), gz - start.getZ()) - Math.hypot(gx - best.getX(), gz - best.getZ());
+		return new Plan(path, reached, progress, looked);
 	}
 
 	private record Node(BlockPos pos, double score) implements Comparable<Node> {

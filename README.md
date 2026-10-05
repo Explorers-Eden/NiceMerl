@@ -170,6 +170,7 @@ Answers are **only visible to the player who asked**. Wiki spoilers are scramble
 | `/nicemerl comments [on\|off]` | everyone | turns Merl's comments about you on or off, just for you |
 | `/nicemerl celebrate [on\|off]` | everyone | turns Merl's congratulations on or off, just for you |
 | `/nicemerl guide stop` | everyone | stops the sparkle trail |
+| `/nicemerl guide debug` | everyone | shows what the trail's path search did on the action bar |
 | `/nicemerl mannequin [remove]` | operators | places a Merl mannequin where you stand, or removes the closest one |
 | `/nicemerl reindex` | operators | re-reads the wiki right away |
 
@@ -214,6 +215,7 @@ Example: `/lp group default permission set nicemerl.settings false` hides settin
 | `locateSlimeChunks` | `true` | slime chunk coordinates; turn off if your world seed is a secret |
 | `locateWaypoints` | `true` | with Warping Wonders: the closest Waypoint Hub the player may use |
 | `particleGuide` | `true` | the **[Guide me]** sparkle trail after coordinates |
+| `guideMerl` | `true` | Merl herself walks ahead along the trail with a map (a mannequin only the guided player sees, sent as packets, never added to the world) |
 | `recipeHelp` | `true` | real recipes, smelting, brewing and enchanting answers |
 | `recipesUrl` | the explorerseden.eu recipe list | where [Recipe picture] links come from; empty for none |
 | `whatsThis` | `true` | *"what is this?"* for the block or mob the player looks at |
@@ -224,6 +226,7 @@ Example: `/lp group default permission set nicemerl.settings false` hides settin
 | `settingsGameRules` | `true` | game rules count as settings in answers |
 | `mannequinMessage` | `Ask /merl anything at any time!` | what a Merl mannequin says when right-clicked (`{user}` is the player) |
 | `mannequinMessageType` | `actionbar` | `actionbar` or `chat` |
+| `mannequinGreetOnLook` | `true` | the mannequin also says its message when a player looks it in the eyes from up to 4 blocks away (once a minute per player) |
 | `craftingHelp` | `true` | *"what can I craft?"* from the player's inventory |
 | `celebrateStatistics` | `true` | congratulations on statistic milestones (blocks mined, distance traveled…); the milestones are in Merl's lines (`stat_milestones`) |
 | `semanticSearch` | `true` | meaning-based search next to the keywords; downloads a small model (about 31 MB, checked against its known checksum) once to `config/nicemerl/model/`. Until then, or if that fails, Merl searches by keywords only |

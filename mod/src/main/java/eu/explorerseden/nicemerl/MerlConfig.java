@@ -43,6 +43,8 @@ public class MerlConfig {
 	public float messageSoundPitch = 2.0f;
 	/** What a Merl mannequin says when someone right-clicks it ({user} is their name). Empty for Merl's own lines. */
 	public String mannequinMessage = "Ask /merl anything at any time!";
+	/** The mannequin also says it when a player looks straight at it from a few blocks away (once a minute at most). */
+	public boolean mannequinGreetOnLook = true;
 	/** Where that message shows: "chat" or "actionbar". */
 	public String mannequinMessageType = "actionbar";
 	/** Used in Merl's "I don't know" lines. */
@@ -67,6 +69,8 @@ public class MerlConfig {
 	public boolean locateWaypoints = true;
 	/** After coordinates, Merl offers a trail of sparkles to follow there (only the player sees it). */
 	public boolean particleGuide = true;
+	/** Merl herself walks ahead along the trail, holding a map (only the guided player sees her). */
+	public boolean guideMerl = true;
 	/** "What's this?" names the block or mob the player looks at (mob variants included) and shows its wiki page. */
 	public boolean whatsThis = true;
 	/** Real recipes from the server ("how do I craft …"), "what can I smelt / brew with this?" and "what can I enchant this with?". */

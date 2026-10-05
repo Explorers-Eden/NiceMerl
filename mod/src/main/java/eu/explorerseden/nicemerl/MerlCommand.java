@@ -129,6 +129,13 @@ public final class MerlCommand {
 				.then(Commands.literal("guide")
 						.requires(Permissions.require(MerlLocate.PERMISSION_LOCATE, true))
 						.then(Commands.literal("stop").executes(MerlCommand::stopGuide))
+						.then(Commands.literal("debug").executes(ctx -> {
+							ServerPlayer p = ctx.getSource().getPlayer();
+							if (p == null) return 0;
+							reply(ctx.getSource(), Component.literal(MerlGuide.toggleDebug(p)
+									? "Trail debug on: the action bar shows what the path search did." : "Trail debug off."));
+							return 1;
+						}))
 						.then(Commands.argument("x", IntegerArgumentType.integer())
 								.then(Commands.argument("y", StringArgumentType.word())
 										.then(Commands.argument("z", IntegerArgumentType.integer())
@@ -156,7 +163,8 @@ public final class MerlCommand {
 		}
 		String target = StringArgumentType.getString(ctx, "target");
 		MerlGuide.start(player, IntegerArgumentType.getInteger(ctx, "x"), height, IntegerArgumentType.getInteger(ctx, "z"), target);
-		reply(source, Component.literal(MerlLines.pick("guide_start", "target", target, "user", player.getName().getString()) + " ")
+		reply(source, Component.literal(MerlLines.pick(NiceMerl.config().guideMerl ? "guide_start_merl" : "guide_start",
+				"target", target, "user", player.getName().getString()) + " ")
 				.append(Component.literal("[Stop]").withStyle(Style.EMPTY.withColor(ChatFormatting.GRAY)
 						.withClickEvent(new ClickEvent.RunCommand("/nicemerl guide stop"))
 						.withHoverEvent(new HoverEvent.ShowText(Component.literal("Stop the trail"))))));

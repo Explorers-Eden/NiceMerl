@@ -18,6 +18,7 @@ import net.minecraft.world.level.entity.EntityTypeTest;
 import net.minecraft.world.entity.decoration.Mannequin;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.Scoreboard;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.Team;
 
 /**
@@ -30,6 +31,14 @@ public final class MerlMannequin {
 	/** Players don't collide with it, and nothing shows above its head. */
 	private static final String TEAM = "nicemerl_mannequin";
 	private static final int CHECK_TICKS = 20;
+	/** Mannequins turn to the closest player this close, every few ticks. */
+	private static final double LOOK_RANGE = 6.0;
+	private static final int LOOK_TICKS = 2;
+	/** Looking straight at a mannequin this close greets you (once a minute at most). */
+	private static final double EYE_CONTACT_RANGE = 4.0;
+	private static final double EYE_CONTACT_COS = Math.cos(Math.toRadians(12));
+	private static final long GREET_PAUSE_MS = 60_000;
+	private static final java.util.Map<java.util.UUID, Long> LAST_GREETED = new java.util.concurrent.ConcurrentHashMap<>();
 	/**
 	 * Merl's skin (minecraftskins.com/skin/24292599/merl), hosted on Mojang's skin server (slim model) so every
 	 * client can show it: the base64 "textures" value of that upload.
@@ -59,6 +68,7 @@ public final class MerlMannequin {
 	}
 
 	private static void greet(ServerPlayer player) {
+		LAST_GREETED.put(player.getUUID(), System.currentTimeMillis());
 		MerlConfig config = NiceMerl.config();
 		String text = config.mannequinMessage == null || config.mannequinMessage.isBlank()
 				? MerlLines.pick("mannequin_greeting", "user", player.getName().getString())
@@ -102,15 +112,62 @@ public final class MerlMannequin {
 		return Component.literal("Merl mannequin removed.");
 	}
 
-	/** Every second: mannequins never sit in boats or minecarts, and stay in the no-collision team. */
+	/**
+	 * Every couple of ticks mannequins look at the closest player nearby; every second they're also kept out of
+	 * boats and minecarts and in the no-collision team.
+	 */
 	public static void tick(MinecraftServer server) {
-		if (++ticks % CHECK_TICKS != 0) return;
+		ticks++;
+		boolean look = ticks % LOOK_TICKS == 0, check = ticks % CHECK_TICKS == 0;
+		if (!look && !check) return;
 		for (ServerLevel level : server.getAllLevels()) {
+			if (level.players().isEmpty()) continue;
 			for (Mannequin mannequin : level.getEntities(MANNEQUINS, MerlMannequin::isMannequin)) {
+				if (look) {
+					lookAtClosestPlayer(level, mannequin);
+					if (NiceMerl.config().mannequinGreetOnLook) greetOnEyeContact(level, mannequin);
+				}
+				if (!check) continue;
 				if (mannequin.isPassenger()) mannequin.stopRiding();
 				if (mannequin.getTeam() == null) joinTeam(server, mannequin);
 			}
 		}
+	}
+
+	/** A player within a few blocks looking straight at the mannequin's face, with nothing in between, gets the message. */
+	private static void greetOnEyeContact(ServerLevel level, Mannequin mannequin) {
+		long now = System.currentTimeMillis();
+		Vec3 face = mannequin.getEyePosition();
+		for (ServerPlayer player : level.players()) {
+			if (player.isSpectator() || player.distanceToSqr(mannequin) > EYE_CONTACT_RANGE * EYE_CONTACT_RANGE) continue;
+			Long last = LAST_GREETED.get(player.getUUID());
+			if (last != null && now - last < GREET_PAUSE_MS) continue;
+			Vec3 toFace = face.subtract(player.getEyePosition()).normalize();
+			if (player.getViewVector(1.0f).dot(toFace) < EYE_CONTACT_COS || !player.hasLineOfSight(mannequin)) continue;
+			greet(player);
+		}
+	}
+
+	private static void lookAtClosestPlayer(ServerLevel level, Mannequin mannequin) {
+		ServerPlayer closest = null;
+		double best = LOOK_RANGE * LOOK_RANGE;
+		for (ServerPlayer player : level.players()) {
+			if (player.isSpectator()) continue;
+			double d = player.distanceToSqr(mannequin);
+			if (d < best) {
+				best = d;
+				closest = player;
+			}
+		}
+		if (closest == null) return;
+		Vec3 eyes = mannequin.getEyePosition(), target = closest.getEyePosition();
+		double dx = target.x - eyes.x, dy = target.y - eyes.y, dz = target.z - eyes.z;
+		float yaw = (float) (Math.toDegrees(Math.atan2(dz, dx)) - 90.0);
+		float pitch = (float) -Math.toDegrees(Math.atan2(dy, Math.hypot(dx, dz)));
+		mannequin.setYRot(yaw);
+		mannequin.setYHeadRot(yaw);
+		mannequin.setYBodyRot(yaw);
+		mannequin.setXRot(Math.max(-60, Math.min(60, pitch)));
 	}
 
 	private static void joinTeam(MinecraftServer server, Entity entity) {

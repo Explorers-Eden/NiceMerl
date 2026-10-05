@@ -1,13 +1,22 @@
 # Minecraft Version(s): 26.3
+## Merl shows you the way
+- **[Guide me]** now has Merl herself walk ahead of you along the way, holding a map. She waits when you fall behind and looks at you when you arrive. A few sparkles between you and her show the way around corners. Only you see her
+- New option `guideMerl` (default `true`): turn it off for just the sparkle trail
+
 ## Sparkle trail fixes
 - The trail finds its way out of buildings: it goes through doors, fence gates and trapdoors and over carpet, instead of leading you into the wall facing your destination
 - It always heads for your actual destination, so it no longer gets stuck aiming at a spot inside a hill or another building
+- When the way out is long (out of a big base or a cave), it looks much further before giving up, and it never shows a trail that just ends at a wall
 - The sparkles are easier to see again
 - On the ground it never draws a line through walls anymore; when there really is no way from where you stand, the action bar shows a short "(no path)"
 - The direction on the action bar no longer flickers between two (like "north" and "northwest") as you walk
+
+## Trail debug
+- `/nicemerl guide debug` shows on the action bar what the path search did (steps, whether it got through, how far it looked), to help find spots where the trail gets stuck
 
 ## Turn the trail off by asking
 - *"Stop the route"*, *"turn off GPS"*, *"don't guide me"*, *"cancel navigation"* or *"no more sparkles"* turn the trail off, just like `/nicemerl guide stop`
 
 ## Smaller changes
+- Merl mannequins look at the closest player within a few blocks, and say their message when you left- or right-click them or look them in the eyes from up close (once a minute; new option `mannequinGreetOnLook`)
 - Merl's "Merl:" prefix is no longer bold

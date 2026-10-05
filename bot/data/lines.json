@@ -22490,6 +22490,14 @@
       "Psst, {user}! Type /merl and your question.",
       "Need help? Just type /merl and ask away!",
       "Hello! I'm Merl. Ask me anything with /merl!"
+    ],
+    "guide_start_merl": [
+      "Follow me! I'll take you to {target}.",
+      "Come on, {user}! This way to {target}.",
+      "I've got the map! Let's go to {target}.",
+      "Stay close, I'll show you the way to {target}!",
+      "Off we go to {target}! Peanut Butter is guarding the house.",
+      "Right behind me, {user}! {target} isn't far."
     ]
   },
   "intents": [
