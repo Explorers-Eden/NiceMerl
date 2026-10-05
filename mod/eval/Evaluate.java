@@ -93,6 +93,7 @@ public final class Evaluate {
 	static Route route(SearchIndex index, String question, java.util.Map<String, Double> interests) {
 		String talk = MerlLines.smallTalk(question);
 		if (talk == null && MerlLines.multiSmallTalk(question) != null) talk = MerlLines.multiSmallTalk(question).talk();
+		if (talk == null && MerlLines.recall(question) != null) talk = "recall";
 		if (talk != null || MerlLines.metQuestion(question) != null) return new Route("talk", List.of());
 		MerlLines.Split split = MerlLines.splitSmallTalk(question);
 		String search = split.rest();

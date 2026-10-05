@@ -72,6 +72,7 @@ public final class MerlCommand {
 	public static final String PERMISSION_REINDEX = "nicemerl.command.reindex";
 	public static final String PERMISSION_BYPASS_COOLDOWN = "nicemerl.bypass.cooldown";
 	public static final String PERMISSION_SETTINGS = "nicemerl.settings";
+	public static final String PERMISSION_MANNEQUIN = "nicemerl.command.mannequin";
 	/** Players with up to this many chats get Merl's introduction with a plain /merl or a hello. */
 	private static final int INTRO_CHATS = 5;
 
@@ -120,7 +121,8 @@ public final class MerlCommand {
 		dispatcher.register(Commands.literal("nicemerl")
 				.requires(source -> Permissions.check(source, PERMISSION_TOGGLE, true)
 						|| Permissions.check(source, MerlLocate.PERMISSION_LOCATE, true)
-						|| Permissions.check(source, PERMISSION_REINDEX, PermissionLevel.GAMEMASTERS))
+						|| Permissions.check(source, PERMISSION_REINDEX, PermissionLevel.GAMEMASTERS)
+						|| Permissions.check(source, PERMISSION_MANNEQUIN, PermissionLevel.GAMEMASTERS))
 				.then(Commands.literal("reindex")
 						.requires(Permissions.require(PERMISSION_REINDEX, PermissionLevel.GAMEMASTERS))
 						.executes(MerlCommand::reindex))
@@ -132,6 +134,10 @@ public final class MerlCommand {
 										.then(Commands.argument("z", IntegerArgumentType.integer())
 												.then(Commands.argument("target", StringArgumentType.greedyString())
 														.executes(MerlCommand::guide))))))
+				.then(Commands.literal("mannequin")
+						.requires(Permissions.require(PERMISSION_MANNEQUIN, PermissionLevel.GAMEMASTERS))
+						.executes(ctx -> { reply(ctx.getSource(), MerlMannequin.spawn(ctx.getSource())); return 1; })
+						.then(Commands.literal("remove").executes(ctx -> { reply(ctx.getSource(), MerlMannequin.remove(ctx.getSource())); return 1; })))
 				.then(toggle("comments"))
 				.then(toggle("celebrate")));
 	}
@@ -299,7 +305,13 @@ public final class MerlCommand {
 
 	/** "Oh! That was our 50th chat." comes as a little extra message after the answer. */
 	private static void sendNote(CommandSourceStack source, String note) {
-		if (note != null) reply(source, Component.literal(note).withStyle(Style.EMPTY.withColor(MERL_PINK)));
+		if (note == null) return;
+		// A friendship note ("our 50th chat!") isn't part of the answer "say that again" repeats.
+		MerlMemory.Visit visit = source.getPlayer() != null ? MerlMemory.visit(source.getPlayer().getUUID()) : null;
+		String pending = visit != null ? visit.pending : "";
+		if (visit != null) visit.pending = "";
+		reply(source, Component.literal(note).withStyle(Style.EMPTY.withColor(MERL_PINK)));
+		if (visit != null) visit.pending = pending;
 	}
 
 	private static MutableComponent example(String command) {
@@ -326,6 +338,31 @@ public final class MerlCommand {
 		visit.seenAt = now;
 		Meeting meeting = meet(player, question, source.getTextName());
 
+		// "say that again" / "what was I asking?": the last question and answer (memory only, half an hour).
+		String recall = MerlLines.recall(question);
+		if (recall != null) {
+			visit.pending = "";
+			if (!visit.canRecall(now)) {
+				reply(source, Component.literal(MerlLines.pick("recall_none", "user", source.getTextName())));
+			} else if (recall.equals("question") || !(visit.lastAnswer instanceof Component last)) {
+				reply(source, Component.literal(MerlLines.pick("recall_question", "question", visit.said, "user", source.getTextName()))
+						.append(Component.literal(" [Ask again]").withStyle(Style.EMPTY.withColor(ChatFormatting.AQUA)
+								.withClickEvent(new ClickEvent.RunCommand("/merl " + chatSafe(visit.said)))
+								.withHoverEvent(new HoverEvent.ShowText(Component.literal("Ask Merl this again"))))));
+			} else {
+				reply(source, Component.literal(MerlLines.pick("repeat_intro", "user", source.getTextName()) + "\n").append(last));
+			}
+			return 1;
+		}
+		visit.pending = question;
+
+		// "what's the tps?", "mob cap", "view distance": live server info, no wiki pages.
+		String serverInfo = config.serverInfo ? MerlLines.serverInfo(question) : null;
+		if (serverInfo != null && Permissions.check(source, MerlServerInfo.PERMISSION, true)) {
+			reply(source, MerlServerInfo.answer(source.getServer(), source.getLevel(), serverInfo, source.getTextName(), player, question));
+			sendNote(source, meeting.note());
+			return 1;
+		}
 		if (player != null && helpers(source, player, question, config)) {
 			sendNote(source, meeting.note());
 			return 1;
@@ -489,7 +526,8 @@ public final class MerlCommand {
 		List<VanillaWiki> live = NiceMerl.mediaWikis();
 		// Settings questions are about this server, so they skip the Minecraft Wiki.
 		if (live.isEmpty() || !settings.isEmpty() || !knownPacks.isEmpty()) {
-			return respond(source, settings, outcome, outcome.results(), ask);
+			// Settings and game rules answer the question themselves; wiki pages next to them are just noise.
+			return respond(source, settings, outcome, settings.isEmpty() ? outcome.results() : List.of(), ask);
 		}
 
 		String query = search;
@@ -889,7 +927,25 @@ public final class MerlCommand {
 
 	private static void reply(CommandSourceStack source, Component body) {
 		source.sendSystemMessage(framed(body));
-		if (source.getPlayer() != null) plop(source.getPlayer());
+		ServerPlayer player = source.getPlayer();
+		if (player != null) {
+			plop(player);
+			// Remembered (in memory only) for "say that again"; gray "Let me look…" lines aren't answers.
+			if (!isStatusLine(body)) {
+				MerlMemory.visit(player.getUUID()).rememberReply(body,
+						(a, b) -> Component.empty().append((Component) a).append("\n").append((Component) b), System.currentTimeMillis());
+			}
+		}
+	}
+
+	private static boolean isStatusLine(Component body) {
+		return body.getStyle().isItalic() && body.getSiblings().isEmpty();
+	}
+
+	/** A question put back into a chat command: no formatting codes or control characters, and not too long. */
+	private static String chatSafe(String text) {
+		String clean = text.replaceAll("[\\p{Cntrl}§]", "").strip();
+		return clean.length() > 200 ? clean.substring(0, 200) : clean;
 	}
 
 	private static final Map<UUID, Long> LAST_SOUND = new ConcurrentHashMap<>();
@@ -932,14 +988,17 @@ public final class MerlCommand {
 		Boolean holding = config.whatsThis ? MerlLines.whatsThis(question) : null;
 		if (holding != null) {
 			MerlWhatsThis.Answer answer = MerlWhatsThis.answer(player, holding);
-			MutableComponent message = Component.empty().append(answer.line());
-			SearchIndex index = NiceMerl.index();
-			if (answer.query() != null && index != null) {
-				for (SearchIndex.Result result : index.find(answer.query(), 2, config.excerptLength).results()) {
-					message.append(Component.literal("\n")).append(formatResult(result, config));
-				}
+			MerlConfig.WikiSource eden = config.wikiJsWikis().isEmpty() ? null : config.wikiJsWikis().get(0);
+			MerlWhatsThis.Summary summary = MerlWhatsThis.edenSummary(NiceMerl.index(), answer, eden != null ? eden.name : "Wiki");
+			List<VanillaWiki> live = NiceMerl.mediaWikis();
+			if (summary != null || answer.vanillaTitle() == null || live.isEmpty()) {
+				reply(source, withSummary(answer.line(), summary));
+				return true;
 			}
-			reply(source, message);
+			// A vanilla thing: the Minecraft Wiki page with exactly its name, looked up off the server thread.
+			MinecraftServer server = source.getServer();
+			NiceMerl.lookupAsync(() -> live.get(0).summary(answer.vanillaTitle()),
+					found -> server.execute(() -> reply(source, withSummary(answer.line(), found))));
 			return true;
 		}
 		if (config.recipeHelp && MerlLines.enchantForThis(question)) {
@@ -953,7 +1012,7 @@ public final class MerlCommand {
 		}
 		String claim = config.locateClaims ? MerlLines.claimQuestion(question) : null;
 		if (claim != null && Permissions.check(source, MerlLocate.PERMISSION_LOCATE, true)) {
-			Component answer = MerlClaims.answer(player, claim, question);
+			Component answer = MerlClaims.answer(player, claim, question, MerlLines.wantsGuide(question));
 			if (answer != null) {
 				reply(source, answer);
 				return true;
@@ -961,10 +1020,22 @@ public final class MerlCommand {
 		}
 		String home = config.locateHome ? MerlLines.homeQuestion(question) : null;
 		if (home != null && Permissions.check(source, MerlLocate.PERMISSION_LOCATE, true)) {
-			reply(source, MerlLocate.home(player, home));
+			reply(source, MerlLocate.home(player, home, MerlLines.wantsGuide(question)));
 			return true;
 		}
 		return false;
+	}
+
+	/** "That's a Cow!" plus the wiki's first sentences about it and a link, when there's a page about exactly it. */
+	private static Component withSummary(Component line, MerlWhatsThis.Summary summary) {
+		MutableComponent message = Component.empty().append(line);
+		if (summary == null) return message;
+		message.append(Component.literal("\n" + summary.text()).withStyle(ChatFormatting.GRAY));
+		message.append(Component.literal(" [" + summary.wiki() + "]").withStyle(Style.EMPTY.withColor(ChatFormatting.AQUA)
+				.withClickEvent(new ClickEvent.OpenUrl(URI.create(summary.url())))
+				.withHoverEvent(new HoverEvent.ShowText(Component.literal("Read more: " + summary.title() + "\n")
+						.append(Component.literal(summary.url()).withStyle(ChatFormatting.GRAY))))));
+		return message;
 	}
 
 	/** Lists the Nice Name Tags texts, each one click to copy; false when the wiki doesn't have them. */

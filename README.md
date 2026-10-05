@@ -64,6 +64,7 @@ Every message in the configured channel is treated as a question. NiceMerl repli
 - **Forgiving about wording:** stretched letters (*"thaaanks"*), small typos (*"thnaks"*, *"jok pls"*), politeness (*"can you tell me a joke please"*) and loose phrasing (*"im bored gimme ideas"*, *"got any tips for beginners"*) all work. As soon as a message has a real subject in it (*"tips for the nether"*), it's treated as a question.
 - **Recipe pictures:** *"how do I craft a waypoint hub?"* shows the recipe as a picture: our packs' recipes are the ones the website renders, vanilla recipes are drawn from the Minecraft Wiki's crafting grid in the game's style.
 - **A picture of Merl on every reply:** each answer is an embed with a random Merl image in the corner, never the same twice in a row.
+- **Context:** *"say that again"* repeats her last answer and *"what was I asking?"* tells you your last question (for half an hour, in memory only).
 - **Mixed messages:** *"thanks! how do I get a boss key?"* gets a quick *"You're welcome!"* and the answer.
 - **She sounds human:**
   - She says how sure she is (*"Found it!"*, *"I think this is it…"*, *"This is my best guess:"*), based on the search score.
@@ -142,11 +143,14 @@ Players type `/merl <question>`, and NiceMerl answers in chat with:
 - the **current data pack settings**, when the question is about settings (*"is pvp enabled?"*, *"keep inventory settings"*, *"blaze settings"*)
 
 She also does small talk (`/merl thanks`, `/merl tell me a joke`, `/merl give me a tip`, `/merl fun fact`, `/merl pet peanut butter`), greets players by name, and has the same human touches as the bot (mixed messages, confidence, short memory, moods, asking back). On top of that, in-game:
-- **Coordinates:** *"where is the closest cherry grove?"* gets the closest one's coordinates, distance and direction, searched like `/locate biome`, off the server thread. Every biome on the server works (vanilla, Terralith, Biomes O' Plenty, the Eden packs' Deep Blue biomes), by name, by id (`terralith:moonlight_grove`), with a pack name (*"bop lavender field"*) or loosely (*"a snowy biome"*). *"Where's a slime chunk?"* finds the closest slime chunk. With [Warping Wonders](https://wiki.explorerseden.eu), *"where's the closest waypoint?"* points to the closest Waypoint Hub the player may use (their own, public ones and locked ones they're trusted on, read from the pack's `eden:database` storage). Click the coordinates to copy them; operators get a `/tp` instead. After the coordinates Merl offers **[Guide me]**: a trail of sparkles toward the target that only that player sees, with the distance on their action bar, until they arrive (`/nicemerl guide stop` ends it).
+- **Coordinates:** *"where is the closest cherry grove?"* gets the closest one's coordinates, distance and direction, searched like `/locate biome`, off the server thread. Every biome on the server works (vanilla, Terralith, Biomes O' Plenty, the Eden packs' Deep Blue biomes), by name, by id (`terralith:moonlight_grove`), with a pack name (*"bop lavender field"*) or loosely (*"a snowy biome"*). *"Where's a slime chunk?"* finds the closest slime chunk. With [Warping Wonders](https://wiki.explorerseden.eu), *"where's the closest waypoint?"* points to the closest Waypoint Hub the player may use (their own, public ones and locked ones they're trusted on, read from the pack's `eden:database` storage). Click the coordinates to copy them; operators get a `/tp` instead. After the coordinates Merl offers **[Guide me]**: a walkable path of sparkles on the ground toward the target (an A* search over standing spots, one stretch of about 28 blocks at a time, around walls and away from lava and drops) that only that player sees, with the distance on their action bar, until they arrive (`/nicemerl guide stop` ends it).
 - **Name Tag texts:** *"name tag phrases"* lists every text Nice Name Tags reacts to, parsed from its wiki page, each one click to copy; *"name tag to mute a mob"* shows just that one.
 - **Real recipes:** *"how do I craft a waypoint hub?"* shows the recipe from the server's own recipe list (our packs' included): ingredients, crafting table or not, the shape on hover, and a **[Recipe picture]** link to the PNG the website renders. *"What can I smelt / brew / enchant this with?"* answers for the held item (enchantments include Enchantments Encore's).
-- **What's this?** *"what is this"* names the block or mob the player looks at (mob variants from data components, like `nice_mob_variants:creamy` → *Creamy Cow (Nice Mob Variants)*), with health and owner, plus its wiki page; *"what am I holding"* does the held item.
+- **What's this?** *"what is this"* names the block or mob the player looks at (mob variants from data components, like `nice_mob_variants:creamy` → *Creamy Cow (Nice Mob Variants)*), with health and owner, plus a short summary from the page that's about exactly that thing: the pack's variant page, our wiki's page with that title, or the Minecraft Wiki page with that title (exact title only, never a search, so nothing unrelated shows up); *"what am I holding"* does the held item.
 - **Bed, death and claims:** *"where's my bed?"*, *"where did I die?"* and, with [Get Off My Lawn ReServed](https://modrinth.com/mod/goml-reserved), *"where's my claim?"* / *"nearest claim I'm trusted on"* / *"where is Steve's claim"* (GOML is read through reflection, so it stays optional). All with coordinates and **[Guide me]**.
+- **Server info:** *"what's the tps?"*, *"mob cap"*, *"view distance"*, *"server info"*, *"what's my ping?"*: live from the server (TPS/MSPT from the tick times, mob counts and caps from the last spawn round, distances, players, difficulty, whitelist, PvP; nothing secret like the seed or IPs). Game rules count as settings (*"is keep inventory on?"*), and settings answers come without wiki links.
+- **Context:** *"say that again"* and *"what was I asking?"* (also in the Discord bot), and *"take me to … / guide me to … / give me a route to …"* start the sparkle path right away.
+- **Merl mannequin:** `/nicemerl mannequin` (operators) places an invulnerable, immovable, nameless Merl (her skin is built in) that shows `mannequinMessage` when right-clicked.
 - **Reminders:** *"remind me in 10 minutes to check the furnace"* (in memory, at most 5 per player and a day ahead; missed ones arrive on the next join).
 - **`/merl what can I craft`** lists what the player's inventory can make right now (using the recipe book's own check); *"what can I make with this?"* only what uses the held item.
 - **`/merl what should I do next`** looks at the player's advancements and suggests the next step (*"You haven't been to the Nether yet!"*, *"Find an End city with a ship and grab the elytra!"*), or one of over 1,200 ideas.
@@ -166,6 +170,7 @@ Answers are **only visible to the player who asked**. Wiki spoilers are scramble
 | `/nicemerl comments [on\|off]` | everyone | turns Merl's comments about you on or off, just for you |
 | `/nicemerl celebrate [on\|off]` | everyone | turns Merl's congratulations on or off, just for you |
 | `/nicemerl guide stop` | everyone | stops the sparkle trail |
+| `/nicemerl mannequin [remove]` | operators | places a Merl mannequin where you stand, or removes the closest one |
 | `/nicemerl reindex` | operators | re-reads the wiki right away |
 
 ### Permissions (LuckPerms)
@@ -177,6 +182,8 @@ Answers are **only visible to the player who asked**. Wiki spoilers are scramble
 | `nicemerl.command.reindex` | operators (level 2) |
 | `nicemerl.bypass.cooldown` | operators (level 2) |
 | `nicemerl.settings` | everyone (shows current data pack settings in answers) |
+| `nicemerl.serverinfo` | everyone (TPS, mob caps, distances, server info, pings) |
+| `nicemerl.command.mannequin` | operators (`/nicemerl mannequin`) |
 | `nicemerl.locate` | everyone (biome, slime chunk, waypoint, claim, bed and death coordinates, and the sparkle trail) |
 
 Example: `/lp group default permission set nicemerl.settings false` hides settings from regular players.
@@ -189,7 +196,7 @@ Example: `/lp group default permission set nicemerl.settings false` hides settin
 |---|---|---|
 | `wikis` | Explorer's Eden + Minecraft Wiki | wikis to search, see below |
 | `communityName` | `Explorer's Eden` | used in Merl's lines |
-| `messagePrefix` | `▊ ` | what Merl's messages start with, like the Explorer's Eden packs' messages |
+| `messagePrefix` | `Merl: ` | what Merl's messages start with (in `prefixColor`); configs with the old default `▊ ` switch automatically |
 | `prefixColor` | `#F06EAA` | the prefix's color: a name like `gold` or a hex color |
 | `messageSound` | `minecraft:entity.chicken.egg` | sound played to the player with Merl's messages (the packs' egg plop); empty for none |
 | `messageSoundVolume` / `messageSoundPitch` | `0.6` / `2.0` | volume and pitch of that sound |
@@ -213,6 +220,10 @@ Example: `/lp group default permission set nicemerl.settings false` hides settin
 | `locateHome` | `true` | *"where's my bed?"* and *"where did I die?"* |
 | `locateClaims` | `true` | with Get Off My Lawn: the player's claims and the ones they're trusted on |
 | `reminders` | `true` | *"remind me in 10 minutes to …"* |
+| `serverInfo` | `true` | TPS, mob caps, distances, server info and pings |
+| `settingsGameRules` | `true` | game rules count as settings in answers |
+| `mannequinMessage` | `Ask /merl anything at any time!` | what a Merl mannequin says when right-clicked (`{user}` is the player) |
+| `mannequinMessageType` | `actionbar` | `actionbar` or `chat` |
 | `craftingHelp` | `true` | *"what can I craft?"* from the player's inventory |
 | `celebrateStatistics` | `true` | congratulations on statistic milestones (blocks mined, distance traveled…); the milestones are in Merl's lines (`stat_milestones`) |
 | `semanticSearch` | `true` | meaning-based search next to the keywords; downloads a small model (about 31 MB, checked against its known checksum) once to `config/nicemerl/model/`. Until then, or if that fails, Merl searches by keywords only |

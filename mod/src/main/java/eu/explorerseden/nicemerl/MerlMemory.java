@@ -13,6 +13,10 @@ public final class MerlMemory {
 	private static final long FOLLOW_UP = 5 * 60_000L;
 	private static final long THANKS = 5 * 60_000L;
 	private static final long ASK_BACK = 5 * 60_000L;
+	/** "What did you say?" and "what was I asking?" work for this long. */
+	private static final long RECALL = 30 * 60_000L;
+	/** Replies this close together belong to the same answer ("Let me look…", then the answer). */
+	private static final long SAME_ANSWER = 10_000L;
 	/** People not seen for this long are dropped when the map gets full. */
 	private static final long WELCOME_BACK_UNTIL = 30 * 86_400_000L;
 	private static final int MAX_PLAYERS = 5000;
@@ -38,6 +42,26 @@ public final class MerlMemory {
 		public long seenAt;
 		/** Last /merl question, for the cooldown. */
 		public long lastMessageAt;
+		/** The last question as written and Merl's answer to it (a chat component), memory only. */
+		public String said = "";
+		public long saidAt;
+		public Object lastAnswer;
+		/** The question being answered right now, so its replies can be remembered. */
+		public String pending = "";
+
+		/** Remembers a reply to the pending question; replies right after each other add up to one answer. */
+		public void rememberReply(Object reply, java.util.function.BinaryOperator<Object> join, long now) {
+			if (pending.isEmpty()) return;
+			boolean same = pending.equals(said) && now - saidAt < SAME_ANSWER && lastAnswer != null;
+			lastAnswer = same ? join.apply(lastAnswer, reply) : reply;
+			said = pending;
+			saidAt = now;
+		}
+
+		/** True when the last question was in the last half hour. */
+		public boolean canRecall(long now) {
+			return !said.isEmpty() && now - saidAt < RECALL;
+		}
 
 		public boolean isRepeat(String asked, long now) {
 			return !asked.isEmpty() && asked.equals(question) && now - askedAt < REPEAT;

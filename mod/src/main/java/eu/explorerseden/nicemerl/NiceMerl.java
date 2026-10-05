@@ -77,6 +77,9 @@ public class NiceMerl implements ModInitializer {
 		ServerTickEvents.END_SERVER_TICK.register(MerlGuide::tick);
 		// Reminders: due ones every second, missed ones when the player comes back.
 		ServerTickEvents.END_SERVER_TICK.register(MerlReminders::tick);
+		// Merl mannequins: right-click messages, and they never end up in boats.
+		MerlMannequin.register();
+		ServerTickEvents.END_SERVER_TICK.register(MerlMannequin::tick);
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
 				server.execute(() -> MerlReminders.deliver(handler.getPlayer(), System.currentTimeMillis())));
 

@@ -22,6 +22,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -239,6 +240,35 @@ public final class VanillaWiki {
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
 			return Answer.NONE;
+		}
+	}
+
+	/**
+	 * The first sentences of the page with exactly this title (or the page it redirects to), for "what's this?".
+	 * Never a search, so a thing without its own page gets no summary. Null when there's none.
+	 */
+	public MerlWhatsThis.Summary summary(String title) {
+		try {
+			JsonObject data = get(Map.of("action", "query", "prop", "extracts", "exintro", "1", "explaintext", "1",
+					"exsentences", "2", "redirects", "1", "titles", title));
+			JsonArray pages = data.getAsJsonObject("query").getAsJsonArray("pages");
+			if (pages == null || pages.isEmpty()) return null;
+			JsonObject page = pages.get(0).getAsJsonObject();
+			if (page.has("missing") || !page.has("extract")) return null;
+			String text = page.get("extract").getAsString().strip();
+			// Disambiguation pages ("X may refer to") aren't about the thing.
+			if (text.isEmpty() || text.contains("may refer to")) return null;
+			// Two long sentences are too much for chat: keep the first, and cut a very long one at a word.
+			if (text.length() > 280) text = text.split("(?<=[.!?])\\s+")[0];
+			if (text.length() > 280) text = text.substring(0, text.lastIndexOf(' ', 277)) + "…";
+			String real = page.get("title").getAsString();
+			return new MerlWhatsThis.Summary(real, text, baseUrl + "/w/" + encode(real.replace(' ', '_')), name);
+		} catch (IOException | RuntimeException e) {
+			NiceMerl.LOGGER.debug("No Minecraft Wiki summary for {}", title, e);
+			return null;
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			return null;
 		}
 	}
 

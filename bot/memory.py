@@ -11,6 +11,8 @@ REPEAT_SECONDS = 10 * 60
 FOLLOW_UP_SECONDS = 5 * 60
 THANKS_SECONDS = 5 * 60
 ASK_BACK_SECONDS = 5 * 60
+# "what did you say?" and "what was I asking?" work for this long.
+RECALL_SECONDS = 30 * 60
 # "Welcome back!" after this long away, but not after so long that it's a first visit again.
 WELCOME_BACK_AFTER = 3 * 3600
 WELCOME_BACK_UNTIL = 30 * 86400
@@ -29,6 +31,14 @@ class Visit:
     talk: str = ""            # the last small talk Merl answered, for "another one"
     talked_at: float = 0.0
     seen_at: float = 0.0
+    said: str = ""            # the last question as written, for "what was I asking?" (memory only)
+    said_at: float = 0.0
+    last_answer: object = None  # the last answer embed, for "say that again"
+    pending: str = ""         # the question being answered right now
+
+    def recall(self, now: float) -> tuple[str, object] | None:
+        """The last question and answer, if they were in the last half hour."""
+        return (self.said, self.last_answer) if self.said and now - self.said_at < RECALL_SECONDS else None
 
     def is_repeat(self, question: str, now: float) -> bool:
         return bool(question) and question == self.question and now - self.asked_at < REPEAT_SECONDS

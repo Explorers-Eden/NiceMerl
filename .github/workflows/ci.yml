@@ -151,6 +151,9 @@ jobs:
           # Pack names starting with "Nice" aren't compliments; "nice! how…" still is.
           assert p.split_small_talk("nice mob variants cows")[0] is None
           assert p.split_small_talk("nice! how do i get a boss key")[0] == "compliment_prefix"
+          # "say that again" and "what was I asking?" use the last question and answer; "another one" is still more.
+          assert p.recall("say that again") == "repeat" and p.recall("what was i asking again?") == "question"
+          assert p.recall("another one") is None and p.small_talk("another one") == "more"
           print("Small talk detection works")
           EOF
 

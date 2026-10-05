@@ -1,12 +1,16 @@
 package eu.explorerseden.nicemerl;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
@@ -36,6 +40,15 @@ public final class MerlGuide {
 	record Target(double x, Double y, double z, Identifier dimension, String label, long startedAt) {}
 
 	private static final Map<UUID, Target> GUIDED = new ConcurrentHashMap<>();
+	/** Each guided player's planned stretch of path, and when it was planned (in ticks). */
+	private static final Map<UUID, List<BlockPos>> PATHS = new ConcurrentHashMap<>();
+	private static final Map<UUID, Long> PLANNED = new ConcurrentHashMap<>();
+	/** The path is planned again this often, or sooner when the player leaves it. */
+	private static final int REPLAN_TICKS = 40;
+	private static final double OFF_PATH = 3.0;
+	/** Sparkles shown ahead of the player, one per path step. */
+	private static final int SHOWN_STEPS = 24;
+	private static final DustParticleOptions DUST = new DustParticleOptions(0xF06EAA, 1.0f);
 	private static long ticks;
 
 	private MerlGuide() {}
@@ -53,12 +66,72 @@ public final class MerlGuide {
 						.withHoverEvent(new HoverEvent.ShowText(Component.literal("Follow a trail of sparkles to " + label)))));
 	}
 
+	/** "Follow the sparkles to …" after starting the trail for "lead me to …". */
+	static Component startNow(ServerPlayer player, double x, Double y, double z, String label) {
+		start(player, x, y, z, label);
+		return Component.literal(" " + MerlLines.pick("guide_start", "target", label, "user", player.getName().getString()))
+				.withStyle(ChatFormatting.LIGHT_PURPLE);
+	}
+
 	static void start(ServerPlayer player, double x, Double y, double z, String label) {
 		GUIDED.put(player.getUUID(), new Target(x + 0.5, y, z + 0.5, player.level().dimension().identifier(), label, ticks));
 	}
 
 	static boolean stop(ServerPlayer player) {
+		forget(player.getUUID());
 		return GUIDED.remove(player.getUUID()) != null;
+	}
+
+	private static void forget(UUID player) {
+		PATHS.remove(player);
+		PLANNED.remove(player);
+	}
+
+	/**
+	 * Sparkles along a walkable path on the ground toward the target. While flying or falling (no ground to plan
+	 * on), a short line of sparkles points the way instead.
+	 */
+	private static void drawPath(ServerPlayer player, Target target) {
+		UUID id = player.getUUID();
+		ServerLevel level = player.level();
+		BlockPos feet = player.blockPosition();
+		List<BlockPos> path = PATHS.get(id);
+		int nearest = path == null ? -1 : nearest(path, feet);
+		boolean stale = path == null || path.size() < 2 || ticks - PLANNED.getOrDefault(id, 0L) >= REPLAN_TICKS
+				|| nearest < 0 || Math.sqrt(path.get(nearest).distSqr(feet)) > OFF_PATH;
+		if (stale) {
+			path = MerlPath.find(level, feet, target.x(), target.y() == null ? null : (int) Math.floor(target.y()), target.z());
+			PATHS.put(id, path);
+			PLANNED.put(id, ticks);
+			nearest = path.isEmpty() ? -1 : 0;
+		}
+		if (path.size() < 2) {
+			Vec3 eye = player.getEyePosition();
+			Vec3 goal = new Vec3(target.x(), target.y() != null ? target.y() : eye.y, target.z());
+			Vec3 step = goal.subtract(eye).normalize();
+			for (double d = START; d <= Math.min(LENGTH, goal.distanceTo(eye)); d += SPACING) {
+				Vec3 at = eye.add(0, -0.4, 0).add(step.scale(d));
+				level.sendParticles(player, ParticleTypes.END_ROD, true, false, at.x, at.y, at.z, 1, 0, 0, 0, 0);
+			}
+			return;
+		}
+		for (int i = Math.max(1, nearest + 1); i < Math.min(path.size(), nearest + 1 + SHOWN_STEPS); i++) {
+			BlockPos at = path.get(i);
+			level.sendParticles(player, DUST, true, false, at.getX() + 0.5, at.getY() + 0.15, at.getZ() + 0.5, 2, 0.12, 0.02, 0.12, 0);
+		}
+	}
+
+	private static int nearest(List<BlockPos> path, BlockPos feet) {
+		int best = -1;
+		double bestDistance = Double.MAX_VALUE;
+		for (int i = 0; i < path.size(); i++) {
+			double d = path.get(i).distSqr(feet);
+			if (d < bestDistance) {
+				best = i;
+				bestDistance = d;
+			}
+		}
+		return best;
 	}
 
 	/** Called every server tick: draws each guided player's trail and checks whether they've arrived. */
@@ -69,6 +142,7 @@ public final class MerlGuide {
 			Target target = entry.getValue();
 			if (player == null || ticks - target.startedAt() > MAX_TICKS) {
 				GUIDED.remove(entry.getKey());
+				forget(entry.getKey());
 				continue;
 			}
 			// In another dimension the trail just waits until they're back.
@@ -78,17 +152,13 @@ public final class MerlGuide {
 			double flat = Math.hypot(goal.x - eye.x, goal.z - eye.z);
 			if (flat < ARRIVED && (target.y() == null || Math.abs(goal.y - eye.y) < ARRIVED)) {
 				GUIDED.remove(entry.getKey());
+				forget(entry.getKey());
 				player.sendOverlayMessage(Component.empty());
 				MerlCommand.replyTo(player.createCommandSourceStack(), Component.literal(
 						MerlLines.pick("guide_arrived", "target", target.label(), "user", player.getName().getString())));
 				continue;
 			}
-			Vec3 step = goal.subtract(eye).normalize();
-			Vec3 low = eye.add(0, -0.4, 0);
-			for (double d = START; d <= Math.min(LENGTH, goal.distanceTo(eye)); d += SPACING) {
-				Vec3 at = low.add(step.scale(d));
-				player.level().sendParticles(player, ParticleTypes.END_ROD, true, false, at.x, at.y, at.z, 1, 0, 0, 0, 0);
-			}
+			drawPath(player, target);
 			player.sendOverlayMessage(Component.literal(target.label() + ": " + String.format(Locale.ROOT, "%,d", Math.round(flat))
 					+ " blocks " + BiomeNames.direction(goal.x - eye.x, goal.z - eye.z)).withStyle(ChatFormatting.LIGHT_PURPLE));
 		}

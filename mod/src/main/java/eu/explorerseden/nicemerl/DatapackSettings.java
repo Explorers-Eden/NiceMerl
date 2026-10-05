@@ -158,7 +158,38 @@ public final class DatapackSettings {
 	 * setting only counts when the question names it, or names its pack.
 	 */
 	public static List<Setting> search(MinecraftServer server, MerlConfig config, String question, int limit, boolean strict) {
-		return rank(read(server, config), question, limit, strict);
+		List<Setting> all = read(server, config);
+		List<Setting> ranked = rank(all, question, limit, strict);
+		// A game rule named outright ("keep inventory", "random tick speed", "mob griefing") comes first, however it's asked.
+		List<Setting> rules = namedGameRules(all, question);
+		if (rules.isEmpty()) return ranked;
+		List<Setting> out = new ArrayList<>(rules);
+		for (Setting setting : ranked) if (!out.contains(setting) && out.size() < limit) out.add(setting);
+		return out;
+	}
+
+	private static Set<String> subjectWords(String text) {
+		// "what's" would leave a stray "s" behind.
+		Set<String> words = new HashSet<>(SearchIndex.tokenize(text.replace("'", "").replace("’", "")));
+		words.removeAll(INTENT);
+		words.removeAll(ATTRIBUTE);
+		words.removeAll(Set.of("on", "off", "gamerule", "game", "rule", "server", "setting", "settings", "allowed", "enabled", "disabled"));
+		return words;
+	}
+
+	/** Game rules whose name or id has every word of the question's subject. */
+	static List<Setting> namedGameRules(List<Setting> settings, String question) {
+		// The words as asked, and with player words translated ("xp" → "exp"); either may name the rule.
+		Set<String> raw = subjectWords(question), translated = subjectWords(translate(question));
+		if (raw.isEmpty()) return List.of();
+		List<Setting> found = new ArrayList<>();
+		for (Setting setting : settings) {
+			if (!setting.pack().equals("Game Rules")) continue;
+			Set<String> words = new HashSet<>(SearchIndex.tokenize(setting.label() + " " + setting.keyWords()));
+			if (words.containsAll(raw) || !translated.isEmpty() && words.containsAll(translated)) found.add(setting);
+		}
+		// "pvp" names one rule; "spawn" alone would name ten, which isn't naming one.
+		return found.size() <= 2 ? found : List.of();
 	}
 
 	static List<Setting> rank(List<Setting> settings, String question, int limit) {
@@ -364,7 +395,37 @@ public final class DatapackSettings {
 				}
 			}
 		}
+		if (config.settingsGameRules) settings.addAll(gameRules(server));
 		return settings;
+	}
+
+	/** The server's game rules as settings ("Game Rules › Keep inventory after death: off"), with their English names. */
+	static List<Setting> gameRules(MinecraftServer server) {
+		List<Setting> out = new ArrayList<>();
+		net.minecraft.world.level.gamerules.GameRules rules = server.getGameRules();
+		net.minecraft.locale.Language language = net.minecraft.locale.Language.getInstance();
+		rules.availableRules().forEach(rule -> addRule(out, rules, rule, language));
+		return out;
+	}
+
+	private static <T> void addRule(List<Setting> out, net.minecraft.world.level.gamerules.GameRules rules,
+			net.minecraft.world.level.gamerules.GameRule<T> rule, net.minecraft.locale.Language language) {
+		String idWords = rule.getIdentifier().getPath().replace('_', ' ');
+		String key = rule.getDescriptionId();
+		String label = language.has(key) ? language.getOrDefault(key) : titleWords(idWords);
+		String raw = rules.getAsString(rule);
+		String value = raw.equals("true") ? "on" : raw.equals("false") ? "off" : raw;
+		// The id's words too ("keep inventory", "mob griefing"), since the English name can be worded differently.
+		out.add(new Setting("Game Rules", label, idWords + " " + camelWords(key) + " gamerule game rule", value,
+				Component.literal(label), Component.literal(value)));
+	}
+
+	private static String camelWords(String key) {
+		return key.substring(key.lastIndexOf('.') + 1).replaceAll("([a-z])([A-Z])", "$1 $2").replace('_', ' ').toLowerCase(Locale.ROOT);
+	}
+
+	private static String titleWords(String words) {
+		return words.isEmpty() ? words : Character.toUpperCase(words.charAt(0)) + words.substring(1);
 	}
 
 	private record Walk(String storage, String pack, List<String> ignore, SettingLabels labels,

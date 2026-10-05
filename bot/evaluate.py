@@ -40,7 +40,7 @@ def right(path: str, pages: list[str]) -> bool:
 
 def route(index: Index, question: str, previous_page: str = "", interests: dict | None = None) -> tuple[str, list, object]:
     """What Merl does with a message: ("talk", pool), ("unclear", []), ("pages", results, outcome)."""
-    talk = p.small_talk(question) or p.multi_small_talk(question)[1]
+    talk = p.small_talk(question) or p.multi_small_talk(question)[1] or (p.recall(question) and "recall")
     if talk:
         return "talk", talk, None
     if p.met_question(question):

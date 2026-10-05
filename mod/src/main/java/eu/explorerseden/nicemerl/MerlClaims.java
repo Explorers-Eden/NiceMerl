@@ -92,7 +92,7 @@ public final class MerlClaims {
 	}
 
 	/** Merl's answer to a claim question ("mine", "trusted" or "any"), or null without GOML. */
-	static Component answer(ServerPlayer player, String kind, String question) {
+	static Component answer(ServerPlayer player, String kind, String question, boolean guide) {
 		if (!available()) return null;
 		MinecraftServer server = player.level().getServer();
 		String user = player.getName().getString();
@@ -130,8 +130,12 @@ public final class MerlClaims {
 				"distance", String.format(Locale.ROOT, "%,d", Math.round(Math.sqrt(dx * dx + dz * dz))),
 				"direction", BiomeNames.direction(dx, dz));
 		String label = claim.mine() ? "your claim" : owner + "'s claim";
-		return MerlLocate.found(line, claim.origin().getX(), claim.origin().getY(), claim.origin().getZ(),
-				MerlLocate.canTeleport(player.createCommandSourceStack()), label);
+		var answer = MerlLocate.found(line, claim.origin().getX(), claim.origin().getY(), claim.origin().getZ(),
+				MerlLocate.canTeleport(player.createCommandSourceStack()), guide ? null : label);
+		if (guide && NiceMerl.config().particleGuide) {
+			answer.append(MerlGuide.startNow(player, claim.origin().getX(), (double) claim.origin().getY(), claim.origin().getZ(), label));
+		}
+		return answer;
 	}
 
 	private static String ownerName(MinecraftServer server, UUID id) {

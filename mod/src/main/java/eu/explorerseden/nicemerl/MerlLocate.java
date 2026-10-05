@@ -135,15 +135,18 @@ public final class MerlLocate {
 					Holder<Biome> biome = found.getSecond();
 					boolean height = biome.is(UNDERGROUND) || biome.unwrapKey().map(k -> k.identifier().getPath())
 							.filter(p -> p.contains("cave") || p.contains("cavern") || p.contains("deep_dark") || p.contains("underground")).isPresent();
-					reply.accept(found(MerlLines.pick("locate_found", "biome", name(biomeNames, biome), "user", user,
+					boolean guide = MerlLines.wantsGuide(question) && source.getPlayer() != null && NiceMerl.config().particleGuide;
+					MutableComponent answer = found(MerlLines.pick("locate_found", "biome", name(biomeNames, biome), "user", user,
 							"distance", distance(from, pos), "direction", BiomeNames.direction(pos.getX() - from.getX(), pos.getZ() - from.getZ())),
-							pos.getX(), height ? pos.getY() : null, pos.getZ(), teleport, name(biomeNames, biome)));
+							pos.getX(), height ? pos.getY() : null, pos.getZ(), teleport, guide ? null : name(biomeNames, biome));
+					if (guide) answer.append(MerlGuide.startNow(source.getPlayer(), pos.getX(), height ? (double) pos.getY() : null, pos.getZ(), name(biomeNames, biome)));
+					reply.accept(answer);
 				}));
 		return true;
 	}
 
 	/** "Where's my bed?" / "where did I die?": the respawn point or last death, with distance and [Guide me]. */
-	static Component home(ServerPlayer player, String kind) {
+	static Component home(ServerPlayer player, String kind, boolean guide) {
 		String user = player.getName().getString();
 		net.minecraft.core.GlobalPos target;
 		if (kind.equals("death")) {
@@ -160,9 +163,11 @@ public final class MerlLocate {
 		}
 		BlockPos pos = target.pos(), from = player.blockPosition();
 		String label = kind.equals("death") ? "where you died" : "your bed";
-		return found(MerlLines.pick(kind + "_found", "user", user, "distance", distance(from, pos),
+		MutableComponent answer = found(MerlLines.pick(kind + "_found", "user", user, "distance", distance(from, pos),
 				"direction", BiomeNames.direction(pos.getX() - from.getX(), pos.getZ() - from.getZ())),
-				pos.getX(), pos.getY(), pos.getZ(), canTeleport(player.createCommandSourceStack()), label);
+				pos.getX(), pos.getY(), pos.getZ(), canTeleport(player.createCommandSourceStack()), guide ? null : label);
+		if (guide && NiceMerl.config().particleGuide) answer.append(MerlGuide.startNow(player, pos.getX(), (double) pos.getY(), pos.getZ(), label));
+		return answer;
 	}
 
 	private static Component slimeChunk(ServerLevel level, BlockPos from, boolean here, String user, boolean teleport) {

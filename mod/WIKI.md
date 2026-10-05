@@ -16,15 +16,22 @@ Type `/merl` and your question:
 - `/merl what is this` (look at a block or mob)
 - `/merl where's my bed`, `/merl where did I die` or `/merl where's my claim` (with Get Off My Lawn)
 - `/merl remind me in 10 minutes to check the furnace`
+- `/merl what's the tps`, `/merl mob cap`, `/merl view distance`, `/merl server info` or `/merl what's my ping`
+- `/merl is keep inventory on` or `/merl what's the random tick speed` (game rules and pack settings)
+- `/merl take me to agnes' waypoint` (starts the sparkle path right away)
+- `/merl say that again` or `/merl what was I asking?`
 
 Ask in your own words: typos, abbreviations like tp or xp, and other wordings (*"how do I unlock the boss room"*) are fine. Merl answers in one line when she can, then shows up to three wiki pages with a link and a short excerpt. Spoilers stay hidden until you hover over them.
 
 ## More than answers
-- **Coordinates:** ask where the closest biome is (vanilla, Terralith, Biomes O' Plenty or our packs, by name or id like `terralith:moonlight_grove`) or the closest slime chunk, and Merl tells you how far, which way and the exact spot. With Warping Wonders, she also finds the closest Waypoint Hub you can use, your own, or one by name. Click the coordinates to copy them, or click **[Guide me]** for a trail of sparkles that leads you there.
+- **Coordinates:** ask where the closest biome is (vanilla, Terralith, Biomes O' Plenty or our packs, by name or id like `terralith:moonlight_grove`) or the closest slime chunk, and Merl tells you how far, which way and the exact spot. With Warping Wonders, she also finds the closest Waypoint Hub you can use, your own, or one by name. Click the coordinates to copy them, or click **[Guide me]** for a sparkle path on the ground that leads you there, around walls and over hills.
 - **Name Tag texts:** `/merl name tag phrases` lists every text Nice Name Tags reacts to, each one click to copy.
 - **Crafting:** `/merl what can I craft` lists what your inventory can make right now; `/merl what can I make with this` only what uses the item in your hand. `/merl how do I craft …` shows the real recipe (our packs' too) with a link to its picture, and she also answers *"what can I smelt / brew / enchant this with?"* for the item in your hand.
-- **What's this?** Look at a block or mob (or hold an item) and ask `/merl what is this`: she names it, mob variants from our packs included, and shows its wiki page.
+- **What's this?** Look at a block or mob (or hold an item) and ask `/merl what is this`: she names it (for mobs with their variant, like *"Variant: Creamy (Nice Mob Variants)"*) and adds a short summary from the wiki page that's about exactly that thing, if there is one.
 - **Your places:** your bed, where you died (your grave), and with Get Off My Lawn your claims or the ones you're trusted on, with coordinates and **[Guide me]**.
+- **Server info:** TPS and MSPT, mob counts and caps, view and simulation distance, players online, difficulty and more, read live from the server. *"What's my ping?"* (or a player's, or everyone's) too. No wiki links, just the numbers.
+- **Settings and game rules:** *"is keep inventory on?"*, *"do mobs grief?"* or *"can I pvp?"* show the server's game rules and our packs' settings, without wiki links.
+- **Context:** *"say that again"* repeats her last answer, *"what was I asking?"* tells you your last question (she forgets both after half an hour). *"Take me to …"*, *"guide me to …"* or *"give me a route to …"* start the sparkle path straight away.
 - **Reminders:** `/merl remind me in 10 minutes to …`, `/merl my reminders`, `/merl cancel my reminders`. Gone after a server restart.
 - **Ideas:** `/merl what should I do next` suggests a next step based on your advancements, or one of over 4,500 ideas.
 - **Small talk:** over 2,000 jokes (stories, dialogues, mob reviews and more), tips, fun facts, stories, `/merl pet peanut butter` and more. Ask for `another one` after a joke.
@@ -38,6 +45,7 @@ Ask in your own words: typos, abbreviations like tp or xp, and other wordings (*
 - `/nicemerl comments [on|off]`: Turn her comments on your situation on or off, just for you
 - `/nicemerl celebrate [on|off]`: Turn her congratulations on or off, just for you
 - `/nicemerl guide stop`: Stop the sparkle trail
+- `/nicemerl mannequin`: Place a Merl mannequin where you stand (operators). Right-clicking it shows a message; `/nicemerl mannequin remove` removes the closest one
 - `/nicemerl reindex`: Read the wikis again right away (operators)
 
 # Permissions
@@ -47,13 +55,15 @@ Everything works without a permissions mod. With LuckPerms:
 - **nicemerl.command.reindex**: use `/nicemerl reindex` (operators)
 - **nicemerl.bypass.cooldown**: skip the cooldown between questions (operators)
 - **nicemerl.settings**: see data pack settings in answers (everyone)
+- **nicemerl.serverinfo**: see TPS, mob caps, distances, server info and pings (everyone)
+- **nicemerl.command.mannequin**: use `/nicemerl mannequin` (operators)
 - **nicemerl.locate**: get biome, slime chunk, waypoint, claim, bed and death coordinates, and the sparkle trail (everyone)
 
 # For server admins
 The config is in `config/nicemerl.json`, created on the first start. Restart the server after changing it. The most useful options:
 - **wikis**: the wikis Merl searches. Remove the Minecraft Wiki to turn off vanilla answers
 - **communityName**: your community's name (Explorer's Eden)
-- **messagePrefix** and **prefixColor**: what Merl's messages start with (a pink `▊ `, like our packs' messages); the color can be a name like `gold` or a hex color
+- **messagePrefix** and **prefixColor**: what Merl's messages start with (a pink `Merl: `); the color can be a name like `gold` or a hex color
 - **messageSound**, **messageSoundVolume** and **messageSoundPitch**: the sound with her messages (the egg plop our packs use); leave the sound empty for none
 - **results**: pages per answer (3)
 - **cooldownSeconds**: wait time between questions (5)
@@ -67,6 +77,8 @@ The config is in `config/nicemerl.json`, created on the first start. Restart the
 - **craftingHelp**: turn "what can I craft?" off for everyone
 - **recipeHelp**: turn real recipes, smelting, brewing and enchanting answers off for everyone; **recipesUrl** is where the recipe pictures come from
 - **whatsThis**, **locateHome**, **locateClaims** and **reminders**: turn "what's this?", bed and death, claims, and reminders off for everyone
+- **serverInfo** and **settingsGameRules**: turn server info, or game rules in settings answers, off for everyone
+- **mannequinMessage** and **mannequinMessageType**: what a Merl mannequin says when right-clicked, in `chat` or on the `actionbar`
 - **semanticSearch**: understanding other wordings. Downloads a small file (about 31 MB) once to `config/nicemerl/model/`
 
 What Merl remembers about players is saved in `config/nicemerl/state.json`: about a hundred bytes per player, no messages, and players gone for a year are forgotten.
@@ -76,7 +88,7 @@ This is `config/nicemerl.json` as it's created on the first start. Delete the fi
 
 ```json
 {
-  "configVersion": 4,
+  "configVersion": 5,
   "wikis": [
     {
       "name": "Explorer's Eden",
@@ -89,11 +101,13 @@ This is `config/nicemerl.json` as it's created on the first start. Delete the fi
       "type": "mediawiki"
     }
   ],
-  "messagePrefix": "▊ ",
+  "messagePrefix": "Merl: ",
   "prefixColor": "#F06EAA",
   "messageSound": "minecraft:entity.chicken.egg",
   "messageSoundVolume": 0.6,
   "messageSoundPitch": 2.0,
+  "mannequinMessage": "Ask /merl anything at any time!",
+  "mannequinMessageType": "actionbar",
   "communityName": "Explorer's Eden",
   "reindexHours": 6.0,
   "results": 3,
@@ -109,6 +123,7 @@ This is `config/nicemerl.json` as it's created on the first start. Delete the fi
   "locateClaims": true,
   "locateHome": true,
   "reminders": true,
+  "serverInfo": true,
   "craftingHelp": true,
   "cooldownSeconds": 5,
   "settingsSources": [
@@ -153,6 +168,7 @@ This is `config/nicemerl.json` as it's created on the first start. Delete the fi
     "command_template",
     "*_template"
   ],
+  "settingsGameRules": true,
   "settingsResults": 6,
   "mediaWikiResults": 2,
   "playerComments": true,

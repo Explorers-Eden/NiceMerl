@@ -760,7 +760,7 @@ public final class MerlLines {
 	// Warping Wonders waypoints: "where is the closest waypoint", "nearest waypoint hub", "where's my waypoint".
 	private static final Pattern WAYPOINT = Pattern.compile("\\b(waypoints?|waypoint hubs?)\\b");
 	private static final Pattern WAYPOINT_CUE = Pattern.compile(
-			"\\b(where|wheres|nearest|closest|nearby|near me|how far|coords?|coordinates|which way|direction|find)\\b");
+			"\\b(where|wheres|nearest|closest|nearby|near me|how far|coords?|coordinates|which way|direction|find|lead|guide|take|bring|navigate|way to|path to|show me)\\b");
 	/** How-to questions about waypoints go to the wiki. */
 	private static final Pattern WAYPOINT_HOW = Pattern.compile("\\b(how|craft|crafting|recipe|trust|untrust|lock|rename|place|break|color|dye|get|buy|obtain|trade|trading|cartographer|cost|make|work|works)\\b");
 	private static final Pattern WAYPOINT_MINE = Pattern.compile("\\bmy (own )?(waypoints?|waypoint hubs?)\\b");
@@ -768,7 +768,10 @@ public final class MerlLines {
 	/** True for "where is the closest waypoint?" and the like. */
 	public static boolean waypointQuestion(String message) {
 		String text = message.toLowerCase(java.util.Locale.ROOT).replace("'", "");
-		return WAYPOINT.matcher(text).find() && WAYPOINT_CUE.matcher(text).find() && !WAYPOINT_HOW.matcher(text).find();
+		if (!WAYPOINT.matcher(text).find()) return false;
+		// "how do I get to mistiik's waypoint" asks for the way; "how do I craft a waypoint hub" goes to the wiki.
+		if (WANTS_GUIDE.matcher(text).find()) return true;
+		return WAYPOINT_CUE.matcher(text).find() && !WAYPOINT_HOW.matcher(text).find();
 	}
 
 	/** "where's my waypoint" means only the player's own. */
@@ -817,16 +820,18 @@ public final class MerlLines {
 
 	// "Where's my bed?" and "where did I die?"
 	private static final Pattern BED = Pattern.compile(
-			"\\bwhere('?s| is| was)? (my|the) (bed|spawn( ?point)?|respawn( ?point)?|respawn anchor)\\b|\\bwhere (do|will) i (respawn|spawn)\\b");
+			"\\bwhere('?s| is| was)? (my|the) (bed|spawn( ?point)?|respawn( ?point)?|respawn anchor)\\b|\\bwhere (do|will) i (respawn|spawn)\\b"
+			+ "|\\b(me|route|path|way|directions?|get|go) (to|back to|towards) (my|the) (bed|spawn( ?point)?|respawn( ?point)?|respawn anchor|home)\\b");
 	private static final Pattern DEATH = Pattern.compile(
 			"\\bwhere (did|have) i (die|died|just die)\\b|\\bwhere('?s| is| are) my (death( ?point)?|grave|stuff|items|loot|body)\\b"
+			+ "|\\b(me|route|path|way|directions?|get|go) (to|back to|towards) (my|the) (death( ?point)?|grave|stuff|items|loot|body)\\b|\\b(me|back|get|go) (to )?where i died\\b"
 			+ "|\\b(last )?death (point|location|spot|coords|coordinates)\\b|\\bwhere i died\\b");
 
 	/** "bed", "death" or null. */
 	public static String homeQuestion(String message) {
 		String text = normalize(message).replace("'", "");
 		// "teleport to my death location" or "how do I find where I died" are about pack features, for the wiki.
-		if (!text.matches("(merl )?(hey )?(where|wheres)\\b.*")) return null;
+		if (!text.matches("(merl )?(hey )?(where|wheres)\\b.*") && !WANTS_GUIDE.matcher(text).find()) return null;
 		if (DEATH.matcher(text).find()) return "death";
 		if (BED.matcher(text).find()) return "bed";
 		return null;
@@ -888,7 +893,7 @@ public final class MerlLines {
 
 	// Get Off My Lawn claims: "where is my claim", "nearest claim I'm trusted on", "where is steve's claim".
 	private static final Pattern CLAIM = Pattern.compile("\\bclaims?\\b");
-	private static final Pattern CLAIM_CUE = Pattern.compile("\\b(where|wheres|nearest|closest|nearby|how far|which way|direction|find|coords?|coordinates)\\b");
+	private static final Pattern CLAIM_CUE = Pattern.compile("\\b(where|wheres|nearest|closest|nearby|how far|which way|direction|find|coords?|coordinates|lead|guide|take|bring|navigate)\\b");
 	/** How-to questions about claims go to the wiki. */
 	private static final Pattern CLAIM_HOW = Pattern.compile("\\bhow\\b(?! far)|\\b(make|create|craft|crafting|recipe|expand|upgrade|resize|remove|delete|abandon|protect|cost|add|untrust|get|buy|anchors?)\\b");
 	private static final Pattern CLAIM_TRUSTED = Pattern.compile("\\b(trusted|trust|access|allowed|friends?|others?|someone elses|other peoples?)\\b|\\bs claim");
@@ -897,9 +902,63 @@ public final class MerlLines {
 	/** "mine", "trusted", "any" or null. */
 	public static String claimQuestion(String message) {
 		String text = normalize(message);
-		if (!CLAIM.matcher(text).find() || !CLAIM_CUE.matcher(text).find() || CLAIM_HOW.matcher(text).find()) return null;
+		if (!CLAIM.matcher(text).find()) return null;
+		if (!WANTS_GUIDE.matcher(text).find() && (!CLAIM_CUE.matcher(text).find() || CLAIM_HOW.matcher(text).find())) return null;
 		if (CLAIM_TRUSTED.matcher(text).find()) return "trusted";
 		if (CLAIM_MINE.matcher(text).find()) return "mine";
 		return "any";
+	}
+
+	// Server info: TPS and MSPT, mob counts and caps, view and simulation distance, general server info.
+	private static final Pattern SERVER_HOW = Pattern.compile("\\bhow (do|can|to|should|would)\\b|\\b(fix|reduce|lower|improve|increase|change|set)\\b");
+	private static final Pattern SERVER_TPS = Pattern.compile(
+			"\\b(tps|mspt|ticks? per second|tick ?rate|tick time|lag|laggy|lagging|lags|server (speed|performance|health|load))\\b|\\bis the server (slow|ok|okay|fine)\\b");
+	private static final Pattern SERVER_MOBS = Pattern.compile(
+			"\\b(mob ?caps?|mob ?counts?|mob limits?|spawn caps?|entity counts?|how many (mobs|monsters|animals|entities))\\b");
+	/** "what's my ping", "mistiik's ping", "everyone's ping" (not "ping", which asks whether Merl is there). */
+	private static final Pattern SERVER_PING = Pattern.compile("\\b\\w+ (ping|latency)\\b|\\b(ping|latency) (of|for)\\b|\\blatency\\b");
+	private static final Pattern SERVER_DISTANCE = Pattern.compile("\\b(view|render|simulation|sim) ?distances?\\b");
+	private static final Pattern SERVER_INFO = Pattern.compile(
+			"\\b(server (properties|info|information|version|details|stats)|difficulty|game ?mode|max(imum)? players|player (limit|cap)"
+			+ "|how many players|players online|who is online|whos online|whitelist(ed)?|hardcore|motd|what version|which version)\\b");
+
+	/** "tps", "mobs", "distance", "info" or null. How-to questions ("how do I reduce lag") go to the wiki. */
+	public static String serverInfo(String message) {
+		String text = normalize(message);
+		if (SERVER_HOW.matcher(text).find()) return null;
+		if (SERVER_PING.matcher(text).find()) return "ping";
+		if (SERVER_TPS.matcher(text).find()) return "tps";
+		if (SERVER_MOBS.matcher(text).find()) return "mobs";
+		if (SERVER_DISTANCE.matcher(text).find()) return "distance";
+		if (SERVER_INFO.matcher(text).find()) return "info";
+		return null;
+	}
+
+	/** Ways of asking to be led somewhere ("lead me to", "give me a route to", "how do I get to"); they start the trail. */
+	public static final String GUIDE_PHRASES = "\\b(lead|guide|take|bring|navigate|direct|walk|escort|point) me\\b"
+			+ "|\\bshow me (the way|how to get|where)\\b|\\bgive me (a |the )?(route|path|way|directions?)\\b"
+			+ "|\\b(route|path|directions?|way|road) (to|back to|towards)\\b|\\bhow (do|can|would) i (get|go|walk|travel) (back )?to\\b"
+			+ "|\\b(get|help) me (back )?(to|get to|find my way)\\b|\\b(navigate|guide) (to|towards)\\b";
+	private static final Pattern WANTS_GUIDE = Pattern.compile(GUIDE_PHRASES);
+
+	public static boolean wantsGuide(String message) {
+		return WANTS_GUIDE.matcher(normalize(message)).find();
+	}
+
+	// "Say that again" and "what was I asking?" (same as personality.recall in the bot).
+	private static final Pattern RECALL_REPEAT = Pattern.compile(
+			"(merl )?(can you |could you |please |pls )?(repeat( that| it| yourself| the last (answer|message|one)| your (last )?answer| please)?"
+			+ "|say (that|it) again|what did you (just )?say|(tell|show) me (that|it) again|one more time please|i missed (that|it)"
+			+ "|what was (that|your answer|the answer)( again)?)( please| pls| merl)?");
+	private static final Pattern RECALL_QUESTION = Pattern.compile(
+			".*\\b(what (was|did|were) (i|we) (just )?(ask|asking|asked|say|saying|said|talking about)|what was my (last |previous )?question"
+			+ "|what did i (just )?ask( you)?|remind me what i (asked|said)|what were we talking about|what was the question)\\b.*");
+
+	/** "repeat", "question" or null. */
+	public static String recall(String message) {
+		String text = normalize(message);
+		if (RECALL_QUESTION.matcher(text).matches()) return "question";
+		if (RECALL_REPEAT.matcher(text).matches()) return "repeat";
+		return null;
 	}
 }

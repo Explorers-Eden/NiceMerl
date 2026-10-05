@@ -1,5 +1,5 @@
 {
-  "_comment": "Merl's lines, shared by the Discord bot and the Fabric mod (the mod bundles this file at build time). Placeholders: {user}, {community}, {term}, {pages}, {page}, {word}, {count}, {deaths}, {hours}, {advancement}, {rank}, {biome}, {distance}, {direction}, {dimension}, {y}, {x1}, {z1}, {x2}, {z2}, {item}, {waypoint}, {owner}, {target}, {thing}, {pack}, {time}, {text}. Emoji outside the basic plane and * are stripped in Minecraft chat. moods/pb_moods pick today's asides_<mood>, status_<mood> and pb_<mood> pools; any small-talk pool with a <pool>_<mood> twin (how_are_you_cozy) uses it half the time on that day. topics map words to reply_<topic> pools after Merl asks what someone is up to. often_phrases say how often someone talked to Merl in met_yes ({often}: once, a few times, lots). topic_phrases describe a remembered topic in remember_topic ({activity}). progress_ideas are used in-game: the first steps whose 'after' advancement is done and 'unless' is not.",
+  "_comment": "Merl's lines, shared by the Discord bot and the Fabric mod (the mod bundles this file at build time). Placeholders: {user}, {community}, {term}, {pages}, {page}, {word}, {count}, {deaths}, {hours}, {advancement}, {rank}, {biome}, {distance}, {direction}, {dimension}, {y}, {x1}, {z1}, {x2}, {z2}, {item}, {waypoint}, {owner}, {target}, {thing}, {pack}, {time}, {text}, {player}, {question}. Emoji outside the basic plane and * are stripped in Minecraft chat. moods/pb_moods pick today's asides_<mood>, status_<mood> and pb_<mood> pools; any small-talk pool with a <pool>_<mood> twin (how_are_you_cozy) uses it half the time on that day. topics map words to reply_<topic> pools after Merl asks what someone is up to. often_phrases say how often someone talked to Merl in met_yes ({often}: once, a few times, lots). topic_phrases describe a remembered topic in remember_topic ({activity}). progress_ideas are used in-game: the first steps whose 'after' advancement is done and 'unless' is not.",
   "pools": {
     "greeting_morning": [
       "Good morning, {user}! ☀️",
@@ -22404,6 +22404,92 @@
       "None of your claims are in this dimension. You have {count} in {dimension}, for example.",
       "Your claims are in {dimension}, not here!",
       "No claims here, {user}. There's one in {dimension}."
+    ],
+    "serverinfo_smooth": [
+      "The server is running smoothly!",
+      "All good! The server is happy.",
+      "Smooth as a slime block!",
+      "No lag here, {user}!"
+    ],
+    "serverinfo_busy": [
+      "The server is a little busy, but keeping up.",
+      "It's working hard, but it's okay!",
+      "A bit busy right now, nothing to worry about."
+    ],
+    "serverinfo_lagging": [
+      "Oof, the server is struggling right now.",
+      "Yep, the server is lagging a bit.",
+      "The server is having a hard time keeping up, {user}."
+    ],
+    "serverinfo_frozen": [
+      "The server's time is frozen right now!",
+      "Everything's paused: the tick rate is frozen."
+    ],
+    "serverinfo_mobs": [
+      "Here are the mob counts and caps around the players in this dimension:",
+      "Mob counts in this dimension, and how many can spawn:",
+      "Here's how crowded it is:"
+    ],
+    "serverinfo_mobs_none": [
+      "Nothing has been counted yet. Give it a moment!",
+      "The game hasn't counted the mobs yet."
+    ],
+    "serverinfo_mobs_note": [
+      "caps grow with the number of chunks around players",
+      "the caps depend on how many chunks are loaded around players",
+      "a full cap means nothing new of that kind spawns"
+    ],
+    "serverinfo_distance": [
+      "Here's how far the server loads and runs the world:",
+      "The server's distances:",
+      "How far the world reaches:"
+    ],
+    "serverinfo_info": [
+      "Here's the server info:",
+      "A quick look at the server:",
+      "Server info, coming right up:"
+    ],
+    "serverinfo_ping_mine": [
+      "Your ping:",
+      "Here's your connection to the server:",
+      "Your ping right now, {user}:"
+    ],
+    "serverinfo_ping_other": [
+      "{player}'s ping:",
+      "Here's {player}'s connection:",
+      "{player}'s ping right now:"
+    ],
+    "serverinfo_ping_all": [
+      "Everyone's ping:",
+      "Pings of the {count} players online:",
+      "Here's how everyone is connected:"
+    ],
+    "serverinfo_ping_nobody": [
+      "Nobody is online right now!",
+      "There's nobody online to ping."
+    ],
+    "repeat_intro": [
+      "Sure! Here it is again:",
+      "Again? No problem!",
+      "Here you go, once more:",
+      "Of course! That was:"
+    ],
+    "recall_question": [
+      "You asked me: \"{question}\"",
+      "Your last question was: \"{question}\"",
+      "You wanted to know: \"{question}\"",
+      "That was: \"{question}\". Want me to say the answer again? Just ask \"say that again\"!"
+    ],
+    "recall_none": [
+      "Hmm, you haven't asked me anything lately, {user}.",
+      "I don't remember a question from you in the last half hour.",
+      "Nothing to repeat yet! Ask me something?"
+    ],
+    "mannequin_greeting": [
+      "Hi {user}! Ask me anything with /merl, any time!",
+      "Psst, {user}! Type /merl and your question.",
+      "Need help? Just type /merl and ask away!",
+      "Hello! I'm Merl. Ask me anything with /merl!"
     ]
   },
   "intents": [

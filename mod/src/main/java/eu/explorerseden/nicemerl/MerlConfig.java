@@ -21,7 +21,7 @@ public class MerlConfig {
 	 * Raise this when a default list gains entries, so existing config files pick them up.
 	 * Entries are only added once, so anything a server owner removed stays removed.
 	 */
-	private static final int CURRENT_VERSION = 4;
+	private static final int CURRENT_VERSION = 5;
 
 	/** Which defaults this file has seen. Files from before versioning count as 1. */
 	public int configVersion = CURRENT_VERSION;
@@ -33,14 +33,18 @@ public class MerlConfig {
 	public List<WikiSource> wikis = new ArrayList<>(List.of(
 			new WikiSource("Explorer's Eden", "https://wiki.explorerseden.eu", WikiSource.WIKIJS),
 			new WikiSource("Minecraft Wiki", "https://minecraft.wiki", WikiSource.MEDIAWIKI)));
-	/** What Merl's messages start with, like the Explorer's Eden packs' "▊ " bar. */
-	public String messagePrefix = "▊ ";
+	/** What Merl's messages start with, in prefixColor. */
+	public String messagePrefix = "Merl: ";
 	/** The prefix's color: a name like "gold" or "dark_aqua", or a hex color like "#F06EAA" (Merl's pink). */
 	public String prefixColor = "#F06EAA";
 	/** The sound played to the player with Merl's messages, like the packs' egg plop. Empty for none. */
 	public String messageSound = "minecraft:entity.chicken.egg";
 	public float messageSoundVolume = 0.6f;
 	public float messageSoundPitch = 2.0f;
+	/** What a Merl mannequin says when someone right-clicks it ({user} is their name). Empty for Merl's own lines. */
+	public String mannequinMessage = "Ask /merl anything at any time!";
+	/** Where that message shows: "chat" or "actionbar". */
+	public String mannequinMessageType = "actionbar";
 	/** Used in Merl's "I don't know" lines. */
 	public String communityName = "Explorer's Eden";
 	/** How often the wiki is downloaded again. */
@@ -75,6 +79,8 @@ public class MerlConfig {
 	public boolean locateHome = true;
 	/** "Remind me in 10 minutes to …" (kept in memory, gone after a restart). */
 	public boolean reminders = true;
+	/** "What's the TPS?", "mob cap", "view distance", "server info": live server info without wiki pages. */
+	public boolean serverInfo = true;
 	/** "What can I craft?" lists what the player can make from their inventory right now. */
 	public boolean craftingHelp = true;
 	/** Minimum seconds between questions per player. */
@@ -90,6 +96,8 @@ public class MerlConfig {
 			new SettingsSource("kattersstructures:gamerule", "settings", "Katters Structures")));
 	/** Setting keys to hide. "*" matches any start or end, e.g. "*_initial". */
 	public List<String> settingsIgnoreKeys = new ArrayList<>(List.of("*_initial", "command_template", "*_template"));
+	/** Game rules count as settings too ("is keep inventory on?", "what's the random tick speed?"). */
+	public boolean settingsGameRules = true;
 	/** Most settings listed per answer. */
 	public int settingsResults = 6;
 	/** Most pages from "mediawiki" wikis (the Minecraft Wiki) per answer. */
@@ -230,6 +238,8 @@ public class MerlConfig {
 				NiceMerl.LOGGER.info("Added new default celebration for {}", id);
 			}
 		}
+		// Version 5: the old default prefix "▊ " became "Merl: " (a changed prefix stays as it is).
+		if (configVersion < 5 && "▊ ".equals(messagePrefix)) messagePrefix = defaults.messagePrefix;
 		configVersion = CURRENT_VERSION;
 	}
 

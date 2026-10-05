@@ -14,6 +14,7 @@ import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentSerialization;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -58,6 +59,11 @@ public final class MerlWaypoints {
 		String text = question.toLowerCase(Locale.ROOT);
 		Hub named = hubs.stream().filter(h -> h.name().length() >= 3 && text.contains(h.name().toLowerCase(Locale.ROOT)))
 				.max(Comparator.comparingInt(h -> h.name().length())).orElse(null);
+		// "mistiik's waypoint": the closest one of that player's waypoints.
+		String flat = text.replace("'", "");
+		List<Hub> byOwner = named != null ? List.of() : hubs.stream()
+				.filter(h -> h.owner().length() >= 3 && !h.owner().equalsIgnoreCase(user) && flat.contains(h.owner().toLowerCase(Locale.ROOT))).toList();
+		if (!byOwner.isEmpty()) hubs = byOwner;
 		List<Hub> nearby = hubs.stream().filter(h -> h.dimension().equals(here))
 				.sorted(Comparator.comparingDouble(h -> h.pos().distSqr(from))).toList();
 		Hub hub = named != null ? named : nearby.isEmpty() ? null : nearby.get(0);
@@ -78,8 +84,12 @@ public final class MerlWaypoints {
 				"user", user, "waypoint", hub.name(), "owner", hub.owner(),
 				"distance", String.format(Locale.ROOT, "%,d", Math.round(Math.sqrt(dx * dx + dz * dz))),
 				"direction", BiomeNames.direction(dx, dz), "count", String.valueOf(hubs.size()));
-		MerlCommand.replyTo(source, MerlLocate.found(line, hub.pos().getX(), hub.pos().getY(), hub.pos().getZ(),
-				MerlLocate.canTeleport(source), hub.name()));
+		MutableComponent answer = MerlLocate.found(line, hub.pos().getX(), hub.pos().getY(), hub.pos().getZ(),
+				MerlLocate.canTeleport(source), MerlLines.wantsGuide(question) ? null : hub.name());
+		if (MerlLines.wantsGuide(question) && source.getPlayer() != null && config.particleGuide) {
+			answer.append(MerlGuide.startNow(source.getPlayer(), hub.pos().getX(), (double) hub.pos().getY(), hub.pos().getZ(), hub.name()));
+		}
+		MerlCommand.replyTo(source, answer);
 		return true;
 	}
 

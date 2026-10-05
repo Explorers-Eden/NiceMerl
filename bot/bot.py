@@ -173,11 +173,16 @@ class NiceMerl(discord.Client):
         self.friends.save(message.author.id, friend, today)
         if note and not friend.forgotten:
             # "Oh! That was our 50th chat." comes as a little extra message after the answer.
-            await self.say(message, time.monotonic(), content=note)
+            await self.say(message, time.monotonic(), content=note, record=False)
 
     async def answer(self, message: discord.Message, question: str, user: str, visit: Visit, friend: Friend,
                      today: int, first: bool, returning: bool, started: float):
         now = time.time()
+        # "say that again" / "what was I asking?": the last question and answer (memory only, half an hour).
+        if kind := personality.recall(question):
+            await self.recall(message, started, visit, kind, user, now)
+            return
+        visit.pending = question
         # "have you met Alex?" (Discord mentions of others stay in, as <@id>)
         raw = re.sub(rf"<@!?{self.user.id}>", "", message.content).strip() if self.user else question
         if (met := personality.met_question(raw)) and (line := self.met_line(*met, message, user)):
@@ -308,6 +313,21 @@ class NiceMerl(discord.Client):
             visit.page = ""
             await self.say(message, started, embed=self.not_found_embed(), results=1)
 
+    async def recall(self, message: discord.Message, started: float, visit: Visit, kind: str, user: str, now: float):
+        last = visit.recall(now)
+        if last is None:
+            await self.say(message, started, content=pick("recall_none", user=user), record=False)
+            return
+        said, answer = last
+        if kind == "question" or answer is None:
+            await self.say(message, started, content=pick("recall_question", question=said, user=user), record=False)
+            return
+        embed = answer.copy()
+        if embed.image and str(embed.image.url or "").startswith("attachment://"):
+            embed.set_image(url=None)  # the drawn recipe picture isn't kept
+        embed.title = f"{pick('repeat_intro', user=user)} {embed.title or ''}".strip()[:256]
+        await self.say(message, started, embed=embed, record=False)
+
     def met_line(self, name: str, strict: bool, message: discord.Message, user: str) -> str | None:
         """ "have you met Alex?": whether Merl knows them, by Discord mention or display name."""
         if normalize_name(name) in ("peanut butter", "pb", "your cat"):
@@ -376,7 +396,8 @@ class NiceMerl(discord.Client):
         return line
 
     async def say(self, message: discord.Message, started: float, *, content: str | None = None,
-                  embed: discord.Embed | None = None, results: int = 0, extra_file: discord.File | None = None):
+                  embed: discord.Embed | None = None, results: int = 0, extra_file: discord.File | None = None,
+                  record: bool = True):
         """Replies after a short "typing…" pause, so Merl doesn't answer inhumanly fast."""
         if results:
             delay = min(TYPING_MAX, TYPING_ANSWER + TYPING_PER_RESULT * results)
@@ -386,7 +407,12 @@ class NiceMerl(discord.Client):
         if remaining > 0:
             async with message.channel.typing():
                 await asyncio.sleep(remaining)
-        await self.send(message, embed=embed or self.text_embed(content or ""), extra_file=extra_file)
+        embed = embed or self.text_embed(content or "")
+        visit = self.memory.visit(message.author.id)
+        if record and visit.pending:
+            # Remembered (in memory only) for "say that again" and "what was I asking?".
+            visit.said, visit.said_at, visit.last_answer = visit.pending, time.time(), embed
+        await self.send(message, embed=embed, extra_file=extra_file)
 
     async def send(self, message: discord.Message, *, embed: discord.Embed, extra_file: discord.File | None = None):
         """Every reply is an embed with a random picture of Merl in the corner (and maybe a recipe picture)."""

@@ -21,11 +21,13 @@ public final class BiomeNames {
 	/** Words that make a message a "where is the nearest …" question. */
 	private static final Pattern LOCATE_CUE = Pattern.compile(
 			"\\b(where|wheres|nearest|closest|nearby|near me|locate|how far|coords?|coordinates|which way|direction)\\b"
-			+ "|\\bfind (me )?(a|an|the|some)?\\b");
+			+ "|\\bfind (me )?(a|an|the|some)?\\b|" + MerlLines.GUIDE_PHRASES);
 	/** Words around the biome's name that aren't part of it. */
 	private static final Set<String> LOCATE_WORDS = Set.of("nearest", "closest", "near", "nearby", "locate", "location",
 			"biome", "biomes", "coord", "coords", "coordinate", "coordinates", "direction", "far", "go", "spot", "place",
 			"area", "around", "here", "one", "look", "search", "show", "way", "which", "next", "is", "find", "found",
+			"lead", "guide", "take", "bring", "navigate", "walk", "path", "route", "directions", "give",
+			"point", "help", "get", "travel", "road", "escort", "towards", "back",
 			"spawn", "spawns", "generate", "generates", "located", "situated", "best", "good", "big", "large", "small");
 	private static final Pattern ID = Pattern.compile("\\b([a-z0-9_.-]+):([a-z0-9_/.-]+)\\b");
 	/**

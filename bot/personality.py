@@ -266,6 +266,25 @@ RECIPE = re.compile(
 RECIPE_SUFFIX = re.compile(r"(?P<item>.+?) (crafting )?recipe")
 
 
+RECALL_REPEAT = re.compile(
+    r"(merl )?(can you |could you |please |pls )?(repeat( that| it| yourself| the last (answer|message|one)| your (last )?answer| please)?"
+    r"|say (that|it) again|what did you (just )?say|(tell|show) me (that|it) again|one more time please|i missed (that|it)"
+    r"|what was (that|your answer|the answer)( again)?)( please| pls| merl)?")
+RECALL_QUESTION = re.compile(
+    r".*\b(what (was|did|were) (i|we) (just )?(ask|asking|asked|say|saying|said|talking about)|what was my (last |previous )?question"
+    r"|what did i (just )?ask( you)?|remind me what i (asked|said)|what were we talking about|what was the question)\b.*")
+
+
+def recall(text: str) -> str | None:
+    """ "say that again" → "repeat", "what was I asking?" → "question" (same as MerlLines.recall in the mod)."""
+    normalized = normalize(text)
+    if RECALL_QUESTION.fullmatch(normalized):
+        return "question"
+    if RECALL_REPEAT.fullmatch(normalized):
+        return "repeat"
+    return None
+
+
 def recipe_item(text: str) -> str | None:
     """ "how do I craft a waypoint hub" → "waypoint hub" (same as MerlLines.recipeItem in the mod)."""
     normalized = normalize(text)
