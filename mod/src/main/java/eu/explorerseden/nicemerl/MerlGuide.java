@@ -168,7 +168,7 @@ public final class MerlGuide {
 			String direction = BiomeNames.direction(goal.x - eye.x, goal.z - eye.z, SHOWN_DIRECTION.get(entry.getKey()));
 			SHOWN_DIRECTION.put(entry.getKey(), direction);
 			player.sendOverlayMessage(Component.literal(target.label() + ": " + String.format(Locale.ROOT, "%,d", Math.round(flat))
-					+ " blocks " + direction + (found ? "" : " · no way found from here, try going around"))
+					+ " blocks " + direction + (found ? "" : " (no path)"))
 					.withStyle(ChatFormatting.LIGHT_PURPLE));
 		}
 	}

@@ -338,6 +338,14 @@ public final class MerlCommand {
 		visit.seenAt = now;
 		Meeting meeting = meet(player, question, source.getTextName());
 
+		// "stop the route", "turn off gps", "don't guide me": the sparkle trail goes away.
+		if (player != null && MerlLines.stopGuide(question)) {
+			visit.pending = "";
+			reply(source, Component.literal(MerlLines.pick(MerlGuide.stop(player) ? "guide_stopped" : "guide_not_guiding",
+					"user", source.getTextName())));
+			return 1;
+		}
+
 		// "say that again" / "what was I asking?": the last question and answer (memory only, half an hour).
 		String recall = MerlLines.recall(question);
 		if (recall != null) {

@@ -1,49 +1,13 @@
 # Minecraft Version(s): 26.3
-## New: "What's this?"
-- Look at a block or mob and ask `/merl what is this`: Merl names it and tells you a little about it, straight from the wiki page about exactly that thing (*"Tall dry grass is the tall variant of dry grass…"*). Mobs show their variant (*"Variant: Creamy (Nice Mob Variants)"*), their health and their owner if they're tamed. Things without their own wiki page just get their name
-- *"What am I holding?"* does the same for the item in your hand
+## Sparkle trail fixes
+- The trail finds its way out of buildings: it goes through doors, fence gates and trapdoors and over carpet, instead of leading you into the wall facing your destination
+- It always heads for your actual destination, so it no longer gets stuck aiming at a spot inside a hill or another building
+- The sparkles are easier to see again
+- On the ground it never draws a line through walls anymore; when there really is no way from where you stand, the action bar shows a short "(no path)"
+- The direction on the action bar no longer flickers between two (like "north" and "northwest") as you walk
 
-## New: Real recipes
-- *"How do I craft a waypoint hub?"* shows the recipe straight from the server, so our packs' recipes are included: the ingredients, whether it needs a crafting table, and the shape when you hover over it. Click **[Recipe picture]** to open the recipe on explorerseden.eu
-- *"What can I smelt with this?"* and *"what can I brew with this?"* show what the item in your hand turns into, and where (furnace, blast furnace, smoker, campfire or brewing stand)
-- *"What can I enchant this with?"* lists every enchantment that fits the item in your hand, Enchantments Encore's included. Click one to ask Merl about it
+## Turn the trail off by asking
+- *"Stop the route"*, *"turn off GPS"*, *"don't guide me"*, *"cancel navigation"* or *"no more sparkles"* turn the trail off, just like `/nicemerl guide stop`
 
-## New: Where's my stuff?
-- *"Where's my bed?"* and *"where did I die?"* (or *"where's my grave?"*) give the coordinates, distance and direction, with **[Guide me]**
-- With Get Off My Lawn: *"where's my claim?"*, *"nearest claim I'm trusted on"*, *"where is Steve's claim"* or *"my diamond claim"* point you to the right claim
-
-## Better sparkle trail
-- The **[Guide me]** trail is now a real path of sparkles you can follow: it runs along the ground, goes through doors and fence gates, around walls and over hills, steps up and down like you do, and keeps away from lava, fire and drops. It plans the next stretch as you walk, and finds a new way when you leave it
-- If there's no way from where you stand, the action bar says so instead of pointing through a wall, and the direction on the action bar no longer flickers between two
-
-## New: Server info
-- *"What's the TPS?"*, *"MSPT"*, *"is the server lagging?"*, *"mob cap"*, *"view distance"*, *"server info"*: Merl answers straight from the running server (TPS and MSPT, mob counts and caps, view and simulation distance, players online, difficulty, game mode, whitelist, PvP)
-- *"What's my ping?"*, *"what's Mistiik's ping?"* or *"everyone's ping"*
-
-## Settings and game rules
-- Game rules count as settings now: *"is keep inventory on?"*, *"what's the random tick speed?"*, *"do mobs grief?"*, *"does fire spread?"* or *"can I pvp?"* show the current game rule next to our packs' settings
-- Settings answers no longer come with wiki links
-
-## Merl remembers the conversation
-- *"Say that again"* repeats her last answer, and *"what was I asking?"* tells you your last question, with a click to ask it again (for half an hour, in memory only)
-- *"Take me to Mistiik's waypoint"*, *"guide me to my bed"*, *"give me a route to the closest cherry grove"*, *"how do I get back to where I died?"*: Merl starts the sparkle path right away. Waypoints can be asked for by their owner's name too
-
-## New: Merl mannequin
-- Operators can place a Merl mannequin with `/nicemerl mannequin` (wearing Merl's skin). It can't be hurt, moved, pushed or put in a boat, has no name above its head, and right-clicking it shows a message: *"Ask /merl anything at any time!"* by default, on the action bar (or in chat)
-- `/nicemerl mannequin remove` removes the closest one
-
-## New: Reminders
-- *"Remind me in 10 minutes to check the furnace"*: Merl pings you when it's time (with the egg plop). *"My reminders"* lists them, *"cancel my reminders"* clears them
-- Up to 5 at a time, up to a day ahead. If you're offline when it's time, you get it when you're back. Reminders are forgotten when the server restarts
-
-## Over 1,100 new jokes
-- Not just question and punchline anymore: little stories, dialogues, mob reviews, fake patch notes, diary entries, signs, shower thoughts, horoscopes, fortune cookies, Merl's hot takes and lots of Peanut Butter anecdotes. Over 2,000 jokes in all
-
-## Merl's messages
-- Merl's messages now start with a pink "Merl:" instead of the bar. If you never changed the prefix, your config switches by itself
-
-## Config
-- New options `serverInfo` and `settingsGameRules` (default `true`), `mannequinMessage` and `mannequinMessageType` (`chat` or `actionbar`)
-- New permission nodes `nicemerl.serverinfo` (everyone) and `nicemerl.command.mannequin` (operators)
-- New options (all default `true`): `whatsThis`, `recipeHelp` (recipes, smelting, brewing and enchantments), `locateHome` (bed and death), `locateClaims` (Get Off My Lawn claims) and `reminders`
-- New option `recipesUrl`: where the recipe pictures come from (explorerseden.eu); empty for no picture links
+## Smaller changes
+- Merl's "Merl:" prefix is no longer bold

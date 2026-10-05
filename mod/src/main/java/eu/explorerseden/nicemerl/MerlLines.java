@@ -961,4 +961,18 @@ public final class MerlLines {
 		if (RECALL_REPEAT.matcher(text).matches()) return "repeat";
 		return null;
 	}
+
+	// "stop the route", "turn off gps", "don't guide me": the sparkle trail goes away.
+	private static final String GUIDE_WORDS = "(route|routes|routing|guide|guiding|guidance|gps|navigation|navigating|navi|nav|trail|trails|path|sparkles?|particles?|directions?)";
+	private static final Pattern STOP_GUIDE = Pattern.compile(
+			"\\b(stop|end|cancel|quit|turn off|switch off|shut off|disable|deactivate|kill|clear|remove|hide|get rid of|no more|enough)\\b(?:\\s+\\w+){0,3}\\s+" + GUIDE_WORDS + "\\b"
+			+ "|\\b" + GUIDE_WORDS + " (off|stop|away|be gone)\\b"
+			+ "|\\b(dont|do not|stop|quit|no need to|you can stop) (guide|guiding|lead|leading|navigate|navigating|show|showing|route|routing) me\\b"
+			+ "|\\bi (dont|do not) (need|want) (a |the |your |any )?" + GUIDE_WORDS + "\\b");
+
+	/** True for "stop the route", "turn off gps", "don't guide me", "no more sparkles". */
+	public static boolean stopGuide(String message) {
+		String text = normalize(message);
+		return !text.startsWith("how ") && STOP_GUIDE.matcher(text).find();
+	}
 }

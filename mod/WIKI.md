@@ -31,7 +31,7 @@ Ask in your own words: typos, abbreviations like tp or xp, and other wordings (*
 - **Your places:** your bed, where you died (your grave), and with Get Off My Lawn your claims or the ones you're trusted on, with coordinates and **[Guide me]**.
 - **Server info:** TPS and MSPT, mob counts and caps, view and simulation distance, players online, difficulty and more, read live from the server. *"What's my ping?"* (or a player's, or everyone's) too. No wiki links, just the numbers.
 - **Settings and game rules:** *"is keep inventory on?"*, *"do mobs grief?"* or *"can I pvp?"* show the server's game rules and our packs' settings, without wiki links.
-- **Context:** *"say that again"* repeats her last answer, *"what was I asking?"* tells you your last question (she forgets both after half an hour). *"Take me to …"*, *"guide me to …"* or *"give me a route to …"* start the sparkle path straight away.
+- **Context:** *"say that again"* repeats her last answer, *"what was I asking?"* tells you your last question (she forgets both after half an hour). *"Take me to …"*, *"guide me to …"* or *"give me a route to …"* start the sparkle path straight away, and *"stop the route"*, *"turn off GPS"* or *"don't guide me"* turn it off.
 - **Reminders:** `/merl remind me in 10 minutes to …`, `/merl my reminders`, `/merl cancel my reminders`. Gone after a server restart.
 - **Ideas:** `/merl what should I do next` suggests a next step based on your advancements, or one of over 4,500 ideas.
 - **Small talk:** over 2,000 jokes (stories, dialogues, mob reviews and more), tips, fun facts, stories, `/merl pet peanut butter` and more. Ask for `another one` after a joke.

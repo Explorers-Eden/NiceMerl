@@ -24,7 +24,9 @@ final class MerlPath {
 	/** How far ahead one stretch is planned, in blocks. */
 	static final int STRETCH = 28;
 	/** Most spots looked at per search, so a maze or an ocean can't slow the server down. */
-	private static final int BUDGET = 6000;
+	private static final int BUDGET = 8000;
+	/** A stretch is done once it gets this much closer to a far target. */
+	private static final double PROGRESS = 20;
 	private static final int MAX_DROP = 3;
 	private static final int[][] STEPS = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
 
@@ -39,12 +41,13 @@ final class MerlPath {
 	static List<BlockPos> find(ServerLevel level, BlockPos from, double goalX, Integer goalY, double goalZ) {
 		BlockPos start = standingSpot(level, from);
 		if (start == null) return List.of();
-		// The goal of this stretch: the target itself when it's close, else a point STRETCH blocks toward it.
-		double dx = goalX - start.getX(), dz = goalZ - start.getZ();
-		double far = Math.hypot(dx, dz);
-		double gx = far > STRETCH ? start.getX() + dx / far * STRETCH : goalX;
-		double gz = far > STRETCH ? start.getZ() + dz / far * STRETCH : goalZ;
+		// Always aim at the target itself. A far target only needs this stretch to get PROGRESS blocks closer:
+		// a fixed point part of the way could be inside a hill or a building, and the search would end at the wall
+		// facing it instead of going out the door.
+		double gx = goalX, gz = goalZ;
+		double far = Math.hypot(goalX - start.getX(), goalZ - start.getZ());
 		boolean useHeight = goalY != null && far <= STRETCH;
+		double enough = far > STRETCH ? far - PROGRESS : 1.5;
 
 		Map<BlockPos, BlockPos> cameFrom = new HashMap<>();
 		Map<BlockPos, Double> cost = new HashMap<>();
@@ -61,7 +64,7 @@ final class MerlPath {
 				best = at;
 				bestGuess = left;
 			}
-			if (left <= 1.5) {
+			if (left <= enough) {
 				best = at;
 				break;
 			}
