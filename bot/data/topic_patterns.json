@@ -1,5 +1,5 @@
 {
-  "_about": "Fun facts and jokes about something or someone: \"fun fact about axolotls\", \"tell me a joke about Katter\", \"make fun of Katter\". Read by the Discord bot (personality.topic_request) and the mod (MerlLines.topicRequest), on normalized text (lower case, no punctuation or apostrophes). A pattern must match the whole text; the subject is in the group named subject.",
+  "_about": "Fun facts, tips and jokes about something or someone: \"fun fact about axolotls\", \"tell me a joke about Katter\", \"make fun of Katter\". Read by the Discord bot (personality.topic_request) and the mod (MerlLines.topicRequest), on normalized text (lower case, no punctuation or apostrophes). A pattern must match the whole text; the subject is in the group named subject.",
   "fact": [
     "(.* )?(fun |cool |random |interesting |weird |crazy |surprising |little |good |nice |new )*(facts?|funfacts?|trivia|something (interesting|fun|cool|new|weird)|interesting things?|cool things?|fun things?)( you know)? (about|on|regarding|of|with|for) (?<subject>.+?)( please| pls| plz| merl)?"
   ],
@@ -35,5 +35,20 @@
     "minecraft",
     "the game"
   ],
-  "maxWords": 4
+  "maxWords": 4,
+  "tip": [
+    "(.* )?(good |pro |useful |helpful |quick |little |nice |another )*(tips?|tops?|advice|hints?|protips?)( you know)? (about|on|for|regarding|with) (?<subject>.+?)( please| pls| plz| merl)?"
+  ],
+  "player": {
+    "_about": "Player lookups on the message as written (any case): explicit ones always look the name up, loose ones only when it's a player Merl knows (\"who is Nox\" → MrNox), so \"who is Arachne\" still gets the wiki.",
+    "explicit": [
+      "(?i)\\s*(merl,? )?(who is|who's|whos|show me|look ?up|find|check)( the)?( minecraft)? (player|account|user|gamer) @?(?<name>[A-Za-z0-9_]{3,16})\\s*[?!.]*\\s*",
+      "(?i)\\s*(merl,? )?(show me |what does |whats |what's )?(the )?(minecraft )?(skin|profile|player info|player card) (of|for) @?(?<name>[A-Za-z0-9_]{3,16})( look like)?\\s*[?!.]*\\s*",
+      "(?i)\\s*(merl,? )?(show me |what does |whats |what's )?@?(?<name>[A-Za-z0-9_]{3,16})'?s (minecraft )?(skin|profile|player card)( look like)?\\s*[?!.]*\\s*",
+      "(?i)\\s*(merl,? )?(player|skin) (lookup|info|card)( for)? @?(?<name>[A-Za-z0-9_]{3,16})\\s*[?!.]*\\s*"
+    ],
+    "loose": [
+      "(?i)\\s*(merl,? )?(who is|who's|whos|who was|do you know who) @?(?<name>[A-Za-z0-9_]{3,16})( is)?\\s*[?!.]*\\s*"
+    ]
+  }
 }

@@ -127,7 +127,7 @@ public class SearchIndex {
 	private static final Set<String> OBTAIN_WORDS = Set.of("get", "obtain", "craft", "make", "recipe", "drop", "drops", "loot", "build", "create");
 	private static final Set<String> OBTAIN_HINTS = hintTerms("obtaining crafting recipe loot drops obtain craft sources trading");
 	private static final Set<String> LIST_HINTS = hintTerms("overview list all");
-	private static final Pattern LIST_QUESTION = Pattern.compile("\\b(what|which)\\b.*\\bare there\\b|\\blist of\\b|\\ball (the )?[a-z]+s\\b"
+	private static final Pattern LIST_QUESTION = Pattern.compile("\\b(what|which)\\b.*\\bare there\\b|\\bhow many\\b|\\blist of\\b|\\ball (the )?[a-z]+s\\b"
 			+ "|\\bevery\\b|\\b(types|kinds|sorts) of\\b|\\boverview\\b|\\b(variants|types|kinds)\\b");
 
 	/**
@@ -198,6 +198,10 @@ public class SearchIndex {
 	}
 
 	public SearchIndex(List<Section> sections, Map<String, Double> priors, Set<String> headingHints, SemanticModel model) {
+		// Unwritten pages show the wiki's placeholder ("Your content here"): the page is still found by its title and
+		// description, but that text is never shown or searched.
+		sections = sections.stream().map(s -> s.text().strip().equalsIgnoreCase("your content here")
+				? new Section(s.path(), s.pageTitle(), s.heading(), s.anchor(), "", s.wiki(), s.vanilla(), s.meta()) : s).toList();
 		this.sections = List.copyOf(sections);
 		this.priors = priors;
 		this.headingHints = headingHints;
@@ -487,6 +491,8 @@ public class SearchIndex {
 			if (!synonym.isEmpty()) {
 				alternatives.add(new Alternative(synonym, exact ? SYNONYM_WEIGHT : SYNONYM_ONLY_WEIGHT));
 			}
+			// A misspelled question word ("wher", "wat") is a question word, not a typo of some wiki word.
+			if (alternatives.isEmpty() && !minecraftTerms().contains(term) && misspelledQuestionWord(w.word())) continue;
 			if (alternatives.isEmpty()) {
 				String guess = typo(term);
 				double weight = TYPO_WEIGHT;
@@ -555,18 +561,28 @@ public class SearchIndex {
 	}
 
 	/**
-	 * The home page section named after what a list question asks about, when the top results are sibling pages
-	 * (all in one folder). -1 otherwise. Same as the bot's Index._overview.
+	 * The overview for a list question when the two best results are sibling pages (same folder): that folder's
+	 * overview page, else the home page section named after what's asked. -1 otherwise. Same as the bot's
+	 * Index._overview.
 	 */
 	private int overview(List<double[]> ranked, Set<String> queryTerms) {
-		if (ranked.size() < 2) return -1;
+		// The best page named after what's asked ("which bosses are there" → Bosses) is the list already.
+		if (ranked.size() < 2 || titleMatch((int) ranked.get(0)[1], queryTerms)) return -1;
 		Set<String> parents = new HashSet<>();
-		for (double[] hit : ranked) {
+		// The two best are pages of one kind (siblings in one folder).
+		for (double[] hit : ranked.subList(0, 2)) {
 			String path = sections.get((int) hit[1]).path();
 			parents.add(path.contains("/") ? path.substring(0, path.lastIndexOf('/')) : "");
 		}
 		if (parents.size() != 1) return -1;
-		String project = parents.iterator().next().split("/")[0];
+		String parent = parents.iterator().next();
+		// The folder's own overview page ("Ambient Structures Overview") first.
+		for (int i = 0; i < sections.size(); i++) {
+			Section s = sections.get(i);
+			String folder = s.path().contains("/") ? s.path().substring(0, s.path().lastIndexOf('/')) : "";
+			if (folder.equals(parent) && (s.path().endsWith("/overview") || s.pageTitle().toLowerCase(Locale.ROOT).contains("overview"))) return i;
+		}
+		String project = parent.split("/")[0];
 		int best = -1, bestSize = 0;
 		for (int i = 0; i < sections.size(); i++) {
 			Section s = sections.get(i);
@@ -590,6 +606,20 @@ public class SearchIndex {
 		if (tf == null) return 0;
 		double norm = K1 * (1 - B + B * lengths[i] / avgLength);
 		return idf.get(term) * tf * (K1 + 1) / (tf + norm);
+	}
+
+	/** Long question words, one letter off ("wher", "shoud"); short ones like "have" are too close to real words ("hate"). */
+	private static final List<String> QUESTION_WORDS = List.of("where", "which", "would", "could", "should", "there", "their",
+			"about", "please", "someone", "anyone", "something");
+	private static final Set<String> WHAT_TYPOS = Set.of("wat", "wht", "waht", "whta", "whats", "wats");
+
+	private static boolean misspelledQuestionWord(String word) {
+		if (WHAT_TYPOS.contains(word)) return true;
+		if (word.length() < 4) return false;
+		for (String q : QUESTION_WORDS) {
+			if (Math.abs(q.length() - word.length()) <= 1 && editDistance(word, q, 1) <= 1) return true;
+		}
+		return false;
 	}
 
 	private static volatile Set<String> minecraftTerms;

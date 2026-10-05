@@ -32,7 +32,9 @@ LESS_USED_PENALTY = 6.0
 # How much a different hue counts against a block, compared with a different lightness.
 HUE_WEIGHT = 1.6
 # Lightness (CIELAB L) the palette spans, and its limits.
-SPREAD, DARKEST, LIGHTEST = 36.0, 12.0, 95.0
+SPREAD, DARKEST, LIGHTEST = 40.0, 12.0, 95.0
+# Blocks per palette: the start, the others from dark to light, and one accent.
+SIZE = 9
 TOO_SIMILAR = 3.0
 NOISE = 6.0
 
@@ -59,7 +61,7 @@ def _distance(x: dict, y: dict) -> float:
 
 
 def palette(colors: dict, base: str, rng: random.Random | None = None, include: tuple[str, ...] = ()) -> list[str]:
-    """Six blocks from dark to light that go with base (base and the blocks in include as well), or [] when its colors
+    """SIZE blocks from dark to light that go with base (base and the blocks in include as well), or [] when its colors
     are unknown. Only full building blocks are suggested; any block can be the start or included."""
     rng = rng or random.Random()
     if base not in colors:
@@ -72,7 +74,7 @@ def palette(colors: dict, base: str, rng: random.Random | None = None, include: 
     # Near the darkest or lightest end, the palette reaches further the other way.
     if hi - lo < SPREAD * 1.5:
         lo, hi = (lo, min(LIGHTEST, lo + SPREAD * 1.5)) if lo == DARKEST else (max(DARKEST, hi - SPREAD * 1.5), hi)
-    points = [lo + (hi - lo) * i / 4 for i in range(5)]
+    points = [lo + (hi - lo) * i / (SIZE - 2) for i in range(SIZE - 1)]
     # The lightness the start and each included block already cover isn't filled again.
     for l in [l0] + [colors[block]["lab"][0] for block in include]:
         if points:
@@ -114,7 +116,7 @@ def palette(colors: dict, base: str, rng: random.Random | None = None, include: 
             return near + 0.6 * chroma  # a colorful block: a calm, gray-ish accent
         return near + 0.5 * abs(chroma - 28) + (6 if bb < 0 else 0)  # a gray block: a warm, colorful accent
     options = [k for k in colors if allowed(k) and abs(colors[k]["lab"][0] - l0) <= 25]
-    if options and len(chosen) < 6:
+    if options and len(chosen) < SIZE:
         take(min(options, key=accent_score))
     return sorted(chosen, key=lambda k: colors[k]["lab"][0])
 
@@ -276,7 +278,7 @@ async def render(session, colors: dict, blocks: list[str], cache: dict | None = 
         found = await icon_urls(session, blocks, urls)
     except Exception:  # the wiki can't be reached: swatches only
         found = {}
-    cell, icon, pad, bar = 120, 96, 16, 14
+    cell, icon, pad, bar = 104, 84, 14, 12
     width, height = pad + len(blocks) * (cell + pad), pad * 2 + icon + 8 + bar
     image = Image.new("RGBA", (width, height), (43, 45, 49, 255))
     draw = ImageDraw.Draw(image)

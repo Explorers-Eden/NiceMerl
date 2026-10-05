@@ -262,11 +262,11 @@ jobs:
           assert [palettes.name(b) for b in ("resin_block", "hay_block", "magma_block", "lapis_block", "jack_o_lantern")] == [
               "Block of Resin", "Hay Bale", "Magma Block", "Block of Lapis Lazuli", "Jack o'Lantern"]
           assert palettes.by_name(colors, "diamonds", exact=True) is None and palettes.by_name(colors, "blorp") is None
-          # Palettes: six different blocks from dark to light, one per color set, the start included.
+          # Palettes: different blocks from dark to light, one per color set, the start included.
           for base in ["deepslate_bricks", "oak_planks", "white_concrete", "copper_block", palettes.random_base(colors)]:
               for seed in range(5):
                   p = palettes.palette(colors, base, random.Random(seed))
-                  assert len(p) == 6 and len(set(p)) == 6 and base in p, (base, p)
+                  assert len(p) == palettes.SIZE and len(set(p)) == palettes.SIZE and base in p, (base, p)
                   assert [colors[b]["lab"][0] for b in p] == sorted(colors[b]["lab"][0] for b in p)
                   sets = [palettes.family(b) for b in p if palettes.family(b) in palettes.ONE_PER_PALETTE]
                   assert len(sets) == len(set(sets)), (base, p)
@@ -275,7 +275,7 @@ jobs:
           assert palettes.blocks_by_name(colors, "deepslate lapis ore") == ["deepslate_lapis_ore"]
           assert palettes.blocks_by_name(colors, "cactus") == ["cactus"] and palettes.blocks_by_name(colors, "prismarine and the moon") == []
           p = palettes.palette(colors, "prismarine", random.Random(1), ("gold_block",))
-          assert "gold_block" in p and len(p) == 6, p
+          assert "gold_block" in p and len(p) == palettes.SIZE, p
           p = palettes.palette(colors, "cactus", random.Random(1))
           assert all(colors[b].get("pick", True) for b in p if b != "cactus"), p
           # The picture, without the wiki's icons (swatches only).
@@ -303,6 +303,15 @@ jobs:
           # Jokes about people: friendly templates, each with the name in it, and plenty of them.
           people = personality.LINES["pools"]["joke_about"]
           assert len(people) >= 480 and all("{name}" in j for j in people), len(people)
+          assert len(personality.LINES["pools"]["tip_about"]) >= 80 and personality.about("joke", "ron") == []
+          # "another tip? i dont understand that one": a request next to a comment; a real question still searches.
+          assert personality.multi_small_talk("can u give me another tip? i dont understand that one") == (None, "tip")
+          assert personality.multi_small_talk("thanks! the boss key doesnt work") == (None, None)
+          # Build ideas and player lookups.
+          assert personality.small_talk("Any idea for a new structure for KS?") == "build_idea"
+          assert len(personality.LINES["pools"]["build_idea"]) >= 1000
+          assert personality.player_lookup("who is the player MrNox?") == ("MrNox", True)
+          assert personality.player_lookup("Who is Nox?") == ("Nox", False) and personality.player_lookup("who is the strongest boss") is None
           print("Facts and jokes about things and people work")
           EOF
 

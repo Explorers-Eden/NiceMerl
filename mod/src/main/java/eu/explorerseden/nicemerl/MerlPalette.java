@@ -62,7 +62,9 @@ final class MerlPalette {
 	/** How much a different hue counts against a block, compared with a different lightness. */
 	private static final double HUE_WEIGHT = 1.6;
 	/** Lightness (CIELAB L) the palette spans, and its limits. */
-	private static final double SPREAD = 36, DARKEST = 12, LIGHTEST = 95;
+	private static final double SPREAD = 40, DARKEST = 12, LIGHTEST = 95;
+	/** Blocks per palette: the start, the others from dark to light, and one accent. Same as the bot's. */
+	private static final int SIZE = 9;
 	private static final double TOO_SIMILAR = 3, NOISE = 6;
 	/** Partial blocks and their full block: oak stairs → oak planks, stone brick wall → stone bricks. */
 	private static final List<String> PART_SUFFIXES = List.of("_stairs", "_slab", "_wall", "_fence_gate", "_fence",
@@ -150,7 +152,7 @@ final class MerlPalette {
 	}
 
 	/**
-	 * Six blocks from dark to light that go with base (base and the blocks in include as well). Only full building
+	 * SIZE blocks from dark to light that go with base (base and the blocks in include as well). Only full building
 	 * blocks are suggested; any block can be the start or included.
 	 */
 	static List<String> palette(Map<String, Shade> all, String base, Random rng, List<String> include) {
@@ -165,7 +167,7 @@ final class MerlPalette {
 			else lo = Math.max(DARKEST, hi - SPREAD * 1.5);
 		}
 		List<Double> points = new ArrayList<>();
-		for (int i = 0; i < 5; i++) points.add(lo + (hi - lo) * i / 4);
+		for (int i = 0; i < SIZE - 1; i++) points.add(lo + (hi - lo) * i / (SIZE - 2));
 		// The lightness the start and each included block already cover isn't filled again.
 		List<Double> covered = new ArrayList<>(List.of(b.l()));
 		extra.forEach(id -> covered.add(all.get(id).l()));
@@ -206,7 +208,7 @@ final class MerlPalette {
 				accentScore = score;
 			}
 		}
-		if (accent != null && chosen.size() < 6) take(accent, chosen, counts);
+		if (accent != null && chosen.size() < SIZE) take(accent, chosen, counts);
 		chosen.sort(Comparator.comparingDouble(id -> all.get(id).l()));
 		return chosen;
 	}

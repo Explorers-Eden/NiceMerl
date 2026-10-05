@@ -81,6 +81,8 @@ PREFIX_POOLS = {"greeting": "greeting_prefix", "thanks": "thanks_prefix", "sorry
                 "ok": "ok_prefix", "no": "ok_prefix", "compliment": "compliment_prefix", "laugh": "compliment_prefix"}
 # Small talk that "more" / "another one" asks for again.
 REPEATABLE = {"joke", "fact", "tip", "idea", "story", "sing", "creeper_song", "pet_pb", "hungry"}
+# Asking for something: answered even next to a comment ("another tip? i dont get that one").
+REQUESTS = REPEATABLE | {"more", "build_idea"}
 # Sentences and clauses, for messages with several bits of small talk ("you're funny! tell me a joke").
 CLAUSE = re.compile(r"[.!?,;]+")
 # "so it's the bosses?" right after an answer: confusion about that answer, not a new question.
@@ -374,11 +376,33 @@ def _topic_patterns() -> dict:
     def compile_(pattern: str) -> re.Pattern:
         return re.compile(re.sub(r"\(\?<([A-Za-z])", r"(?P<\1", pattern))
     return {"fact": [compile_(p) for p in raw["fact"]], "joke": [compile_(p) for p in raw["joke"]],
+            "tip": [compile_(p) for p in raw["tip"]],
             "leading": compile_(raw["leading"]), "trailing": compile_(raw["trailing"]), "me": set(raw["me"]),
             "merl": set(raw["merl"]), "not_subjects": set(raw["notSubjects"]), "max_words": raw["maxWords"]}
 
 
 TOPIC_REQUESTS = _topic_patterns()
+
+
+def _player_patterns() -> tuple[list[re.Pattern], list[re.Pattern]]:
+    raw = json.loads((Path(__file__).parent / "data" / "topic_patterns.json").read_text("utf-8"))["player"]
+
+    def compile_(pattern: str) -> re.Pattern:
+        return re.compile(re.sub(r"\(\?<([A-Za-z])", r"(?P<\1", pattern))
+    return [compile_(p) for p in raw["explicit"]], [compile_(p) for p in raw["loose"]]
+
+
+PLAYER_EXPLICIT, PLAYER_LOOSE = _player_patterns()
+
+
+def player_lookup(text: str) -> tuple[str, bool] | None:
+    """ "who is the player MrNox" → ("MrNox", True); "who is Nox" → ("Nox", False), a player card only when Merl
+    knows such a player (same patterns as MerlPlayers in the mod)."""
+    for patterns, explicit in ((PLAYER_EXPLICIT, True), (PLAYER_LOOSE, False)):
+        for pattern in patterns:
+            if m := pattern.fullmatch(text):
+                return m.group("name"), explicit
+    return None
 ME, MERL = "@me", "@merl"
 # With this many jokes about a subject it's a thing (creepers); with fewer probably a person (Katter).
 MANY_TOPIC_JOKES = 12
@@ -388,7 +412,7 @@ def topic_request(text: str) -> tuple[str, str] | None:
     """ "fun fact about axolotls" → ("fact", "axolotls"), "make fun of Katter" → ("joke", "katter"); the subject is
     ME or MERL for "me" and "you", "" for no particular subject (same as MerlLines.topicRequest)."""
     t = normalize(text)
-    for kind in ("joke", "fact"):
+    for kind in ("joke", "tip", "fact"):
         for pattern in TOPIC_REQUESTS[kind]:
             if m := pattern.fullmatch(t):
                 # Shown as asked ("the ender dragon"); "the", "my"… don't count for the checks.
@@ -426,7 +450,11 @@ def about(pool: str, subject: str) -> list[str]:
     if not wanted:
         return []
     lines = LINES["pools"].get(pool, [])
-    found = [line for line in lines if all(any(word.startswith(w) for word in _topic_words(line)) for w in wanted)]
+    # Short words count whole ("ron" isn't the start of "blast-ronaut"); longer ones also as a word's start
+    # ("enderman" in "endermans").
+    def has(word: str, w: str) -> bool:
+        return word == w or (len(w) >= 5 and word.startswith(w))
+    found = [line for line in lines if all(any(has(word, w) for word in _topic_words(line)) for w in wanted)]
     if not found:
         # Typos: "prismarin", "axolotel".
         import palettes
@@ -654,6 +682,11 @@ def multi_small_talk(text: str) -> tuple[str | None, str | None]:
         return None, None
     talks = [small_talk(c) for c in clauses]
     if None in talks:
+        # "can u give me another tip? i dont understand that one": a request with a comment that asks nothing.
+        requests = [t for t in talks if t in REQUESTS]
+        others = [c for c, t in zip(clauses, talks) if t is None]
+        if requests and not any(seeks_info(c) for c in others):
+            return None, requests[-1]
         return None, None
     first, main = talks[0], talks[-1]
     return (PREFIX_POOLS.get(first) if first != main else None), main

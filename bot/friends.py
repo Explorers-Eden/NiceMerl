@@ -92,6 +92,19 @@ class Friends:
         except OSError:
             log.exception("Could not write %s", self.path)
 
+    def named(self, part: str) -> list[tuple[int, Friend]]:
+        """The people Merl has talked to whose display name is this or contains it ("nox" → MrNox): the exact name
+        alone when there is one."""
+        part = part.lower()
+        exact, containing = [], []
+        for person, row in self.rows.items():
+            name = row[9].lower() if len(row) > 9 else ""
+            if name == part:
+                exact.append((int(person), Friend(*row)))
+            elif len(part) >= 3 and part in name:
+                containing.append((int(person), Friend(*row)))
+        return exact or containing
+
     def find(self, name: str) -> tuple[int, Friend] | None:
         """Someone Merl has talked to, by display name (any case)."""
         name = name.lower()

@@ -226,6 +226,23 @@ public final class MerlState {
 		return null;
 	}
 
+	/**
+	 * The players Merl has talked to whose name is the given one or contains it ("nox" → MrNox), by UUID: the exact
+	 * name alone when there is one.
+	 */
+	public static synchronized Map<UUID, String> named(String part) {
+		Map<UUID, String> exact = new HashMap<>(), containing = new HashMap<>();
+		String wanted = part.toLowerCase(java.util.Locale.ROOT);
+		for (Map.Entry<String, Player> e : data.players.entrySet()) {
+			String name = e.getValue().name;
+			if (name == null) continue;
+			String lower = name.toLowerCase(java.util.Locale.ROOT);
+			if (lower.equals(wanted)) exact.put(UUID.fromString(e.getKey()), name);
+			else if (wanted.length() >= 3 && lower.contains(wanted)) containing.put(UUID.fromString(e.getKey()), name);
+		}
+		return exact.isEmpty() ? containing : exact;
+	}
+
 	/** "forget me": erases what Merl remembers about the player. */
 	public static void forget(UUID id) {
 		update(id, Player::forget);

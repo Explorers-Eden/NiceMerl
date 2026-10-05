@@ -3,6 +3,7 @@
 Mirrored in the mod's SearchIndex.java, so changes to tokenizing or scoring go in both places.
 """
 
+import dataclasses
 import json
 import math
 import re
@@ -105,7 +106,7 @@ ANSWER_SEMANTIC_MIN = 0.7
 # The top result gets whole sentences / list lines up to this many characters.
 LONG_EXCERPT_LEN = 450
 LONG_EXCERPT_LINES = 8
-LIST_QUESTION = re.compile(r"\b(what|which)\b.*\bare there\b|\blist of\b|\ball (the )?[a-z]+s\b|\bevery\b|"
+LIST_QUESTION = re.compile(r"\b(what|which)\b.*\bare there\b|\bhow many\b|\blist of\b|\ball (the )?[a-z]+s\b|\bevery\b|"
                            r"\b(types|kinds|sorts) of\b|\boverview\b|\b(variants|types|kinds)\b")
 SENTENCE_END = re.compile(r"(?<=[.!?])\s+(?=[A-Z0-9\"'(\[])")
 
@@ -190,6 +191,17 @@ def edit_distance(a: str, b: str, limit: int) -> int:
     return prev[-1]
 
 
+PLACEHOLDER_TEXTS = {"your content here"}
+# Long question words, one letter off ("wher", "shoud"); short ones like "have" are too close to real words ("hate").
+QUESTION_WORDS = ("where", "which", "would", "could", "should", "there", "their", "about", "please", "someone",
+                  "anyone", "something")
+WHAT_TYPOS = {"wat", "wht", "waht", "whta", "whats", "wats"}
+
+
+def _misspelled_question_word(word: str) -> bool:
+    if word in WHAT_TYPOS:
+        return True
+    return len(word) >= 4 and any(abs(len(q) - len(word)) <= 1 and edit_distance(word, q, 1) <= 1 for q in QUESTION_WORDS)
 _TECHNICAL_WORDS: set[str] | None = None
 
 
@@ -255,6 +267,10 @@ class Index:
         """priors: optional per-page bonus (by path), e.g. the source's own search rank.
         heading_hints: terms that make a section heading a likely answer, e.g. {"craft", "obtain"}.
         embed: a semantic.Embedder for meaning-based search next to the keywords, or None."""
+        # Unwritten pages show the wiki's placeholder ("Your content here"): the page is still found by its title
+        # and description, but that text is never shown or searched.
+        sections = [dataclasses.replace(s, text="") if s.text.strip().lower() in PLACEHOLDER_TEXTS else s
+                    for s in sections]
         self.sections = sections
         self.embed = embed
         self.vectors = embed([f"{s.page_title}. {s.heading}. {s.meta}. {s.text[:SEMANTIC_TEXT_CHARS]}"
@@ -352,6 +368,9 @@ class Index:
             synonym = tuple(t for t in tokenize(SYNONYMS.get(word, "")) if t in self.idf and t != term)
             if synonym:
                 alternatives.append((synonym, SYNONYM_WEIGHT if exact else SYNONYM_ONLY_WEIGHT))
+            # A misspelled question word ("wher", "wat") is a question word, not a typo of some wiki word.
+            if not alternatives and term not in minecraft_terms() and _misspelled_question_word(word):
+                continue
             if not alternatives:
                 guess = self._typo(term)
                 weight = TYPO_WEIGHT
@@ -460,14 +479,21 @@ class Index:
         return Outcome(results, corrections if results else {}, uncertain)
 
     def _overview(self, ranked: list[tuple[float, int]], query_terms: set[str]) -> int | None:
-        """The home page section named after what a list question asks about, when the top results are sibling
-        pages (same folder, a folder with several pages). None otherwise. Same as SearchIndex.overview."""
-        if len(ranked) < 2:
+        """The overview for a list question when the two best results are sibling pages (same folder): that folder's
+        overview page, else the home page section named after what's asked. None otherwise. Same as
+        SearchIndex.overview."""
+        # The best page named after what's asked ("which bosses are there" → Bosses) is the list already.
+        if len(ranked) < 2 or self._title_match(ranked[0][1], query_terms):
             return None
-        parents = {self.sections[i].path.rsplit("/", 1)[0] for _, i in ranked}
+        # The two best are pages of one kind (siblings in one folder).
+        parents = {self.sections[i].path.rsplit("/", 1)[0] for _, i in ranked[:2]}
         if len(parents) != 1:
             return None
         parent = parents.pop()
+        # The folder's own overview page ("Ambient Structures Overview") first.
+        for i, s in enumerate(self.sections):
+            if s.path.rsplit("/", 1)[0] == parent and (s.path.endswith("/overview") or "overview" in s.page_title.lower()):
+                return i
         project = parent.split("/")[0]
         best, best_size = None, 0
         for i, s in enumerate(self.sections):

@@ -142,6 +142,14 @@ public final class DatapackSettings {
 		return false;
 	}
 
+	private static final java.util.regex.Pattern FINDING = java.util.regex.Pattern.compile(
+			"\\b(where|wher|wheres|find|finding|look|looking|search|searching|surch|surching|locate|located|hunt|hunting)\\b");
+
+	/** "where do I find Tenku", "I'm looking for the skyrtle": about finding a thing, not about its setting. */
+	public static boolean isFindingQuestion(String question) {
+		return FINDING.matcher(question.toLowerCase(Locale.ROOT)).find();
+	}
+
 	/** "what are the keep inventory settings", "show me the config": a miss gets a list of the known packs. */
 	public static boolean mentionsSettings(String question) {
 		return SearchIndex.tokenize(question).stream().anyMatch(SETTINGS_WORDS::contains);

@@ -25,3 +25,7 @@ Can u give me a funfact about prismarin?|fact:prismarin
 give me a funfact about prismarine|fact:prismarine
 any funfacts on axolotls|fact:axolotls
 give me a funfact|none
+Can u give me a tip about Ron?|tip:ron
+Can u give me a top about Ron?|tip:ron
+give me a tip about creepers|tip:creepers
+any tips on redstone|tip:redstone

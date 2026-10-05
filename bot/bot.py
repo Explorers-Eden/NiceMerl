@@ -1,5 +1,7 @@
 import asyncio
+import base64
 import io
+import json
 import logging
 import random
 import re
@@ -70,6 +72,8 @@ class NiceMerl(discord.Client):
         self.block_colors = palettes.load()
         self.last_palette: dict[int, list[str]] = {}
         self.palette_icons: dict = {}
+        # Minecraft profiles looked up for player cards: name → (when, profile).
+        self.profiles: dict[str, tuple[float, object]] = {}
 
     async def setup_hook(self):
         self.refresh_index.change_interval(hours=config.REINDEX_HOURS)
@@ -195,6 +199,13 @@ class NiceMerl(discord.Client):
             await self.say(message, started, content=line)
             return
         # "what blocks go with deepslate?", "random palette": a block palette.
+        # "who is MrNox?": a player card with their skin; "who is Arachne" (no player Merl knows) gets the wiki.
+        named = raw
+        for member in message.mentions:
+            if not self.user or member.id != self.user.id:
+                named = re.sub(rf"<@!?{member.id}>", member.display_name, named)
+        if (lookup := personality.player_lookup(named)) and await self.player_card(message, started, *lookup, user):
+            return
         # "fun fact about axolotls", "make fun of @Katter" (mentions of others as their names)
         named = raw
         for member in message.mentions:
@@ -202,7 +213,8 @@ class NiceMerl(discord.Client):
                 named = re.sub(rf"<@!?{member.id}>", member.display_name, named)
         if topic := personality.topic_request(named):
             visit.talk, visit.talked_at, visit.topic = topic[0], now, topic[1]
-            await self.say(message, started, content=self.topic_line(*topic, named, user))
+            line = self.topic_line(*topic, named, user)
+            await self.say(message, started, content=line[:1].upper() + line[1:])
             return
         if visit.recent_talk(now) == "palette" and personality.palette_follow_up(question):
             # "shuffle", "try again" right after a palette
@@ -244,7 +256,7 @@ class NiceMerl(discord.Client):
                 intro = friend.chats <= personality.INTRO_CHATS
                 await self.say(message, started, embed=self.hello_embed(greeting, extra, intro))
             return
-        if talk == "more" and visit.recent_talk(now) in ("fact", "joke") and visit.topic:
+        if talk == "more" and visit.recent_talk(now) in ("fact", "joke", "tip") and visit.topic:
             # "another one" after a fact or joke about something: another one about it
             visit.talked_at = now
             await self.say(message, started, content=self.topic_line(visit.talk, visit.topic, visit.topic, user))
@@ -352,9 +364,81 @@ class NiceMerl(discord.Client):
             visit.page = ""
             await self.say(message, started, embed=self.not_found_embed(), results=1)
 
+    async def player_card(self, message: discord.Message, started: float, name: str, explicit: bool, user: str) -> bool:
+        """A Minecraft player's card: their skin, skin type and cape from Mojang, and what Merl remembers about them.
+        "who is X" only counts for someone Merl knows and when the wiki has no page named X ("who is Katter");
+        "who is the player X" always looks them up. False when it isn't about a player, so it's answered as usual."""
+        if not explicit:
+            known = self.friends.named(name)
+            if len(known) != 1:
+                return False
+            outcome = self.index.find(name, limit=1)
+            if outcome.results and outcome.results[0].title_match:
+                return False
+            name = known[0][1].name
+        profile = await self.minecraft_profile(name)
+        if profile is None:
+            if not explicit:
+                return False
+            await self.say(message, started, content=pick("player_unknown", name=name, user=user))
+            return True
+        uuid, mc_name, slim, cape = profile
+        lines = [pick("player_card", name=mc_name, user=user), ""]
+        lines.append(f"🧍 Skin: {'slim (Alex style)' if slim else 'classic (Steve style)'}")
+        lines.append(f"🧣 Cape: {'yes' if cape else 'no'}")
+        found = self.friends.find(mc_name)
+        if found and found[1].met:
+            friend = found[1]
+            since = datetime.fromtimestamp(friend.met * 86400, self.timezone).strftime("%-d %B %Y")
+            lines.append(f"💗 Merl's friend since {since}, {friend.chats} {'chat' if friend.chats == 1 else 'chats'}")
+        lines.append(f"🔗 [NameMC](https://namemc.com/profile/{uuid})")
+        embed = self.text_embed("\n".join(lines))
+        embed.title = mc_name
+        embed.set_image(url=f"https://mc-heads.net/body/{uuid}/right")
+        await self.say(message, started, embed=embed)
+        return True
+
+    async def minecraft_profile(self, name: str) -> tuple[str, str, bool, bool] | None:
+        """(uuid, name as spelled, slim skin, has a cape) from Mojang, or None. Remembered for an hour."""
+        key = name.lower()
+        cached = self.profiles.get(key)
+        if cached and time.time() - cached[0] < 3600:
+            return cached[1]
+        profile = None
+        try:
+            timeout = aiohttp.ClientTimeout(total=10)
+            async with self.session().get(f"https://api.mojang.com/users/profiles/minecraft/{name}", timeout=timeout) as resp:
+                found = await resp.json(content_type=None) if resp.status == 200 else None
+            if found and found.get("id"):
+                uuid = found["id"]
+                async with self.session().get(f"https://sessionserver.mojang.com/session/minecraft/profile/{uuid}",
+                                              timeout=timeout) as resp:
+                    session = await resp.json(content_type=None) if resp.status == 200 else {}
+                textures = {}
+                for prop in session.get("properties", []):
+                    if prop.get("name") == "textures":
+                        textures = json.loads(base64.b64decode(prop["value"])).get("textures", {})
+                slim = textures.get("SKIN", {}).get("metadata", {}).get("model") == "slim"
+                profile = (uuid, found.get("name", name), slim, "CAPE" in textures)
+        except (aiohttp.ClientError, asyncio.TimeoutError, ValueError, KeyError):
+            log.warning("Could not look up the Minecraft player %s", name, exc_info=True)
+            return None
+        self.profiles[key] = (time.time(), profile)
+        return profile
+
     def topic_line(self, kind: str, subject: str, text: str, user: str) -> str:
         """A fun fact or a joke about something ("axolotls") or someone ("Katter", the asker, Merl). Jokes about
         people are friendly little teases from the joke_about pool, never mean."""
+        if kind == "tip":
+            # A tip about a thing ("creepers") from the tips, about a person ("Ron", "me") a friendly pro tip.
+            name = user if subject == personality.ME else "Merl" if subject == personality.MERL else personality.original_case(text, subject)
+            if not subject:
+                return pick("tip")
+            if subject not in (personality.ME, personality.MERL) and (tips := personality.about("tip", subject)):
+                return f"{pick('tip_topic_intro', subject=name)} {random.choice(tips)}"
+            if subject in (personality.ME, personality.MERL) or name[:1].isupper():
+                return pick("tip_about", name=name)
+            return f"{pick('tip_topic_none', subject=name)} {pick('tip')}"
         if kind == "fact":
             if not subject or subject in (personality.ME, personality.MERL):
                 return pick("fact")

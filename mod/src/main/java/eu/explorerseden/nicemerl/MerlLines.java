@@ -77,6 +77,9 @@ public final class MerlLines {
 			"sorry", "sorry_prefix", "ok", "ok_prefix", "no", "ok_prefix", "compliment", "compliment_prefix", "laugh", "compliment_prefix");
 	/** Small talk that "more" / "another one" asks for again. */
 	public static final Set<String> REPEATABLE = Set.of("joke", "fact", "tip", "idea", "story", "sing", "creeper_song", "pet_pb", "hungry");
+	/** Asking for something: answered even next to a comment ("another tip? i dont get that one"). */
+	private static final Set<String> REQUESTS = Set.of("joke", "fact", "tip", "idea", "story", "sing", "creeper_song", "pet_pb",
+			"hungry", "more", "build_idea");
 	/** Sentences and clauses, for messages with several bits of small talk ("you're funny! tell me a joke"). */
 	private static final Pattern CLAUSE = Pattern.compile("[.!?,;]+");
 	/** "so it's the bosses?" right after an answer: confusion about that answer, not a new question. */
@@ -486,10 +489,16 @@ public final class MerlLines {
 		List<String> clauses = Arrays.stream(CLAUSE.split(text)).filter(c -> !normalize(c).isEmpty()).toList();
 		if (clauses.size() < 2) return null;
 		List<String> talks = new ArrayList<>();
-		for (String clause : clauses) {
-			String talk = smallTalk(clause);
-			if (talk == null) return null;
-			talks.add(talk);
+		for (String clause : clauses) talks.add(smallTalk(clause));
+		if (talks.contains(null)) {
+			// "can u give me another tip? i dont understand that one": a request with a comment that asks nothing.
+			String request = null;
+			for (int i = 0; i < clauses.size(); i++) {
+				String talk = talks.get(i);
+				if (talk == null && seeksInfo(clauses.get(i))) return null;
+				if (talk != null && REQUESTS.contains(talk)) request = talk;
+			}
+			return request == null ? null : new MultiTalk(null, request);
 		}
 		String first = talks.get(0);
 		String main = talks.get(talks.size() - 1);
@@ -902,7 +911,7 @@ public final class MerlLines {
 	/** @param kind "fact" or "joke"; @param subject as asked ("the ender dragon"), ME, MERL, or "" for no particular one */
 	public record TopicRequest(String kind, String subject) {}
 
-	private record TopicPatterns(List<Pattern> fact, List<Pattern> joke, Pattern leading, Pattern trailing, Set<String> me,
+	private record TopicPatterns(List<Pattern> fact, List<Pattern> joke, List<Pattern> tip, Pattern leading, Pattern trailing, Set<String> me,
 			Set<String> merl, Set<String> notSubjects, int maxWords) {}
 
 	private static final TopicPatterns TOPIC_REQUESTS = topicPatterns();
@@ -919,7 +928,7 @@ public final class MerlLines {
 			raw.getAsJsonArray(key).forEach(e -> out.add(e.getAsString()));
 			return Set.copyOf(out);
 		};
-		return new TopicPatterns(patterns.apply("fact"), patterns.apply("joke"), Pattern.compile(raw.get("leading").getAsString()),
+		return new TopicPatterns(patterns.apply("fact"), patterns.apply("joke"), patterns.apply("tip"), Pattern.compile(raw.get("leading").getAsString()),
 				Pattern.compile(raw.get("trailing").getAsString()), words.apply("me"), words.apply("merl"), words.apply("notSubjects"),
 				raw.get("maxWords").getAsInt());
 	}
@@ -927,8 +936,13 @@ public final class MerlLines {
 	/** "fun fact about axolotls" → fact/axolotls, "make fun of Katter" → joke/katter; null when it's neither. */
 	public static TopicRequest topicRequest(String message) {
 		String text = normalize(message);
-		for (String kind : List.of("joke", "fact")) {
-			for (Pattern pattern : kind.equals("joke") ? TOPIC_REQUESTS.joke() : TOPIC_REQUESTS.fact()) {
+		for (String kind : List.of("joke", "tip", "fact")) {
+			List<Pattern> kindPatterns = switch (kind) {
+				case "joke" -> TOPIC_REQUESTS.joke();
+				case "tip" -> TOPIC_REQUESTS.tip();
+				default -> TOPIC_REQUESTS.fact();
+			};
+			for (Pattern pattern : kindPatterns) {
 				Matcher m = pattern.matcher(text);
 				if (!m.matches()) continue;
 				// Shown as asked ("the ender dragon"); "the", "my"… don't count for the checks.
@@ -962,7 +976,8 @@ public final class MerlLines {
 		List<String> found = new ArrayList<>();
 		for (String line : lines) {
 			List<String> words = topicWords(line);
-			if (wanted.stream().allMatch(w -> words.stream().anyMatch(word -> word.startsWith(w)))) found.add(line);
+			// Short words count whole ("ron" isn't the start of "blast-ronaut"); longer ones also as a word's start.
+			if (wanted.stream().allMatch(w -> words.stream().anyMatch(word -> word.equals(w) || (w.length() >= 5 && word.startsWith(w))))) found.add(line);
 		}
 		if (found.isEmpty()) {
 			// Typos: "prismarin", "axolotel".

@@ -22,7 +22,9 @@ Type `/merl` and your question:
 - `/merl take me to agnes' waypoint` (starts the sparkle path right away)
 - `/merl take me to 100 64 -200` or `/merl guide me to 300 -150 in the nether` (any coordinates)
 - `/merl say that again` or `/merl what was I asking?`
-- `/merl fun fact about axolotls`, `/merl tell me a joke about Katter` or `/merl make fun of me`
+- `/merl fun fact about axolotls`, `/merl tell me a joke about Katter`, `/merl tip about creepers` or `/merl make fun of me`
+- `/merl who is MrNox` or `/merl who is the player Notch`
+- `/merl what should I build next` or `/merl any idea for a new structure`
 
 Ask in your own words: typos, abbreviations like tp or xp, and other wordings (*"how do I unlock the boss room"*) are fine. Merl answers in one line when she can, then shows up to three wiki pages with a link and a short excerpt. Spoilers stay hidden until you hover over them.
 
@@ -31,7 +33,7 @@ Ask in your own words: typos, abbreviations like tp or xp, and other wordings (*
 - **Name Tag texts:** `/merl name tag phrases` lists every text Nice Name Tags reacts to, each one click to copy.
 - **Crafting:** `/merl what can I craft` lists what your inventory can make right now; `/merl what can I make with this` only what uses the item in your hand. `/merl how do I craft …` shows the real recipe (our packs' too) with a link to its picture, and she also answers *"what can I smelt / brew / enchant this with?"* for the item in your hand.
 - **What's this?** Look at a block or mob (or hold an item) and ask `/merl what is this`: she names it (for mobs with their variant, like *"Variant: Creamy (Nice Mob Variants)"*) and adds a short summary from the wiki page that's about exactly that thing, if there is one.
-- **Block palettes:** look at a block (or hold one, or name it) and ask *"what blocks go with this?"*: Merl suggests five blocks that go with it, from dark to light plus one accent, each in its own color. Name several blocks (*"a palette with prismarine and gold"*) and all of them are in it; any block works as a start, even ores, plants or cactus. Click one for a palette around that block, or click **[Another one]**. *"Give me a random palette"* starts from a block she picks herself.
+- **Block palettes:** look at a block (or hold one, or name it) and ask *"what blocks go with this?"*: Merl suggests eight blocks that go with it, from dark to light plus one accent, each in its own color. Name several blocks (*"a palette with prismarine and gold"*) and all of them are in it; any block works as a start, even ores, plants or cactus. Click one for a palette around that block, or click **[Another one]**. *"Give me a random palette"* starts from a block she picks herself.
 - **Your places:** your bed, where you died (your grave), and with Get Off My Lawn your claims or the ones you're trusted on, with coordinates and **[Guide me]**.
 - **Server info:** TPS and MSPT, mob counts and caps, view and simulation distance, players online, difficulty and more, read live from the server. *"What's my ping?"* (or a player's, or everyone's) too. No wiki links, just the numbers.
 - **Settings and game rules:** *"is keep inventory on?"*, *"do mobs grief?"* or *"can I pvp?"* show the server's game rules and our packs' settings, without wiki links.
@@ -39,7 +41,9 @@ Ask in your own words: typos, abbreviations like tp or xp, and other wordings (*
 - **Reminders:** `/merl remind me in 10 minutes to …`, `/merl my reminders`, `/merl cancel my reminders`. Gone after a server restart.
 - **Ideas:** `/merl what should I do next` suggests a next step based on your advancements, or one of over 4,500 ideas.
 - **Small talk:** over 2,000 jokes (stories, dialogues, mob reviews and more), tips, over 1,200 fun facts, stories, `/merl pet peanut butter` and more. Ask for `another one` after a joke.
-- **Facts and jokes about anything:** *"fun fact about axolotls"* or *"trivia about the ender dragon"* gets a fact about exactly that. *"Tell me a joke about Katter"*, *"make fun of Katter"* or *"roast me"* gets a friendly little tease (always lighthearted, never mean). `another one` stays on the same topic.
+- **Who is…?** *"Who is MrNox?"* shows what the server knows about a player: online or last seen, play time, deaths, mobs defeated, since when Merl knows them, and a link to their skin. Plain *"who is …"* only counts for players Merl knows (part of the name works, *"who is Nox"*), so *"who is Arachne"* still gets the wiki; *"who is the player …"* always looks them up.
+- **Build ideas:** *"What should I build next?"* or *"any idea for a new structure?"* gets one of over 1,200 ideas.
+- **Facts and jokes about anything:** *"fun fact about axolotls"* or *"trivia about the ender dragon"* gets a fact about exactly that. *"Tell me a joke about Katter"*, *"make fun of Katter"* or *"roast me"* gets a friendly little tease (always lighthearted, never mean), and *"tip about creepers"* or *"tip about Ron"* a tip. `another one` stays on the same topic.
 - **She remembers you:** when you met, what you're up to, which page helped and which packs you ask about most, so her answers fit you better over time. Ask `/merl do you remember me`, or say `/merl forget me` to erase it. She never saves what you write.
 - **She comments now and then** on where you are and what you're doing.
 - **She celebrates with you:** big advancements (and how few players have them), and milestones like 100,000 blocks mined or 1,000 km traveled.
