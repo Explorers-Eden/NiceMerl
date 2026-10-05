@@ -19,6 +19,7 @@ Type `/merl` and your question:
 - `/merl what's the tps`, `/merl mob cap`, `/merl view distance`, `/merl server info` or `/merl what's my ping`
 - `/merl is keep inventory on` or `/merl what's the random tick speed` (game rules and pack settings)
 - `/merl take me to agnes' waypoint` (starts the sparkle path right away)
+- `/merl take me to 100 64 -200` or `/merl guide me to 300 -150 in the nether` (any coordinates)
 - `/merl say that again` or `/merl what was I asking?`
 
 Ask in your own words: typos, abbreviations like tp or xp, and other wordings (*"how do I unlock the boss room"*) are fine. Merl answers in one line when she can, then shows up to three wiki pages with a link and a short excerpt. Spoilers stay hidden until you hover over them.

@@ -975,4 +975,35 @@ public final class MerlLines {
 		String text = normalize(message);
 		return !text.startsWith("how ") && STOP_GUIDE.matcher(text).find();
 	}
+
+	// Fixed coordinates: "take me to 100 64 -200", "guide me to x 100 z -200", "route to 300, -150 in the nether".
+	private static final Pattern LABELLED = Pattern.compile("\\b([xyz])\\s*[=:]?\\s*(-?\\d{1,8})\\b");
+	private static final Pattern NUMBERS = Pattern.compile("(?<![\\w.])(-?\\d{1,8})(?:\\s*,\\s*|\\s+)(-?\\d{1,8})(?:(?:\\s*,\\s*|\\s+)(-?\\d{1,8}))?(?![\\w.])");
+
+	/** Coordinates in the message as {x, y, z} (y is null when only x and z were given), or null. */
+	public static Integer[] coordinates(String message) {
+		String text = message.toLowerCase(Locale.ROOT);
+		Matcher labelled = LABELLED.matcher(text);
+		Integer x = null, y = null, z = null;
+		while (labelled.find()) {
+			int value = Integer.parseInt(labelled.group(2));
+			switch (labelled.group(1)) {
+				case "x" -> x = value;
+				case "y" -> y = value;
+				default -> z = value;
+			}
+		}
+		if (x != null && z != null) return new Integer[] {x, y, z};
+		Matcher numbers = NUMBERS.matcher(text);
+		if (!numbers.find()) return null;
+		int a = Integer.parseInt(numbers.group(1)), b = Integer.parseInt(numbers.group(2));
+		if (numbers.group(3) == null) return new Integer[] {a, null, b};
+		return new Integer[] {a, b, Integer.parseInt(numbers.group(3))};
+	}
+
+	/** "take me to 100 64 -200" and the like: a request to be guided to fixed coordinates. */
+	public static boolean coordinatesGuide(String message) {
+		return coordinates(message) != null && (WANTS_GUIDE.matcher(normalize(message)).find()
+				|| normalize(message).matches(".*\\b(go|walk|travel|navigate|head|get) to\\b.*"));
+	}
 }

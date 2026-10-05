@@ -1,3 +1,3 @@
 # Minecraft Version(s): 26.3
-## Changes
-- The guide trail's markers take turns in pink, magenta and white
+## New: Guide to coordinates
+- *"Take me to 100 64 -200"*, *"guide me to 300 -150"* or *"give me a route to x 100 z -200 in the nether"*: Merl leads you to any coordinates. Without a dimension she uses the one you're in; other dimensions (the Nether, the End, the Deep Blue…) work too, and she waits until you get there

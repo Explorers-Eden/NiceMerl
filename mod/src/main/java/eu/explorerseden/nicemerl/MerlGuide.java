@@ -93,7 +93,14 @@ public final class MerlGuide {
 	}
 
 	static void start(ServerPlayer player, double x, Double y, double z, String label) {
-		GUIDED.put(player.getUUID(), new Target(x + 0.5, y, z + 0.5, player.level().dimension().identifier(), label, ticks));
+		start(player, x, y, z, label, player.level().dimension().identifier());
+	}
+
+	/** A guide to a spot in a given dimension; in another one it waits until the player gets there. */
+	static void start(ServerPlayer player, double x, Double y, double z, String label, Identifier dimension) {
+		MerlGuideNpc.stop(player.getUUID());
+		forget(player.getUUID());
+		GUIDED.put(player.getUUID(), new Target(x + 0.5, y, z + 0.5, dimension, label, ticks));
 	}
 
 	/** /nicemerl guide debug: shows what the path search did on the action bar. Returns whether it's on now. */

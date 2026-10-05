@@ -1026,6 +1026,14 @@ public final class MerlCommand {
 			reply(source, MerlCrafting.smeltOrBrew(player, smelt));
 			return true;
 		}
+		// "take me to 100 64 -200": a guide to fixed coordinates.
+		if (MerlLines.coordinatesGuide(question) && Permissions.check(source, MerlLocate.PERMISSION_LOCATE, true)) {
+			Component answer = MerlLocate.coordinates(player, question);
+			if (answer != null) {
+				reply(source, answer);
+				return true;
+			}
+		}
 		String claim = config.locateClaims ? MerlLines.claimQuestion(question) : null;
 		if (claim != null && Permissions.check(source, MerlLocate.PERMISSION_LOCATE, true)) {
 			Component answer = MerlClaims.answer(player, claim, question, MerlLines.wantsGuide(question));

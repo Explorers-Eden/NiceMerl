@@ -23461,6 +23461,33 @@
       "Oh! I'm over here! Slow and steady!",
       "Hmm? Don't get lost! Enjoy the view!",
       "Oh! I'll stay put. We'll get there!"
+    ],
+    "coords_found": [
+      "That spot is about {distance} blocks {direction} of you:",
+      "Coordinates noted! About {distance} blocks {direction}:",
+      "Got it! That's {distance} blocks to the {direction}:",
+      "Okay! {distance} blocks {direction}, here:",
+      "I know where that is! About {distance} blocks {direction}:",
+      "Easy! About {distance} blocks {direction} from here:",
+      "Off we go, {distance} blocks {direction}:",
+      "Found it on my map: {distance} blocks {direction}:",
+      "That's about {distance} blocks {direction}, {user}:",
+      "Map out! It's {distance} blocks to the {direction}:"
+    ],
+    "coords_other_dimension": [
+      "{target} is in {dimension}. Go there and I'll lead the way!",
+      "That spot is in {dimension}, {user}. Once you're there, I'll show you the way to {target}.",
+      "{dimension}, huh? Head over, and I'll guide you to {target} from there.",
+      "Okay! I'll wait until you're in {dimension}, then lead you to {target}.",
+      "That's in {dimension}. I'll be ready to guide you once you arrive!",
+      "Noted! As soon as you're in {dimension}, follow me to {target}."
+    ],
+    "coords_noted": [
+      "Here are those coordinates:",
+      "Got them! Here:",
+      "Noted:",
+      "Here you go:",
+      "Your spot:"
     ]
   },
   "intents": [

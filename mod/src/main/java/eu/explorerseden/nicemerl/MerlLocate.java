@@ -145,6 +145,53 @@ public final class MerlLocate {
 		return true;
 	}
 
+	/**
+	 * "Take me to 100 64 -200 (in the nether)": a guide to fixed coordinates, in the named dimension or the player's
+	 * own. Null when the message has no coordinates.
+	 */
+	static Component coordinates(ServerPlayer player, String question) {
+		Integer[] at = MerlLines.coordinates(question);
+		if (at == null) return null;
+		String user = player.getName().getString();
+		ServerLevel here = player.level();
+		ServerLevel level = namedDimension(player.level().getServer(), question);
+		if (level == null) level = here;
+		String label = at[1] != null ? "X " + at[0] + ", Y " + at[1] + ", Z " + at[2] : "X " + at[0] + ", Z " + at[2];
+		Identifier dimension = level.dimension().identifier();
+		if (!NiceMerl.config().particleGuide) {
+			return found(MerlLines.pick("coords_noted", "user", user), at[0], at[1], at[2], canTeleport(player.createCommandSourceStack()), null);
+		}
+		if (level != here) {
+			MerlGuide.start(player, at[0], at[1] == null ? null : (double) at[1], at[2], label, dimension);
+			return Component.literal(MerlLines.pick("coords_other_dimension", "dimension", dimensionName(dimension), "target", label, "user", user));
+		}
+		BlockPos from = player.blockPosition();
+		MutableComponent answer = found(MerlLines.pick("coords_found", "user", user,
+				"distance", distance(from, new BlockPos(at[0], from.getY(), at[2])),
+				"direction", BiomeNames.direction(at[0] - from.getX(), at[2] - from.getZ())),
+				at[0], at[1], at[2], canTeleport(player.createCommandSourceStack()), null);
+		return answer.append(MerlGuide.startNow(player, at[0], at[1] == null ? null : (double) at[1], at[2], label));
+	}
+
+	/** The dimension named in the message ("the nether", "end", "minecraft:the_end", "deep blue"), or null. */
+	static ServerLevel namedDimension(MinecraftServer server, String question) {
+		String text = " " + question.toLowerCase(Locale.ROOT).replace("_", " ") + " ";
+		ServerLevel best = null;
+		int bestLength = 0;
+		for (ServerLevel level : server.getAllLevels()) {
+			Identifier id = level.dimension().identifier();
+			String path = id.getPath().replace('_', ' ').replace('/', ' ');
+			String plain = path.startsWith("the ") ? path.substring(4) : path;
+			for (String name : List.of(id.toString().replace('_', ' '), path, plain)) {
+				if (name.length() > bestLength && text.matches(".*\\b" + java.util.regex.Pattern.quote(name) + "\\b.*")) {
+					best = level;
+					bestLength = name.length();
+				}
+			}
+		}
+		return best;
+	}
+
 	/** "Where's my bed?" / "where did I die?": the respawn point or last death, with distance and [Guide me]. */
 	static Component home(ServerPlayer player, String kind, boolean guide) {
 		String user = player.getName().getString();
