@@ -235,6 +235,40 @@ jobs:
           print("Recipe pictures work: pack recipes, mini blocks, vanilla grids")
           EOF
 
+      - name: Check block palettes (questions, block names, palettes, picture)
+        run: |
+          python - <<'EOF'
+          import asyncio, random, palettes, personality
+          # Questions, like MerlLines.palette in the mod.
+          ask = personality.palette
+          assert ask("which blocks fit to deepslate bricks?").block == "deepslate bricks"
+          assert ask("give me a random palette").random and ask("surprise me with a palette").random
+          assert ask("another palette").again and ask("what blocks go with this").block is None
+          assert ask("what goes well with oak planks").loose and ask("how do i get a boss key") is None
+          colors = palettes.load()
+          assert len(colors) > 300, len(colors)
+          # Names: exact, partial blocks (stairs → planks), loose words; "diamonds" only loosely.
+          assert palettes.by_name(colors, "oak stairs") == "oak_planks"
+          assert palettes.by_name(colors, "stone brick wall") == "stone_bricks"
+          assert palettes.by_name(colors, "copper") == "copper_block" and palettes.name("copper_block") == "Block of Copper"
+          assert palettes.by_name(colors, "diamonds", exact=True) is None and palettes.by_name(colors, "blorp") is None
+          # Palettes: six different blocks from dark to light, one per color set, the start included.
+          for base in ["deepslate_bricks", "oak_planks", "white_concrete", "copper_block", palettes.random_base(colors)]:
+              for seed in range(5):
+                  p = palettes.palette(colors, base, random.Random(seed))
+                  assert len(p) == 6 and len(set(p)) == 6 and base in p, (base, p)
+                  assert [colors[b]["lab"][0] for b in p] == sorted(colors[b]["lab"][0] for b in p)
+                  sets = [palettes.family(b) for b in p if palettes.family(b) in palettes.ONE_PER_PALETTE]
+                  assert len(sets) == len(set(sets)), (base, p)
+          # The picture, without the wiki's icons (swatches only).
+          class NoWeb:
+              def get(self, *a, **k):
+                  raise OSError("offline")
+          png = asyncio.run(palettes.render(NoWeb(), colors, palettes.palette(colors, "stone")))
+          assert png.startswith(b"\x89PNG")
+          print("Block palettes work: questions, names, palettes, picture")
+          EOF
+
       - name: Check that the bot starts (without logging in to Discord)
         env:
           DISCORD_TOKEN: ci

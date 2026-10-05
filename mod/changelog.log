@@ -1,3 +1,15 @@
 # Minecraft Version(s): 26.3
+## New: Block palettes
+- *"What blocks go with this?"*: look at a block (or hold one) and Merl suggests blocks that go well with it, from dark to light plus one accent, each name shown in its own color
+- *"Palette for deepslate bricks"* or *"which blocks fit to oak planks?"* works with any block's name too, and stairs, slabs and walls count as their full block
+- *"Give me a random palette"* when you just want some inspiration
+- Click a block in the palette for a palette around it, or **[Another one]** for a new mix
+
+## Better guiding out of bases and caves
+- **No more paths into walls:** the guide used to end its path at whatever spot was closest to the target, often the wall facing it. Now it only shows a path that really gets there, and finds the way out of your base first, even if that means going the other way
+- **Ladders, vines, scaffolding and water columns** are used for climbing up and down
+- **Big bases are searched completely**, spread over a few ticks so the server doesn't lag. The action bar shows *"finding the way…"* while she looks, and *"(no path)"* only if there really is none
+- `/nicemerl guide debug` shows how long the path is and how much was searched
+
 ## Fixes
-- **Smooth elytra flights:** guide Merl no longer jitters and twitches while flying with you. She keeps a steady speed and turns smoothly instead of reacting to every little bump in your position
+- **Rocket speed:** guide Merl stays ahead of you with long rockets too, and her firework sparks last as long as your rocket

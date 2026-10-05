@@ -79,7 +79,7 @@ public class NiceMerl implements ModInitializer {
 		// A guided player firing a rocket mid-glide: guide Merl fires one too.
 		UseItemCallback.EVENT.register((player, level, hand) -> {
 			if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer && serverPlayer.isFallFlying()
-					&& player.getItemInHand(hand).is(net.minecraft.world.item.Items.FIREWORK_ROCKET)) MerlGuideNpc.boost(serverPlayer);
+					&& player.getItemInHand(hand).is(net.minecraft.world.item.Items.FIREWORK_ROCKET)) MerlGuideNpc.boost(serverPlayer, player.getItemInHand(hand));
 			return net.minecraft.world.InteractionResult.PASS;
 		});
 		// Reminders: due ones every second, missed ones when the player comes back.

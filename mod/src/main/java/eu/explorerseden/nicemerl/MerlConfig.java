@@ -75,6 +75,8 @@ public class MerlConfig {
 	public boolean whatsThis = true;
 	/** Real recipes from the server ("how do I craft …"), "what can I smelt / brew with this?" and "what can I enchant this with?". */
 	public boolean recipeHelp = true;
+	/** "What blocks go with this?" and "give me a random palette": block palettes built from the blocks' colors. */
+	public boolean blockPalettes = true;
 	/** The website's recipe list, for [Recipe picture] links. Empty for none. */
 	public String recipesUrl = "https://explorerseden.eu/api/generated-data.php?key=recipes-manifest";
 	/** With Get Off My Lawn: "where's my claim?" points to the closest claim the player owns or is trusted on. */

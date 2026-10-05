@@ -6,6 +6,7 @@ Mirrored in the mod's MerlLines.java, so changes to how replies are put together
 import json
 import random
 import re
+from dataclasses import dataclass
 import unicodedata
 from datetime import date, datetime
 from pathlib import Path
@@ -293,6 +294,73 @@ def recipe_item(text: str) -> str | None:
         return None
     item = re.sub(r"^(an?|the|some) ", "", m.group("item")).strip()
     return item if item and len(item.split()) <= 5 else None
+
+
+# Block palettes (same as MerlLines.palette in the mod).
+_PALETTE_WORD = r"(block |color |colour |building |build )?palettes?"
+PALETTE_AGAIN = re.compile(
+    r"(merl )?(give me |show me |try |can i get |i want )?(an ?other|a different|a new|different|new|more|one more|other) "
+    + _PALETTE_WORD + r"( please| pls)?")
+PALETTE_RANDOM = re.compile(
+    r"(.* )?(random|surprise|any|some) " + _PALETTE_WORD + r"( please| pls| idea| ideas)?"
+    r"|(.* )?surprise me( with)?( an?| some)? " + _PALETTE_WORD + r"( please| pls)?"
+    r"|(merl )?(give me |show me |suggest |make me |can you (give|make|suggest|show) me |i want |i need |got )?an? " + _PALETTE_WORD + r"( please| pls)?"
+    r"|(merl )?" + _PALETTE_WORD + r"( please| pls| idea| ideas| inspiration)?"
+    r"|(.* )?" + _PALETTE_WORD + r" (ideas?|inspiration|suggestions?)( please| pls)?"
+    r"|(.* )?(what|which|some|random) blocks (go|fit|match|look good|work)( well| nicely| great)? together")
+PALETTE_WITH = re.compile(
+    r"(.* )?(what|which)( other| kind of| kinds of)? (blocks?|materials?) (would |could |will |do |does |might )?"
+    r"(go|goes|fit|fits|match|matches|pair|pairs|work|works|look good|looks good|combine|blend|complement|complements)"
+    r"( well| nicely| best| good| great)? (with|to|together with|alongside|next to|for) (?P<block>.+)"
+    r"|(.* )?(what|which) (would |could |will |do |does )?(go|goes|fit|fits|match|matches|pairs?|complements?)"
+    r"( well| nicely| best| good)? (with|to) (?P<block2>.+)"
+    r"|(.* )?(blocks?|materials?) (that|which|to) (go|fit|match|pair|work|look good|complement)s?( well| nicely| best)? (with |to |next to )?(?P<block3>.+)"
+    r"|(.* )?" + _PALETTE_WORD + r" (for|with|around|using|based on|from|of|to go with|that goes with) (?P<block4>.+)"
+    r"|(merl )?(?P<block5>[a-z ]{3,40}?) " + _PALETTE_WORD + r"( please| pls)?")
+PALETTE_THIS = re.compile(
+    r"(this|that|it|here|this one|that one)( block)?( here| right here| right now)?|(the )?block (im|i am) looking at|what im looking at")
+PALETTE_HELD = re.compile(r"\b(holding|in my hand|my hand|held)\b")
+NOT_PALETTE_BLOCKS = {"a", "the", "my", "random", "any", "some", "another", "new", "different", "more", "one more", "other",
+                      "good", "nice", "cool", "best", "together", "each other"}
+
+
+@dataclass
+class PaletteAsk:
+    block: str | None = None   # the block asked about by name; None for "this" (the mod's looked-at block)
+    held: bool = False         # "the block in my hand" (in-game only)
+    random: bool = False       # a palette around a random block
+    again: bool = False        # another palette like the last one
+    loose: bool = False        # "what goes with X" without saying block or palette: only when X is a block
+
+
+def palette(text: str) -> PaletteAsk | None:
+    """ "what blocks go with deepslate", "random palette", "another palette" (same as MerlLines.palette)."""
+    t = normalize(text)
+    if "palette" not in t and not re.search(r"\b(blocks?|materials?|go|goes|fit|fits|match|matches|pairs?|complements?)\b", t):
+        return None
+    if PALETTE_AGAIN.fullmatch(t):
+        return PaletteAsk(again=True)
+    if PALETTE_RANDOM.fullmatch(t):
+        return PaletteAsk(random=True)
+    m = PALETTE_WITH.fullmatch(t)
+    if not m:
+        return None
+    group = next(g for g in ("block5", "block4", "block3", "block2", "block") if m.group(g) is not None)
+    about_blocks = "palette" in t or bool(re.search(r"\b(blocks?|materials?)\b", t))
+    block = re.sub(r"\b(in minecraft|for (my|a) (build|house|base|wall|floor|roof)|for building|please|pls|merl|well|nicely)\b",
+                   " ", m.group(group))
+    block = re.sub(r"\s+", " ", re.sub(r"^(the|a|an|some|my) ", "", block)).strip()
+    if not block or block in NOT_PALETTE_BLOCKS:
+        return PaletteAsk(random=True) if about_blocks else None
+    if PALETTE_HELD.search(block):
+        return PaletteAsk(held=True)
+    if PALETTE_THIS.fullmatch(block):
+        return PaletteAsk()
+    if len(block.split()) > 5:
+        return None
+    if group == "block5" and re.search(r"\b(me|you|with|give|show|want|need|make|get|some|any)\b", block):
+        return PaletteAsk(random=True)
+    return PaletteAsk(block=block, loose=not about_blocks)
 
 
 def split_small_talk(text: str) -> tuple[str | None, str]:

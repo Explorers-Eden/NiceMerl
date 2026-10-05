@@ -379,6 +379,17 @@ public final class MerlCommand {
 			sendNote(source, meeting.note());
 			return 1;
 		}
+		// "what blocks go with this?", "give me a random palette": a block palette.
+		MerlLines.PaletteAsk paletteAsk = player != null && config.blockPalettes ? MerlLines.palette(question) : null;
+		// "what goes with diamonds?" isn't about blocks: only when it names one.
+		if (paletteAsk != null && paletteAsk.loose() && MerlPalette.fullBlockByExactName(paletteAsk.block()) == null) paletteAsk = null;
+		if (paletteAsk != null) {
+			reply(source, MerlPalette.answer(player, paletteAsk));
+			visit.talk = "palette";
+			visit.talkedAt = now;
+			sendNote(source, meeting.note());
+			return 1;
+		}
 		if (player != null && helpers(source, player, question, config)) {
 			sendNote(source, meeting.note());
 			return 1;
@@ -450,6 +461,12 @@ public final class MerlCommand {
 		if ("more".equals(talk)) {
 			// "another one!" after a joke is another joke.
 			String last = visit.recentTalk(now);
+			if ("palette".equals(last) && player != null && config.blockPalettes) {
+				reply(source, MerlPalette.answer(player, new MerlLines.PaletteAsk(null, false, false, true)));
+				visit.talkedAt = now;
+				sendNote(source, meeting.note());
+				return 1;
+			}
 			if (last == null || !MerlLines.REPEATABLE.contains(last)) {
 				reply(source, Component.literal(MerlLines.pick("more_what", "user", source.getTextName())));
 				sendNote(source, meeting.note());

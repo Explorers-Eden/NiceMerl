@@ -14,6 +14,7 @@ from discord.ext import tasks
 
 import config
 import personality
+import palettes
 import recipes
 import semantic
 from friends import Friend, Friends
@@ -64,6 +65,10 @@ class NiceMerl(discord.Client):
         self.recipes = recipes.Manifest(config.RECIPES_URL)
         self.drawer = recipes.Drawer()
         self.web: aiohttp.ClientSession | None = None
+        # Block palettes: the blocks' colors, each person's last palette start, and the block icons drawn so far.
+        self.block_colors = palettes.load()
+        self.last_palette: dict[int, str] = {}
+        self.palette_icons: dict = {}
 
     async def setup_hook(self):
         self.refresh_index.change_interval(hours=config.REINDEX_HOURS)
@@ -188,6 +193,9 @@ class NiceMerl(discord.Client):
         if (met := personality.met_question(raw)) and (line := self.met_line(*met, message, user)):
             await self.say(message, started, content=line)
             return
+        # "what blocks go with deepslate?", "random palette": a block palette.
+        if (ask := personality.palette(question)) and await self.palette(message, started, ask, visit, user, now):
+            return
         talk = personality.small_talk(question)
         talk_prefix = None
         if talk is None:
@@ -221,6 +229,9 @@ class NiceMerl(discord.Client):
                 extra = extra or self.ask_back("greeting", visit, now) or self.ask_feeling("greeting", greeting, visit, now)
                 intro = friend.chats <= personality.INTRO_CHATS
                 await self.say(message, started, embed=self.hello_embed(greeting, extra, intro))
+            return
+        if talk == "more" and visit.recent_talk(now) == "palette":
+            await self.palette(message, started, personality.PaletteAsk(again=True), visit, user, now)
             return
         if talk == "more":
             # "another one!" after a joke is another joke.
@@ -312,6 +323,45 @@ class NiceMerl(discord.Client):
         else:
             visit.page = ""
             await self.say(message, started, embed=self.not_found_embed(), results=1)
+
+    async def palette(self, message: discord.Message, started: float, ask: personality.PaletteAsk, visit: Visit,
+                      user: str, now: float) -> bool:
+        """A block palette with a picture of the blocks. False when it isn't one after all ("what goes with
+        diamonds?" names no block), so the question is answered as usual."""
+        colors = self.block_colors
+        if not colors:
+            return False
+        if ask.again:
+            base = self.last_palette.get(message.author.id, "")
+        elif ask.random:
+            base = ""
+        elif ask.block:
+            base = palettes.by_name(colors, ask.block, exact=ask.loose)
+            if base is None:
+                if ask.loose:
+                    return False
+                await self.say(message, started, content=pick("palette_unknown_name", block=ask.block, user=user))
+                return True
+        else:
+            # "what goes with this?": Discord has no block to look at.
+            await self.say(message, started, content=pick("palette_name_needed", user=user))
+            return True
+        self.last_palette[message.author.id] = base
+        start = base or palettes.random_base(colors)
+        blocks = palettes.palette(colors, start)
+        title = pick("palette_intro", block=palettes.name(start), user=user) if base else pick("palette_random", user=user)
+        names = " · ".join(f"**{palettes.name(b)}**" if b == start else palettes.name(b) for b in blocks)
+        embed = self.text_embed(f"{title}\n\n{names}\n\n-# {pick('palette_more_hint')}")
+        picture = None
+        try:
+            png = await palettes.render(self.session(), colors, blocks, self.palette_icons)
+            picture = discord.File(io.BytesIO(png), filename="palette.png")
+            embed.set_image(url="attachment://palette.png")
+        except Exception:
+            log.warning("Could not draw the palette for %s", start, exc_info=True)
+        visit.talk, visit.talked_at = "palette", now
+        await self.say(message, started, embed=embed, extra_file=picture)
+        return True
 
     async def recall(self, message: discord.Message, started: float, visit: Visit, kind: str, user: str, now: float):
         last = visit.recall(now)

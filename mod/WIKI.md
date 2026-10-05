@@ -14,6 +14,7 @@ Type `/merl` and your question:
 - `/merl name tag phrases` or `/merl name tag to mute a mob`
 - `/merl what can I craft` or `/merl how do I craft a waypoint hub`
 - `/merl what is this` (look at a block or mob)
+- `/merl what blocks go with this`, `/merl palette for deepslate bricks` or `/merl random palette`
 - `/merl where's my bed`, `/merl where did I die` or `/merl where's my claim` (with Get Off My Lawn)
 - `/merl remind me in 10 minutes to check the furnace`
 - `/merl what's the tps`, `/merl mob cap`, `/merl view distance`, `/merl server info` or `/merl what's my ping`
@@ -25,10 +26,11 @@ Type `/merl` and your question:
 Ask in your own words: typos, abbreviations like tp or xp, and other wordings (*"how do I unlock the boss room"*) are fine. Merl answers in one line when she can, then shows up to three wiki pages with a link and a short excerpt. Spoilers stay hidden until you hover over them.
 
 ## More than answers
-- **Coordinates:** ask where the closest biome is (vanilla, Terralith, Biomes O' Plenty or our packs, by name or id like `terralith:moonlight_grove`) or the closest slime chunk, and Merl tells you how far, which way and the exact spot. With Warping Wonders, she also finds the closest Waypoint Hub you can use, your own, or one by name. Click the coordinates to copy them, or click **[Guide me]**: Merl herself walks ahead of you with a map and a compass, around walls and over hills, with a trail of white sparkles and pink specks between you and her (only you see her). Glide with an elytra and she flies ahead of you with one too, firing a rocket whenever you do; fly in creative mode and she floats ahead of you.
+- **Coordinates:** ask where the closest biome is (vanilla, Terralith, Biomes O' Plenty or our packs, by name or id like `terralith:moonlight_grove`) or the closest slime chunk, and Merl tells you how far, which way and the exact spot. With Warping Wonders, she also finds the closest Waypoint Hub you can use, your own, or one by name. Click the coordinates to copy them, or click **[Guide me]**: Merl herself walks ahead of you with a map and a compass, around walls and over hills, out of your base and up ladders, with a trail of white sparkles and pink specks between you and her (only you see her). Glide with an elytra and she flies ahead of you with one too, firing a rocket whenever you do; fly in creative mode and she floats ahead of you.
 - **Name Tag texts:** `/merl name tag phrases` lists every text Nice Name Tags reacts to, each one click to copy.
 - **Crafting:** `/merl what can I craft` lists what your inventory can make right now; `/merl what can I make with this` only what uses the item in your hand. `/merl how do I craft …` shows the real recipe (our packs' too) with a link to its picture, and she also answers *"what can I smelt / brew / enchant this with?"* for the item in your hand.
 - **What's this?** Look at a block or mob (or hold an item) and ask `/merl what is this`: she names it (for mobs with their variant, like *"Variant: Creamy (Nice Mob Variants)"*) and adds a short summary from the wiki page that's about exactly that thing, if there is one.
+- **Block palettes:** look at a block (or hold one, or name it) and ask *"what blocks go with this?"*: Merl suggests five blocks that go with it, from dark to light plus one accent, each in its own color. Click one for a palette around that block, or click **[Another one]**. *"Give me a random palette"* starts from a block she picks herself.
 - **Your places:** your bed, where you died (your grave), and with Get Off My Lawn your claims or the ones you're trusted on, with coordinates and **[Guide me]**.
 - **Server info:** TPS and MSPT, mob counts and caps, view and simulation distance, players online, difficulty and more, read live from the server. *"What's my ping?"* (or a player's, or everyone's) too. No wiki links, just the numbers.
 - **Settings and game rules:** *"is keep inventory on?"*, *"do mobs grief?"* or *"can I pvp?"* show the server's game rules and our packs' settings, without wiki links.
@@ -76,6 +78,7 @@ The config is in `config/nicemerl.json`, created on the first start. Restart the
 - **locateWaypoints**: turn waypoint answers off for everyone
 - **particleGuide**: turn the guide off for everyone; **guideMerl**: off means just the sparkle trail, without Merl walking ahead
 - **craftingHelp**: turn "what can I craft?" off for everyone
+- **blockPalettes**: turn block palettes off for everyone
 - **recipeHelp**: turn real recipes, smelting, brewing and enchanting answers off for everyone; **recipesUrl** is where the recipe pictures come from
 - **whatsThis**, **locateHome**, **locateClaims** and **reminders**: turn "what's this?", bed and death, claims, and reminders off for everyone
 - **serverInfo** and **settingsGameRules**: turn server info, or game rules in settings answers, off for everyone
@@ -122,6 +125,7 @@ This is `config/nicemerl.json` as it's created on the first start. Delete the fi
   "guideMerl": true,
   "whatsThis": true,
   "recipeHelp": true,
+  "blockPalettes": true,
   "recipesUrl": "https://explorerseden.eu/api/generated-data.php?key=recipes-manifest",
   "locateClaims": true,
   "locateHome": true,

@@ -55,9 +55,16 @@ final class MerlGuideNpc {
 	/** After the player arrives she looks at them this long before leaving, in ticks. */
 	private static final int GOODBYE_TICKS = 60;
 	/** While the player flies, she stays this far ahead of them toward the target, plus a bit more the faster they go. */
-	private static final double FLY_AHEAD = 6.0, FLY_AHEAD_PER_SPEED = 2.0;
+	/**
+	 * Per block-per-tick of speed: what the player sees of her is about 5 ticks behind (the client smooths her
+	 * movement over 3 ticks, and the player's position reaches the server a tick or two late), so the faster they
+	 * go, the further ahead she has to be to still look ahead of them (rockets: about 1.7 blocks per tick).
+	 */
+	private static final double FLY_AHEAD = 6.0, FLY_AHEAD_PER_SPEED = 5.0;
 	/** How much of the gap to where she should be she closes each tick, on top of matching the player's speed. */
 	private static final double FLY_CATCH_UP = 0.1;
+	/** Falling behind by more than FLY_BEHIND blocks, she closes the gap faster (up to FLY_CATCH_UP_MAX). */
+	private static final double FLY_BEHIND = 2.0, FLY_CATCH_UP_MAX = 0.3;
 	/** How quickly her flying speed follows the speed she wants (the rest keeps her last speed), so she glides smoothly. */
 	private static final double FLY_STEER = 0.4;
 	/** The fastest she turns while flying, in degrees per tick. */
@@ -66,8 +73,8 @@ final class MerlGuideNpc {
 	private static final int SPEED_TICKS = 6;
 	/** Further than this behind while flying, she just appears where she should be. */
 	private static final double FLY_SNAP = 30.0;
-	/** After the player fires a rocket she trails firework sparks this long, in ticks. */
-	private static final int BOOST_TICKS = 25;
+	/** After the player fires a rocket she trails firework sparks as long as it burns: about 10 ticks per flight duration level, plus 10. */
+	private static final int BOOST_TICKS_PER_DURATION = 10;
 	/** ClientboundAnimatePacket action for swinging the off hand. */
 	private static final int SWING_OFF_HAND = 3;
 	/** Entity flag for gliding with an elytra (Entity.FLAG_FALL_FLYING). */
@@ -207,7 +214,10 @@ final class MerlGuideNpc {
 			npc.velocity = npc.playerSpeed;
 		} else {
 			// Smoothly toward the player's speed plus a bit of the gap, instead of jumping with every update.
-			Vec3 wantedSpeed = npc.playerSpeed.add(wanted.subtract(npc.pos).scale(FLY_CATCH_UP));
+			Vec3 gap = wanted.subtract(npc.pos);
+			double behind = gap.dot(npc.playerSpeed.lengthSqr() > 1e-4 ? npc.playerSpeed.normalize() : Vec3.ZERO);
+			double catchUp = behind > FLY_BEHIND ? Math.min(FLY_CATCH_UP_MAX, FLY_CATCH_UP + (behind - FLY_BEHIND) * 0.05) : FLY_CATCH_UP;
+			Vec3 wantedSpeed = npc.playerSpeed.add(gap.scale(catchUp));
 			npc.velocity = npc.velocity.scale(1 - FLY_STEER).add(wantedSpeed.scale(FLY_STEER));
 			next = npc.pos.add(npc.velocity);
 		}
@@ -239,11 +249,12 @@ final class MerlGuideNpc {
 	}
 
 	/** The player fired a rocket while gliding: so does she. */
-	static void boost(ServerPlayer player) {
+	static void boost(ServerPlayer player, ItemStack rocket) {
 		Npc npc = NPCS.get(player.getUUID());
 		if (npc == null || npc.body == null || npc.air != Air.GLIDING || npc.goodbyeTicks >= 0) return;
 		boolean first = npc.boostTicks == 0;
-		npc.boostTicks = BOOST_TICKS;
+		var fireworks = rocket.get(DataComponents.FIREWORKS);
+		npc.boostTicks = BOOST_TICKS_PER_DURATION * (1 + (fireworks == null ? 1 : fireworks.flightDuration()));
 		npc.owner.connection.send(new ClientboundAnimatePacket(npc.body, SWING_OFF_HAND));
 		if (first && npc.owner.getRandom().nextInt(4) == 0) remark(npc, "guide_boost");
 	}

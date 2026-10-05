@@ -44,15 +44,22 @@ public final class MerlGuide {
 	/** Each guided player's planned stretch of path, and when it was planned (in ticks). */
 	private static final Map<UUID, List<BlockPos>> PATHS = new ConcurrentHashMap<>();
 	private static final Map<UUID, Long> PLANNED = new ConcurrentHashMap<>();
+	/** Whether each path goes all the way to the target (or is just the next stretch toward a far one). */
+	private static final Map<UUID, Boolean> TO_TARGET = new ConcurrentHashMap<>();
 	/** The direction last shown on each player's action bar, so it doesn't flicker between two. */
 	private static final Map<UUID, String> SHOWN_DIRECTION = new ConcurrentHashMap<>();
 	/** Players who asked to see what the path search did (/nicemerl guide debug), and its last result. */
 	private static final java.util.Set<UUID> DEBUG = ConcurrentHashMap.newKeySet();
 	private static final Map<UUID, String> LAST_PLAN = new ConcurrentHashMap<>();
-	/** A path that doesn't get through is only shown when it still gets this many blocks closer. */
-	private static final double USEFUL_PROGRESS = 10;
-	/** The path is planned again this often, or sooner when the player leaves it. */
-	private static final int REPLAN_TICKS = 40;
+	/** Searches in progress (a big base takes a few ticks), and when the last one found nothing. */
+	private static final Map<UUID, MerlPath.Search> SEARCHES = new ConcurrentHashMap<>();
+	private static final Map<UUID, Long> NO_WAY = new ConcurrentHashMap<>();
+	/** A found path is checked again this often (blocks change), or sooner when the player leaves it, in ticks. */
+	private static final int REPLAN_TICKS = 200;
+	/** After finding no way, try again this much later. */
+	private static final int RETRY_TICKS = 60;
+	/** A stretch toward a far target is extended when the player gets this close to its end, in path steps. */
+	private static final int STRETCH_END = 8;
 	private static final double OFF_PATH = 3.0;
 	/** Sparkles shown ahead of the player, one per path step. */
 	private static final int SHOWN_STEPS = 24;
@@ -111,31 +118,73 @@ public final class MerlGuide {
 	private static void forget(UUID player) {
 		PATHS.remove(player);
 		PLANNED.remove(player);
+		SEARCHES.remove(player);
+		NO_WAY.remove(player);
+		TO_TARGET.remove(player);
 		SHOWN_DIRECTION.remove(player);
 	}
 
+	enum Way { SHOWN, SEARCHING, NONE }
+
 	/**
-	 * Sparkles along a walkable path on the ground toward the target. While flying or falling (no ground to plan
-	 * on), a short line of sparkles points the way instead.
+	 * Every tick: starts a new path search when needed (none yet, the player left the path, the stretch is nearly
+	 * walked, or it's old) and runs the one in progress a bit further.
 	 */
-	/** True when there's a path to show; false when the player stands on the ground and no way was found. */
-	private static boolean drawPath(ServerPlayer player, Target target) {
+	private static void plan(ServerPlayer player, Target target) {
+		UUID id = player.getUUID();
+		MerlPath.Search search = SEARCHES.get(id);
+		if (search == null) {
+			if (!needsPlan(player, id)) return;
+			// In the air there's no ground to start from; wait until they land.
+			search = MerlPath.start(player.level(), player.blockPosition(), target.x(),
+					target.y() == null ? null : (int) Math.floor(target.y()), target.z());
+			if (search == null) return;
+			SEARCHES.put(id, search);
+		}
+		MerlPath.Plan plan = search.step(MerlPath.PER_TICK);
+		if (plan == null) return;
+		SEARCHES.remove(id);
+		LAST_PLAN.put(id, (plan.path().isEmpty() ? "no way found" : plan.path().size() + " steps")
+				+ (plan.toTarget() ? " to the target" : " (next stretch)") + ", " + plan.looked() + " spots looked at");
+		PLANNED.put(id, ticks);
+		if (plan.path().size() < 2) {
+			// Better no path than one into a wall.
+			PATHS.remove(id);
+			NO_WAY.put(id, ticks);
+			return;
+		}
+		NO_WAY.remove(id);
+		PATHS.put(id, plan.path());
+		TO_TARGET.put(id, plan.toTarget());
+	}
+
+	private static boolean needsPlan(ServerPlayer player, UUID id) {
+		Long noWay = NO_WAY.get(id);
+		if (noWay != null) return ticks - noWay >= RETRY_TICKS;
+		List<BlockPos> path = PATHS.get(id);
+		if (path == null || path.size() < 2) return true;
+		if (ticks - PLANNED.getOrDefault(id, 0L) >= REPLAN_TICKS) return true;
+		int nearest = nearest(path, player.blockPosition());
+		if (Math.sqrt(path.get(nearest).distSqr(player.blockPosition())) > OFF_PATH) {
+			// Off the path: it's not shown until the new one is found.
+			PATHS.remove(id);
+			return true;
+		}
+		return !TO_TARGET.getOrDefault(id, false) && nearest >= path.size() - STRETCH_END;
+	}
+
+	/**
+	 * Sparkles along the path toward the target, between the player and Merl. While flying or falling with no
+	 * path, a short line of sparkles points the way instead.
+	 */
+	private static Way drawPath(ServerPlayer player, Target target) {
 		UUID id = player.getUUID();
 		ServerLevel level = player.level();
-		BlockPos feet = player.blockPosition();
 		List<BlockPos> path = PATHS.get(id);
-		int nearest = path == null ? -1 : nearest(path, feet);
-		boolean stale = path == null || path.size() < 2 || ticks - PLANNED.getOrDefault(id, 0L) >= REPLAN_TICKS
-				|| nearest < 0 || Math.sqrt(path.get(nearest).distSqr(feet)) > OFF_PATH;
-		if (stale) {
-			path = MerlPath.find(level, feet, target.x(), target.y() == null ? null : (int) Math.floor(target.y()), target.z());
-			PATHS.put(id, path);
-			PLANNED.put(id, ticks);
-			nearest = path.isEmpty() ? -1 : 0;
-		}
-		if (path.size() < 2) {
-			// On the ground with no way found: say so rather than draw a line through the walls.
-			if (player.onGround() || player.isInWater()) return false;
+		if (path == null || path.size() < 2) {
+			if (player.onGround() || player.isInWater() || player.onClimbable()) {
+				return SEARCHES.containsKey(id) || !NO_WAY.containsKey(id) ? Way.SEARCHING : Way.NONE;
+			}
 			// Flying or falling, there's no ground to follow: a short line points the way.
 			Vec3 eye = player.getEyePosition();
 			Vec3 goal = new Vec3(target.x(), target.y() != null ? target.y() : eye.y, target.z());
@@ -144,8 +193,9 @@ public final class MerlGuide {
 				Vec3 at = eye.add(0, -0.4, 0).add(step.scale(d));
 				level.sendParticles(player, MARKERS[(int) (Math.round(d / SPACING) % MARKERS.length)], true, false, at.x, at.y, at.z, 1, 0, 0, 0, 0);
 			}
-			return true;
+			return Way.SHOWN;
 		}
+		int nearest = nearest(path, player.blockPosition());
 		// With Merl walking ahead, the sparkles only show the way between the player and her.
 		int merl = NiceMerl.config().guideMerl ? MerlGuideNpc.step(id) : -1;
 		int last = merl > nearest ? merl : nearest + 1 + SHOWN_STEPS;
@@ -154,7 +204,7 @@ public final class MerlGuide {
 			// By path step, so each spot keeps its color as the player walks.
 			level.sendParticles(player, MARKERS[i % MARKERS.length], true, false, at.getX() + 0.5, at.getY() + 0.3, at.getZ() + 0.5, 1, 0, 0, 0, 0);
 		}
-		return true;
+		return Way.SHOWN;
 	}
 
 	private static int nearest(List<BlockPos> path, BlockPos feet) {
@@ -203,17 +253,18 @@ public final class MerlGuide {
 						MerlLines.pick("guide_arrived", "target", target.label(), "user", player.getName().getString())));
 				continue;
 			}
+			plan(player, target);
 			if (merl) {
 				List<BlockPos> path = PATHS.get(entry.getKey());
 				MerlGuideNpc.update(player, path, path == null ? -1 : nearest(path, player.blockPosition()),
 						new Vec3(target.x(), target.y() != null ? target.y() : player.getY(), target.z()));
 			}
 			if (!frame) continue;
-			boolean found = drawPath(player, target);
+			Way way = drawPath(player, target);
 			String direction = BiomeNames.direction(goal.x - eye.x, goal.z - eye.z, SHOWN_DIRECTION.get(entry.getKey()));
 			SHOWN_DIRECTION.put(entry.getKey(), direction);
 			player.sendOverlayMessage(Component.literal(target.label() + ": " + String.format(Locale.ROOT, "%,d", Math.round(flat))
-					+ " blocks " + direction + (found ? "" : " (no path)")
+					+ " blocks " + direction + (way == Way.NONE ? " (no path)" : way == Way.SEARCHING ? " (finding the way…)" : "")
 					+ (DEBUG.contains(entry.getKey()) ? " · " + LAST_PLAN.getOrDefault(entry.getKey(), "") : ""))
 					.withStyle(ChatFormatting.LIGHT_PURPLE));
 		}

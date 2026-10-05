@@ -808,6 +808,72 @@ public final class MerlLines {
 		return item.isEmpty() || item.split(" ").length > 5 ? null : item;
 	}
 
+	// Block palettes: "what blocks go with this", "palette for deepslate", "random palette", "another palette".
+	/**
+	 * @param block the block asked about by name, or null for the one looked at (or held)
+	 * @param holding about the block in the player's hand
+	 * @param random a palette around a random block
+	 * @param again another palette like the last one
+	 * @param loose "what goes with X" without saying block or palette: only a palette question when X is a block
+	 */
+	public record PaletteAsk(String block, boolean holding, boolean random, boolean again, boolean loose) {
+		public PaletteAsk(String block, boolean holding, boolean random, boolean again) {
+			this(block, holding, random, again, false);
+		}
+	}
+
+	private static final String PALETTE_WORD = "(block |color |colour |building |build )?palettes?";
+	private static final Pattern PALETTE_AGAIN = Pattern.compile(
+			"(merl )?(give me |show me |try |can i get |i want )?(an ?other|a different|a new|different|new|more|one more|other) " + PALETTE_WORD + "( please| pls)?");
+	private static final Pattern PALETTE_RANDOM = Pattern.compile(
+			"(.* )?(random|surprise|any|some) " + PALETTE_WORD + "( please| pls| idea| ideas)?"
+			+ "|(.* )?surprise me( with)?( an?| some)? " + PALETTE_WORD + "( please| pls)?"
+			+ "|(merl )?(give me |show me |suggest |make me |can you (give|make|suggest|show) me |i want |i need |got )?an? " + PALETTE_WORD + "( please| pls)?"
+			+ "|(merl )?" + PALETTE_WORD + "( please| pls| idea| ideas| inspiration)?"
+			+ "|(.* )?" + PALETTE_WORD + " (ideas?|inspiration|suggestions?)( please| pls)?"
+			+ "|(.* )?(what|which|some|random) blocks (go|fit|match|look good|work)( well| nicely| great)? together");
+	private static final Pattern PALETTE_WITH = Pattern.compile(
+			"(.* )?(what|which)( other| kind of| kinds of)? (blocks?|materials?) (would |could |will |do |does |might )?"
+			+ "(go|goes|fit|fits|match|matches|pair|pairs|work|works|look good|looks good|combine|blend|complement|complements)"
+			+ "( well| nicely| best| good| great)? (with|to|together with|alongside|next to|for) (?<block>.+)"
+			+ "|(.* )?(what|which) (would |could |will |do |does )?(go|goes|fit|fits|match|matches|pairs?|complements?)"
+			+ "( well| nicely| best| good)? (with|to) (?<block2>.+)"
+			+ "|(.* )?(blocks?|materials?) (that|which|to) (go|fit|match|pair|work|look good|complement)s?( well| nicely| best)? (with |to |next to )?(?<block3>.+)"
+			+ "|(.* )?" + PALETTE_WORD + " (for|with|around|using|based on|from|of|to go with|that goes with) (?<block4>.+)"
+			+ "|(merl )?(?<block5>[a-z ]{3,40}?) " + PALETTE_WORD + "( please| pls)?");
+	private static final Pattern THIS_BLOCK = Pattern.compile(
+			"(this|that|it|here|this one|that one)( block)?( here| right here| right now)?|(the )?block (im|i am) looking at|what im looking at");
+	private static final Pattern HELD_BLOCK = Pattern.compile("\\b(holding|in my hand|my hand|held)\\b");
+	private static final Set<String> NOT_PALETTE_BLOCKS = Set.of("a", "the", "my", "random", "any", "some", "another", "new",
+			"different", "more", "one more", "other", "good", "nice", "cool", "best", "together", "each other");
+
+	/** A palette question, or null. */
+	public static PaletteAsk palette(String message) {
+		String text = normalize(message);
+		if (!text.contains("palette") && !text.matches(".*\\b(blocks?|materials?|go|goes|fit|fits|match|matches|pairs?|complements?)\\b.*")) return null;
+		if (PALETTE_AGAIN.matcher(text).matches()) return new PaletteAsk(null, false, false, true);
+		if (PALETTE_RANDOM.matcher(text).matches()) return new PaletteAsk(null, false, true, false);
+		Matcher m = PALETTE_WITH.matcher(text);
+		if (!m.matches()) return null;
+		String block = null;
+		for (String group : List.of("block", "block2", "block3", "block4", "block5")) {
+			if (m.group(group) != null) block = m.group(group);
+		}
+		// "what goes with diamonds" is no palette question unless it says block or palette, or names this block.
+		boolean aboutBlocks = text.contains("palette") || text.matches(".*\\b(blocks?|materials?)\\b.*");
+		block = block.replaceAll("\\b(in minecraft|for (my|a) (build|house|base|wall|floor|roof)|for building|please|pls|merl|well|nicely)\\b", " ")
+				.replaceAll("^(the|a|an|some|my) ", "").replaceAll("\\s+", " ").strip();
+		if (block.isEmpty() || NOT_PALETTE_BLOCKS.contains(block)) return aboutBlocks ? new PaletteAsk(null, false, true, false) : null;
+		if (HELD_BLOCK.matcher(block).find()) return new PaletteAsk(null, true, false, false);
+		if (THIS_BLOCK.matcher(block).matches()) return new PaletteAsk(null, false, false, false);
+		if (block.split(" ").length > 5) return null;
+		// "surprise me with a palette" and the like: no block named after all.
+		if (m.group("block5") != null && block.matches(".*\\b(me|you|with|give|show|want|need|make|get|some|any)\\b.*")) {
+			return new PaletteAsk(null, false, true, false);
+		}
+		return new PaletteAsk(block, false, false, false, !aboutBlocks);
+	}
+
 	// "What can I enchant this with?"
 	private static final Pattern ENCHANT_FOR_THIS = Pattern.compile(
 			"\\b(what|which|list|show|all|any)\\b.*\\benchant(ment)?s?\\b.*\\b(this|it|that|my hand|holding)\\b"
