@@ -1,7 +1,3 @@
 # Minecraft Version(s): 26.3
-## Guide Merl takes to the skies
-- **Fly in creative mode** and Merl floats along ahead of you, upright and with her map, instead of waiting on the ground
-- **Rockets!** While you glide she holds a firework rocket instead of her compass, and when you fire one she fires one too, with a trail of sparks
-- **She keeps up now:** elytra Merl matches your speed and stays ahead of you instead of trailing behind
-- **No more flying sideways:** she faces the way she's flying and leans into turns like a real player
-- **Sparkles are back:** the trail between you and Merl is made of white sparkles again, now mixed with pink ones (no more glass squares)
+## Fixes
+- **Smooth elytra flights:** guide Merl no longer jitters and twitches while flying with you. She keeps a steady speed and turns smoothly instead of reacting to every little bump in your position
