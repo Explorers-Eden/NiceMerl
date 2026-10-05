@@ -19,7 +19,11 @@ import net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket;
 import net.minecraft.network.protocol.game.ClientboundRotateHeadPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.MapItem;
+import net.minecraft.world.level.saveddata.maps.MapId;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityProcessor;
 import net.minecraft.world.entity.EntitySpawnReason;
@@ -151,7 +155,32 @@ final class MerlGuideNpc {
 				body.getType(), 0, Vec3.ZERO, 0.0));
 		var data = body.getEntityData().getNonDefaultValues();
 		if (data != null && !data.isEmpty()) connection.send(new ClientboundSetEntityDataPacket(body.getId(), data));
-		connection.send(new ClientboundSetEquipmentPacket(body.getId(), List.of(Pair.of(EquipmentSlot.MAINHAND, new ItemStack(Items.FILLED_MAP)))));
+		connection.send(new ClientboundSetEquipmentPacket(body.getId(), List.of(Pair.of(EquipmentSlot.MAINHAND, map(player)),
+				Pair.of(EquipmentSlot.OFFHAND, new ItemStack(Items.COMPASS)))));
+	}
+
+	/**
+	 * A real filled map for her hand (one without a map id is drawn blank). It's made once, of the area around
+	 * spawn, and reused for every guide.
+	 */
+	private static ItemStack map(ServerPlayer player) {
+		ItemStack stack = new ItemStack(Items.FILLED_MAP);
+		try {
+			ServerLevel overworld = player.level().getServer().overworld();
+			Integer known = MerlState.guideMap();
+			if (known != null && MapItem.getSavedData(new MapId(known), overworld) != null) {
+				stack.set(DataComponents.MAP_ID, new MapId(known));
+				return stack;
+			}
+			BlockPos spawn = overworld.getRespawnData().pos();
+			ItemStack made = MapItem.create(overworld, spawn.getX(), spawn.getZ(), (byte) 2, false, false);
+			MapId id = made.get(DataComponents.MAP_ID);
+			if (id != null) MerlState.setGuideMap(id.id());
+			return made;
+		} catch (RuntimeException e) {
+			NiceMerl.LOGGER.debug("Could not make the guide map", e);
+			return stack;
+		}
 	}
 
 	private static void move(Npc npc, Vec3 to, float yaw, float pitch) {

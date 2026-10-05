@@ -145,6 +145,8 @@ public final class MerlState {
 
 	private static final class Data {
 		long pets;
+		/** The map the guide Merl holds, made once so the world doesn't fill up with maps. */
+		Integer guideMap;
 		Map<String, Player> players = new HashMap<>();
 	}
 
@@ -185,6 +187,15 @@ public final class MerlState {
 		} catch (IOException e) {
 			NiceMerl.LOGGER.warn("Could not write {}", path, e);
 		}
+	}
+
+	public static synchronized Integer guideMap() {
+		return data.guideMap;
+	}
+
+	public static synchronized void setGuideMap(int id) {
+		data.guideMap = id;
+		save();
 	}
 
 	/** One more pet for Peanut Butter; returns the new total. */
