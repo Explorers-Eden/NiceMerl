@@ -15,25 +15,32 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
-import net.minecraft.network.protocol.game.ClientboundAnimatePacket;
+import net.minecraft.network.protocol.game.ClientboundSwingAnimationPacket;
 import net.minecraft.network.protocol.game.ClientboundEntityPositionSyncPacket;
 import net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket;
 import net.minecraft.network.protocol.game.ClientboundRotateHeadPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket;
+import net.minecraft.network.protocol.game.ClientboundSetPassengersPacket;
+import net.minecraft.network.FriendlyByteBuf;
+import io.netty.buffer.Unpooled;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.MapItem;
 import net.minecraft.world.level.saveddata.maps.MapId;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityProcessor;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.decoration.Cushion;
+import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.entity.PositionPath;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.SwingAnimation;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.Vec3;
 
@@ -75,8 +82,6 @@ final class MerlGuideNpc {
 	private static final double FLY_SNAP = 30.0;
 	/** After the player fires a rocket she trails firework sparks as long as it burns: about 10 ticks per flight duration level, plus 10. */
 	private static final int BOOST_TICKS_PER_DURATION = 10;
-	/** ClientboundAnimatePacket action for swinging the off hand. */
-	private static final int SWING_OFF_HAND = 3;
 	/** Entity flag for gliding with an elytra (Entity.FLAG_FALL_FLYING). */
 	private static final int FLAG_FALL_FLYING = 7;
 	private static java.lang.reflect.Method setSharedFlag;
@@ -84,6 +89,10 @@ final class MerlGuideNpc {
 	private static final class Npc {
 		ServerPlayer owner;
 		Entity body;
+		/** Hide and seek: the cushion she sits on (packet-only too), or null. */
+		Entity cushion;
+		/** Companion Merl: ticks the player has stood still (she sits down on a cushion after a while). */
+		int idleTicks;
 		Vec3 pos;
 		float yaw;
 		/** The path step she's at, so the sparkles can stop at her. */
@@ -108,6 +117,8 @@ final class MerlGuideNpc {
 
 	/** She says each kind of remark (taking off, landing, waiting) at most this often, in ticks. */
 	private static final long REMARK_PAUSE = 400;
+	/** Companion Merl sits down on a cushion after the player has stood still this long, in ticks. */
+	private static final int SIT_AFTER_TICKS = 200;
 	/** She mentions waiting after the player has been behind this long, in ticks. */
 	private static final int WAIT_BEFORE_REMARK = 60;
 
@@ -139,6 +150,7 @@ final class MerlGuideNpc {
 			npc.air = Air.WALKING;
 			npc.playerTrail.clear();
 		}
+		if (npc.cushion != null) standUp(npc);
 		trackSpeed(npc, player);
 		// The player glides or flies: she puts on an elytra (or just takes off) and flies ahead of them.
 		if (player.isFallFlying() || player.getAbilities().flying) {
@@ -229,6 +241,7 @@ final class MerlGuideNpc {
 	 * doesn't fall behind, and faces the way she's going.
 	 */
 	private static void fly(Npc npc, ServerPlayer player, Vec3 destination, Air air) {
+		if (npc.cushion != null) standUp(npc);
 		Vec3 here = player.position();
 		Vec3 toward = new Vec3(destination.x - here.x, 0, destination.z - here.z);
 		double far = toward.length();
@@ -291,7 +304,7 @@ final class MerlGuideNpc {
 		boolean first = npc.boostTicks == 0;
 		var fireworks = rocket.get(DataComponents.FIREWORKS);
 		npc.boostTicks = BOOST_TICKS_PER_DURATION * (1 + (fireworks == null ? 1 : fireworks.flightDuration()));
-		npc.owner.connection.send(new ClientboundAnimatePacket(npc.body, SWING_OFF_HAND));
+		npc.owner.connection.send(new ClientboundSwingAnimationPacket(npc.body, InteractionHand.OFF_HAND, SwingAnimation.DEFAULT));
 		if (first && npc.owner.getRandom().nextInt(4) == 0) remark(npc, "guide_boost");
 	}
 
@@ -391,7 +404,22 @@ final class MerlGuideNpc {
 					player.isFallFlying() ? Air.GLIDING : Air.HOVERING);
 		} else {
 			if (npc.air != Air.WALKING && npc.body != null) setAir(npc, Air.WALKING);
+			// Standing still for a while: she sits down on a cushion next to them, and gets up when they move on.
+			boolean still = player.onGround() && npc.playerSpeed.horizontalDistanceSqr() < 0.0004 && !player.isShiftKeyDown();
+			npc.idleTicks = still ? npc.idleTicks + 1 : 0;
+			if (npc.cushion != null && npc.idleTicks == 0) standUp(npc);
+			if (npc.cushion != null) {
+				Vec3 facing = player.getEyePosition().subtract(npc.pos.add(0, 1.0, 0));
+				if (npc.ticks % 5 == 0) move(npc, npc.pos, yaw(facing), 0f);
+				return;
+			}
 			stayClose(npc, player);
+			if (npc.idleTicks >= SIT_AFTER_TICKS && npc.body != null && npc.goodbyeTicks < 0
+					&& npc.pos.distanceTo(player.position()) < 3 && MerlPath.standable(player.level(), BlockPos.containing(npc.pos))) {
+				Vec3 seat = Vec3.atBottomCenterOf(BlockPos.containing(npc.pos));
+				move(npc, seat, npc.yaw, 0f);
+				sitOnCushion(npc, player, seat, npc.yaw);
+			}
 		}
 		// Just (re)appeared, or back from flying: her outfit again.
 		if (npc.body != null && npc.air == Air.WALKING && !npc.outfitSent && npc.outfitItems != null) sendOutfit(npc);
@@ -421,16 +449,53 @@ final class MerlGuideNpc {
 		spawn(npc, player, at);
 		if (npc.body == null) return;
 		move(npc, at, yaw, 0f);
+		sitOnCushion(npc, player, at, yaw);
 		npc.outfit = "hiding";
 		npc.outfitItems = List.of(Pair.of(EquipmentSlot.MAINHAND, ItemStack.EMPTY), Pair.of(EquipmentSlot.OFFHAND, ItemStack.EMPTY));
 		sendOutfit(npc);
+	}
+
+	/**
+	 * Hide and seek: a cushion of a random color (26.3's own cushion, packet-only like her) where she hides, with her
+	 * sitting on it. Her figure isn't in the world, so it can't really ride; the passengers packet is written by hand.
+	 */
+	private static void sitOnCushion(Npc npc, ServerPlayer player, Vec3 at, float yaw) {
+		try {
+			Cushion cushion = new Cushion(net.minecraft.world.entity.EntityTypes.CUSHION, player.level());
+			DyeColor[] colors = DyeColor.values();
+			cushion.setColor(colors[player.getRandom().nextInt(colors.length)]);
+			cushion.setPos(at.x, at.y, at.z);
+			var connection = player.connection;
+			connection.send(new ClientboundAddEntityPacket(cushion.getId(), cushion.getUUID(), at.x, at.y, at.z, 0f, yaw,
+					cushion.getType(), 0, Vec3.ZERO, 0.0));
+			var data = cushion.getEntityData().getNonDefaultValues();
+			if (data != null && !data.isEmpty()) connection.send(new ClientboundSetEntityDataPacket(cushion.getId(), data));
+			FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());
+			buffer.writeVarInt(cushion.getId());
+			buffer.writeVarIntArray(new int[] {npc.body.getId()});
+			connection.send(ClientboundSetPassengersPacket.STREAM_CODEC.decode(buffer));
+			npc.cushion = cushion;
+		} catch (Exception e) {
+			NiceMerl.LOGGER.debug("Could not make Merl's cushion", e);
+		}
+	}
+
+	/** She gets up: the cushion goes away (which drops her off it) and she stands where it was. */
+	private static void standUp(Npc npc) {
+		if (npc.cushion == null || npc.owner == null || npc.owner.hasDisconnected()) {
+			npc.cushion = null;
+			return;
+		}
+		npc.owner.connection.send(new ClientboundRemoveEntitiesPacket(npc.cushion.getId()));
+		npc.cushion = null;
+		if (npc.body != null) move(npc, npc.pos, npc.yaw, 0f);
 	}
 
 	/** Hide and seek is over: she turns to the player, waves for a moment, then goes. */
 	static void foundAt(ServerPlayer player) {
 		Npc npc = NPCS.get(player.getUUID());
 		if (npc == null || npc.body == null) return;
-		npc.owner.connection.send(new ClientboundAnimatePacket(npc.body, 0));
+		npc.owner.connection.send(new ClientboundSwingAnimationPacket(npc.body, InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT));
 		npc.goodbyeTicks = GOODBYE_TICKS;
 	}
 
@@ -495,7 +560,12 @@ final class MerlGuideNpc {
 	}
 
 	private static void remove(Npc npc) {
-		npc.owner.connection.send(new ClientboundRemoveEntitiesPacket(npc.body.getId()));
+		if (npc.cushion != null) {
+			npc.owner.connection.send(new ClientboundRemoveEntitiesPacket(npc.body.getId(), npc.cushion.getId()));
+			npc.cushion = null;
+		} else {
+			npc.owner.connection.send(new ClientboundRemoveEntitiesPacket(npc.body.getId()));
+		}
 		npc.body = null;
 	}
 

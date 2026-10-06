@@ -2,6 +2,7 @@
 ## New: Companion Merl
 - *"Can you stay with me?"*, *"give me a hand"* or *"keep me company"*: Merl stays by your side (only you see her) and follows you around, flying along when you glide or fly
 - She dresses for the situation: a gold helmet and fire resistance in the Nether, a pumpkin in the End, a turtle helmet and trident underwater, sword and shield when monsters are near, a pickaxe and torch underground, a fishing rod, a hoe or your building block when you're fishing, farming or building, warm clothes in the snow, and a golden apple ready when you're hurt
+- Stand still for a while and she puts down a cushion in a random color and sits on it, until you move on
 - She warns you about creepers, reminds you when you're hurt, hungry or night is falling, and chats with you now and then
 - *"You can go now"* or *"stop following me"* sends her home. While she guides you somewhere, the guide takes over, and she comes back afterwards
 - Server admins can turn her off with `companion` in the config
@@ -17,7 +18,7 @@
 - Right answers, streaks and your best streak are saved; *"quiz leaderboard"* shows the top 10
 
 ## New: Hide and seek
-- *"Let's play hide and seek"*: Merl hides somewhere nearby (only you see her), and the action bar tells you warmer or colder
+- *"Let's play hide and seek"*: Merl hides somewhere nearby, sitting on a cushion of a random color (only you see her), and the action bar tells you warmer or colder
 - Walk up and look her in the eyes to find her. Your fastest time is saved. *"I give up"* and she shows you where she was
 
 ## New: Biome collection and advancement coach

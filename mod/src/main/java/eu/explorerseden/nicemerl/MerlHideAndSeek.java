@@ -20,14 +20,16 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * "Let's play hide and seek": Merl's figure (only the player sees it) hides 15–40 blocks away, preferably out of
- * sight, and the action bar says warmer or colder every second. Looking at her from close by finds her.
+ * "Let's play hide and seek": Merl's figure (only the player sees it) sits on a cushion 15–40 blocks away, preferably
+ * out of sight, and the action bar says warmer or colder every second. Looking at her from close by finds her.
  */
 final class MerlHideAndSeek {
 	private static final int MIN_DISTANCE = 15, MAX_DISTANCE = 40, TRIES = 80;
 	private static final long TIME_LIMIT_MS = 5 * 60_000;
 	/** Found: her face within this many blocks of the player's eyes, looked at with nothing in between. */
 	private static final double FOUND_RANGE = 3.5, FOUND_COS = 0.85;
+	/** Her face above the ground while she sits on her cushion. */
+	private static final double FACE_HEIGHT = 1.2;
 	private static final TextColor PINK = TextColor.fromRgb(0xF06EAA);
 
 	private static final class Game {
@@ -142,7 +144,7 @@ final class MerlHideAndSeek {
 	}
 
 	private static boolean found(ServerPlayer player, Game game) {
-		Vec3 face = game.spot.add(0, 1.62, 0);
+		Vec3 face = game.spot.add(0, FACE_HEIGHT, 0);
 		Vec3 eyes = player.getEyePosition();
 		if (eyes.distanceTo(face) > FOUND_RANGE + 1.0) return false;
 		if (eyes.distanceTo(face) <= 1.5) return true;
@@ -175,7 +177,7 @@ final class MerlHideAndSeek {
 				if (!MerlPath.standable(level, at) || level.canSeeSky(at.above()) != outdoors) continue;
 				if (!level.getFluidState(at).isEmpty()) continue;
 				Vec3 spot = Vec3.atBottomCenterOf(at);
-				if (!visible(level, eyes, spot.add(0, 1.62, 0), player)) return spot;
+				if (!visible(level, eyes, spot.add(0, FACE_HEIGHT, 0), player)) return spot;
 				if (fallback == null) fallback = spot;
 				break;
 			}
