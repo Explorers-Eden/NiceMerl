@@ -14,6 +14,12 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.TagParser;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.entity.EntityTypeTest;
 import net.minecraft.world.entity.decoration.Mannequin;
 import net.minecraft.world.scores.PlayerTeam;
@@ -27,7 +33,6 @@ import net.minecraft.world.scores.Team;
  */
 public final class MerlMannequin {
 	static final String TAG = "nicemerl.mannequin";
-	private static final String NEW_TAG = "nicemerl.mannequin.new";
 	/** Players don't collide with it, and nothing shows above its head. */
 	private static final String TEAM = "nicemerl_mannequin";
 	private static final int CHECK_TICKS = 20;
@@ -87,17 +92,30 @@ public final class MerlMannequin {
 		if (player == null) return Component.literal("Only players can place a Merl mannequin.");
 		ServerLevel level = player.level();
 		String profile = SKIN_TEXTURE.isEmpty() ? "" : "{properties:[{name:\"textures\",value:\"" + SKIN_TEXTURE + "\"}]}";
-		String nbt = "{Tags:[\"" + TAG + "\",\"" + NEW_TAG + "\"],Invulnerable:1b,Silent:1b,PersistenceRequired:1b,"
-				+ "immovable:1b,hide_description:1b,Rotation:[" + player.getYRot() + "f,0f]" + (profile.isEmpty() ? "" : ",profile:" + profile) + "}";
+		String nbt = "{Tags:[\"" + TAG + "\"],Invulnerable:1b,Silent:1b,PersistenceRequired:1b,"
+				+ "immovable:1b,hide_description:1b" + (profile.isEmpty() ? "" : ",profile:" + profile) + "}";
 		MinecraftServer server = source.getServer();
-		CommandSourceStack console = server.createCommandSourceStack().withSuppressedOutput().withLevel(level).withPosition(player.position());
-		server.getCommands().performPrefixedCommand(console, "summon minecraft:mannequin ~ ~ ~ " + nbt);
-		List<? extends Mannequin> spawned = level.getEntities(MANNEQUINS, m -> m.entityTags().contains(NEW_TAG));
-		if (spawned.isEmpty()) return Component.literal("The mannequin couldn't be placed here.").withStyle(ChatFormatting.RED);
-		for (Mannequin mannequin : spawned) {
-			mannequin.removeTag(NEW_TAG);
-			joinTeam(server, mannequin);
+		// Made and added directly (not by /summon and a search afterwards, which sometimes didn't find the new one yet).
+		Entity made;
+		try {
+			CompoundTag tag = TagParser.parseCompoundFully(nbt);
+			EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.getValue(Identifier.withDefaultNamespace("mannequin"));
+			Vec3 at = player.position();
+			float yaw = player.getYRot();
+			made = EntityType.loadEntityRecursive(type, tag, level, EntitySpawnReason.COMMAND, e -> {
+				e.snapTo(at, yaw, 0f);
+				e.setYHeadRot(yaw);
+				return e;
+			});
+		} catch (Exception e) {
+			NiceMerl.LOGGER.warn("Could not make a Merl mannequin: {}", e.toString());
+			made = null;
 		}
+		if (!(made instanceof Mannequin mannequin) || !level.tryAddFreshEntityWithPassengers(mannequin)) {
+			return Component.literal("The mannequin couldn't be placed here.").withStyle(ChatFormatting.RED);
+		}
+		mannequin.setYBodyRot(player.getYRot());
+		joinTeam(server, mannequin);
 		return Component.literal("Merl mannequin placed. Right-click it to try it, or remove it with /nicemerl mannequin remove.");
 	}
 

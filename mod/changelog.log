@@ -10,5 +10,14 @@
 ## Merl is your size
 - Merl is always as big as you: when a pack, a potion or a command makes you bigger or smaller, she changes size with you (guide, companion and hide and seek)
 
+## Quiz
+- The quiz now has over 1,100 questions. Many of them come straight from the game's data (recipes, smelting, the right tool, mob drops, advancements, enchantments and biomes), so their answers are always right
+
+## Build ideas
+- *"What to build next?"*, *"what structure should I build?"*, *"what can I build?"*, *"I don't know what to build"* and similar questions now get a build idea instead of a general tip or a wiki page
+
+## Mannequin
+- Placing a Merl mannequin no longer sometimes says it couldn't be placed when it was
+
 ## Companion Merl
 - *"Give me company"*, *"I could use some company"*, *"company please"* and *"stay by my side"* now ask her to stay with you too
