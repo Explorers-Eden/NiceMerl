@@ -4,6 +4,7 @@ import asyncio
 import logging
 import re
 from dataclasses import dataclass
+from urllib.parse import quote, urljoin
 
 import aiohttp
 from bs4 import BeautifulSoup, NavigableString, Tag
@@ -28,6 +29,8 @@ class Section:
     vanilla: bool = False
     # The page's description and tags from the wiki, the same for every section of the page.
     meta: str = ""
+    # A picture from the page to show with the answer, "" if it has none.
+    image: str = ""
 
 
 async def fetch_page_list(session: aiohttp.ClientSession, wiki_url: str) -> list[dict]:
@@ -48,6 +51,14 @@ def extract_sections(html: str, path: str, page_title: str) -> list[Section]:
     return split_sections(content, path, page_title)
 
 
+def picture(img: Tag) -> str:
+    """The src of a page picture worth showing, or "" for recipes, inline SVGs and the like."""
+    src = (img.get("src") or "").strip()
+    if not src or src.startswith("data:") or "/recipe/" in src or src.lower().endswith(".svg"):
+        return ""
+    return src
+
+
 def split_sections(content: BeautifulSoup, path: str, page_title: str, vanilla: bool = False) -> list[Section]:
     """Splits parsed page content into one Section per h1-h3 heading."""
     for tag in content.find_all(["style", "script"]):
@@ -63,8 +74,10 @@ def split_sections(content: BeautifulSoup, path: str, page_title: str, vanilla: 
     # excerpts can show whole sentences and bullet lists.
     for tr in content.find_all("tr"):
         cells = [c.get_text(" ", strip=True) for c in tr.find_all(["td", "th"])]
+        images = [img.extract() for img in tr.find_all("img")]
         tr.clear()
         tr.append(NavigableString(" | ".join(c for c in cells if c)))
+        tr.extend(images)
     for li in content.find_all("li"):
         li.insert(0, NavigableString("• "))
     for tag in content.find_all(LINE_BLOCKS):
@@ -74,6 +87,7 @@ def split_sections(content: BeautifulSoup, path: str, page_title: str, vanilla: 
 
     sections = [Section(path, page_title, page_title, "", "", vanilla)]
     parts: list[str] = []
+    hero = ""  # the page's first picture, for sections without their own
 
     def flush():
         text = re.sub(r"[^\S\n]+", " ", "".join(parts))
@@ -87,7 +101,15 @@ def split_sections(content: BeautifulSoup, path: str, page_title: str, vanilla: 
             sections.append(Section(path, page_title, heading, node.get("id", ""), "", vanilla))
         elif isinstance(node, NavigableString) and node.find_parent(HEADINGS) is None:
             parts.append(str(node))
+        elif isinstance(node, Tag) and node.name == "img" and not vanilla:
+            # A section keeps its own captioned picture; ones without alt text are small inline icons.
+            src = picture(node)
+            hero = hero or src
+            if src and node.get("alt") and not sections[-1].image:
+                sections[-1].image = src
     flush()
+    for section in sections:
+        section.image = section.image or hero
     return [s for s in sections if s.text or s.anchor]
 
 
@@ -115,6 +137,8 @@ async def fetch_sections(wiki_url: str, concurrency: int = 4) -> list[Section]:
             meta = " ".join([page.get("description") or ""] + list(page.get("tags") or [])).strip()
             for section in sections:
                 section.meta = meta
+                if section.image:
+                    section.image = quote(urljoin(f"{wiki_url}/", section.image), safe=":/?#[]@!$&'()*+,;=%")
             return sections
 
         results = await asyncio.gather(*(fetch(p) for p in pages))

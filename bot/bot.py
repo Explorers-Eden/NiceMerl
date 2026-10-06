@@ -359,6 +359,8 @@ class NiceMerl(discord.Client):
                     embed.set_image(url="attachment://recipe.png")
                 else:
                     embed.set_image(url=picture.url)
+            elif results[0].section.image:
+                embed.set_image(url=results[0].section.image)
             await self.say(message, started, embed=embed, results=len(results), extra_file=recipe_file)
         else:
             visit.page = ""
