@@ -102,6 +102,11 @@ public final class MerlGuide {
 		GUIDED.put(player.getUUID(), new Target(x + 0.5, y, z + 0.5, dimension, label, ticks));
 	}
 
+	/** Whether Merl is guiding the player somewhere right now. */
+	static boolean guiding(UUID player) {
+		return GUIDED.containsKey(player);
+	}
+
 	/** /nicemerl guide debug: shows what the path search did on the action bar. Returns whether it's on now. */
 	static boolean toggleDebug(ServerPlayer player) {
 		if (DEBUG.remove(player.getUUID())) return false;

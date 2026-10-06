@@ -1,0 +1,2625 @@
+{
+  "_comment": "Hand-written Minecraft trivia for Merl's quiz (mod). The right answer is listed first; Merl shuffles the answers.",
+  "questions": [
+    {
+      "q": "How many hearts of health does a creeper have?",
+      "right": "10",
+      "wrong": [
+        "5",
+        "8",
+        "15"
+      ],
+      "why": "Creepers have 20 health points, which is 10 hearts."
+    },
+    {
+      "q": "What do you feed a turtle to breed it?",
+      "right": "Seagrass",
+      "wrong": [
+        "Kelp",
+        "Raw cod",
+        "Lily pads"
+      ],
+      "why": "Turtles breed with seagrass and lay their eggs on the beach they hatched on."
+    },
+    {
+      "q": "Which mob drops a nautilus shell when it holds one?",
+      "right": "Drowned",
+      "wrong": [
+        "Guardian",
+        "Squid",
+        "Turtle"
+      ],
+      "why": "Drowned can spawn holding a nautilus shell in their off hand, and they always drop it."
+    },
+    {
+      "q": "What item do you use to tame a wolf?",
+      "right": "Bones",
+      "wrong": [
+        "Raw beef",
+        "Rotten flesh",
+        "Wheat"
+      ],
+      "why": "Feeding a wolf bones has a chance to tame it."
+    },
+    {
+      "q": "What does a cat bring you as a morning gift?",
+      "right": "Things like string, feathers or rabbit hide",
+      "wrong": [
+        "Diamonds",
+        "Emeralds",
+        "Golden apples"
+      ],
+      "why": "Tamed cats sleeping on your bed can leave a gift such as string, feathers, rabbit feet or phantom membranes."
+    },
+    {
+      "q": "Which mob is scared of cats and ocelots?",
+      "right": "Creepers",
+      "wrong": [
+        "Zombies",
+        "Skeletons",
+        "Spiders"
+      ],
+      "why": "Creepers run away from cats and ocelots."
+    },
+    {
+      "q": "What do skeletons run away from?",
+      "right": "Wolves",
+      "wrong": [
+        "Cats",
+        "Villagers",
+        "Iron golems"
+      ],
+      "why": "Skeletons flee from wolves, which hunt them."
+    },
+    {
+      "q": "How do you get a charged creeper?",
+      "right": "Lightning strikes a creeper",
+      "wrong": [
+        "Feed it gunpowder",
+        "Splash it with a potion",
+        "Light it with flint and steel"
+      ],
+      "why": "A lightning bolt near a creeper turns it into a charged creeper."
+    },
+    {
+      "q": "What does a charged creeper's explosion make some mobs drop?",
+      "right": "Their heads",
+      "wrong": [
+        "Diamonds",
+        "Experience bottles",
+        "Music discs"
+      ],
+      "why": "Mobs killed by a charged creeper explosion drop their head, like a zombie or skeleton skull."
+    },
+    {
+      "q": "Which mob can pick up and carry blocks?",
+      "right": "Enderman",
+      "wrong": [
+        "Creeper",
+        "Witch",
+        "Zombie"
+      ],
+      "why": "Endermen pick up certain blocks like grass, dirt, sand and flowers."
+    },
+    {
+      "q": "What happens when you look an enderman in the eyes?",
+      "right": "It becomes angry",
+      "wrong": [
+        "It teleports away",
+        "It gives you an ender pearl",
+        "Nothing"
+      ],
+      "why": "Looking at an enderman's upper body makes it hostile. A carved pumpkin on your head prevents this."
+    },
+    {
+      "q": "What does a mooshroom give you when you use a bowl on it?",
+      "right": "Mushroom stew",
+      "wrong": [
+        "Milk",
+        "Beetroot soup",
+        "Rabbit stew"
+      ],
+      "why": "Using a bowl on a mooshroom gives mushroom stew; a brown mooshroom fed a flower gives suspicious stew."
+    },
+    {
+      "q": "How do you turn a red mooshroom into a brown one?",
+      "right": "Lightning strikes it",
+      "wrong": [
+        "Feed it a brown mushroom",
+        "Shear it",
+        "Put it in a swamp"
+      ],
+      "why": "A lightning bolt switches a mooshroom between red and brown."
+    },
+    {
+      "q": "What do you get when you shear a mooshroom?",
+      "right": "Mushrooms and a normal cow",
+      "wrong": [
+        "Wool",
+        "Leather",
+        "Mycelium"
+      ],
+      "why": "Shearing a mooshroom drops five mushrooms and turns it into a cow."
+    },
+    {
+      "q": "Which of these mobs is undead, so Smite hurts it more?",
+      "right": "Wither skeleton",
+      "wrong": [
+        "Blaze",
+        "Spider",
+        "Enderman"
+      ],
+      "why": "Smite does extra damage to undead mobs, and wither skeletons are undead."
+    },
+    {
+      "q": "Which enchantment does extra damage to spiders?",
+      "right": "Bane of Arthropods",
+      "wrong": [
+        "Smite",
+        "Sharpness",
+        "Impaling"
+      ],
+      "why": "Bane of Arthropods hurts spiders, cave spiders, bees, silverfish and endermites more."
+    },
+    {
+      "q": "What do piglins love?",
+      "right": "Gold",
+      "wrong": [
+        "Emeralds",
+        "Diamonds",
+        "Iron"
+      ],
+      "why": "Piglins admire gold and barter with gold ingots."
+    },
+    {
+      "q": "What protects you from piglins attacking you on sight?",
+      "right": "Wearing a piece of gold armor",
+      "wrong": [
+        "Holding a torch",
+        "Wearing leather boots",
+        "Crouching"
+      ],
+      "why": "Piglins leave you alone if you wear at least one piece of golden armor."
+    },
+    {
+      "q": "What do you trade with piglins?",
+      "right": "Gold ingots",
+      "wrong": [
+        "Emeralds",
+        "Gold nuggets",
+        "Diamonds"
+      ],
+      "why": "Throwing a gold ingot to a piglin starts a barter."
+    },
+    {
+      "q": "Which mob turns into a zombified piglin when struck by lightning?",
+      "right": "Pig",
+      "wrong": [
+        "Piglin",
+        "Hoglin",
+        "Villager"
+      ],
+      "why": "A pig struck by lightning becomes a zombified piglin."
+    },
+    {
+      "q": "What does a villager turn into when struck by lightning?",
+      "right": "A witch",
+      "wrong": [
+        "A zombie villager",
+        "An illager",
+        "An iron golem"
+      ],
+      "why": "Lightning turns villagers into witches."
+    },
+    {
+      "q": "How do you cure a zombie villager?",
+      "right": "Weakness potion, then a golden apple",
+      "wrong": [
+        "Feed it bread",
+        "Splash it with water",
+        "Use a totem of undying"
+      ],
+      "why": "Throw a splash potion of weakness and give it a golden apple; it cures after a few minutes."
+    },
+    {
+      "q": "What do iron golems sometimes give to villager children?",
+      "right": "A poppy",
+      "wrong": [
+        "An iron ingot",
+        "A dandelion",
+        "A cookie"
+      ],
+      "why": "Iron golems sometimes hold out a poppy, a nod to the film Castle in the Sky."
+    },
+    {
+      "q": "How do you build an iron golem?",
+      "right": "Four iron blocks in a T and a carved pumpkin",
+      "wrong": [
+        "Two iron blocks and a pumpkin",
+        "Four iron blocks and a skull",
+        "Iron ingots and a jack o'lantern on a fence"
+      ],
+      "why": "Four blocks of iron in a T shape topped with a carved pumpkin or jack o'lantern."
+    },
+    {
+      "q": "What do you need to build a snow golem?",
+      "right": "Two snow blocks and a carved pumpkin",
+      "wrong": [
+        "Three snow blocks",
+        "Ice and a pumpkin",
+        "Snowballs and a skull"
+      ],
+      "why": "Stack two snow blocks and put a carved pumpkin on top."
+    },
+    {
+      "q": "What happens to snow golems in hot biomes?",
+      "right": "They melt and take damage",
+      "wrong": [
+        "They turn into water",
+        "They grow taller",
+        "Nothing"
+      ],
+      "why": "Snow golems take damage in warm biomes like deserts and the Nether."
+    },
+    {
+      "q": "How do you summon the Wither?",
+      "right": "Four soul sand or soil and three wither skeleton skulls",
+      "wrong": [
+        "Four obsidian and three skulls",
+        "Nether bricks and a nether star",
+        "Three skulls on a fence"
+      ],
+      "why": "A T of soul sand or soul soil topped with three wither skeleton skulls."
+    },
+    {
+      "q": "What does the Wither drop?",
+      "right": "A nether star",
+      "wrong": [
+        "A dragon egg",
+        "A wither skull",
+        "A beacon"
+      ],
+      "why": "The Wither drops a nether star, used to craft a beacon."
+    },
+    {
+      "q": "What do you need to respawn the Ender Dragon?",
+      "right": "Four end crystals",
+      "wrong": [
+        "An ender eye",
+        "A dragon egg",
+        "Eight ender pearls"
+      ],
+      "why": "Place four end crystals on the edges of the exit portal."
+    },
+    {
+      "q": "What blocks heal the Ender Dragon?",
+      "right": "End crystals",
+      "wrong": [
+        "Obsidian",
+        "Purpur",
+        "End rods"
+      ],
+      "why": "The crystals on top of the obsidian pillars heal the dragon."
+    },
+    {
+      "q": "Which mob drops the elytra?",
+      "right": "None, you find it in end ships",
+      "wrong": [
+        "Phantom",
+        "Ender Dragon",
+        "Shulker"
+      ],
+      "why": "Elytra hang in item frames inside end ships near end cities."
+    },
+    {
+      "q": "What do phantoms drop?",
+      "right": "Phantom membranes",
+      "wrong": [
+        "Feathers",
+        "Leather",
+        "Elytra"
+      ],
+      "why": "Phantom membranes repair elytra and brew potions of slow falling."
+    },
+    {
+      "q": "When do phantoms appear?",
+      "right": "When you haven't slept for three or more days",
+      "wrong": [
+        "Every full moon",
+        "During thunderstorms",
+        "In the End only"
+      ],
+      "why": "Phantoms spawn at night over players who haven't slept for at least three in-game days."
+    },
+    {
+      "q": "Which mob shoots fireballs in the Nether?",
+      "right": "Ghast",
+      "wrong": [
+        "Blaze",
+        "Magma cube",
+        "Strider"
+      ],
+      "why": "Ghasts shoot explosive fireballs that you can hit back."
+    },
+    {
+      "q": "What do blazes drop?",
+      "right": "Blaze rods",
+      "wrong": [
+        "Blaze powder only",
+        "Fire charges",
+        "Magma cream"
+      ],
+      "why": "Blazes drop blaze rods, needed for brewing stands and eyes of ender."
+    },
+    {
+      "q": "What do magma cubes drop?",
+      "right": "Magma cream",
+      "wrong": [
+        "Slimeballs",
+        "Blaze powder",
+        "Lava buckets"
+      ],
+      "why": "Small magma cubes drop magma cream, used for fire resistance potions."
+    },
+    {
+      "q": "Which Nether mob can you ride across lava?",
+      "right": "Strider",
+      "wrong": [
+        "Hoglin",
+        "Ghast",
+        "Magma cube"
+      ],
+      "why": "Saddle a strider and steer it with a warped fungus on a stick."
+    },
+    {
+      "q": "What do you use to steer a pig you're riding?",
+      "right": "A carrot on a stick",
+      "wrong": [
+        "A lead",
+        "A saddle only",
+        "A stick"
+      ],
+      "why": "A carrot on a stick lets you control a saddled pig."
+    },
+    {
+      "q": "What scares hoglins away?",
+      "right": "Warped fungus",
+      "wrong": [
+        "Crimson fungus",
+        "Gold",
+        "Torches"
+      ],
+      "why": "Hoglins avoid warped fungus, nether portals and respawn anchors."
+    },
+    {
+      "q": "What happens to a piglin brought into the Overworld?",
+      "right": "It turns into a zombified piglin",
+      "wrong": [
+        "It turns into a pig",
+        "It explodes",
+        "Nothing"
+      ],
+      "why": "Piglins and hoglins zombify after 15 seconds outside the Nether."
+    },
+    {
+      "q": "What item makes a llama carry chests?",
+      "right": "A chest",
+      "wrong": [
+        "A saddle",
+        "A carpet",
+        "A lead"
+      ],
+      "why": "Put a chest on a tamed llama to carry items. Carpets decorate them."
+    },
+    {
+      "q": "Which animal can you breed with hay bales?",
+      "right": "Horses and llamas",
+      "wrong": [
+        "Cows",
+        "Sheep",
+        "Pigs"
+      ],
+      "why": "Hay bales heal horses and llamas, and breed llamas."
+    },
+    {
+      "q": "What do you feed axolotls?",
+      "right": "A bucket of tropical fish",
+      "wrong": [
+        "Seagrass",
+        "Kelp",
+        "Raw cod"
+      ],
+      "why": "Axolotls are fed and bred with buckets of tropical fish."
+    },
+    {
+      "q": "Which axolotl color is the rarest?",
+      "right": "Blue",
+      "wrong": [
+        "Pink",
+        "Gold",
+        "Cyan"
+      ],
+      "why": "Blue axolotls have a 1 in 1200 chance when bred."
+    },
+    {
+      "q": "What do frogs eat?",
+      "right": "Small slimes and magma cubes",
+      "wrong": [
+        "Flies",
+        "Seagrass",
+        "Tropical fish"
+      ],
+      "why": "Frogs eat small slimes, which drop slimeballs, and small magma cubes, which drop froglights."
+    },
+    {
+      "q": "What decides a froglight's color?",
+      "right": "Which frog eats the magma cube",
+      "wrong": [
+        "The biome of the magma cube",
+        "The time of day",
+        "The moon phase"
+      ],
+      "why": "Temperate, warm and cold frogs make different froglights."
+    },
+    {
+      "q": "What do you need to tame a parrot?",
+      "right": "Seeds",
+      "wrong": [
+        "Cookies",
+        "Fish",
+        "Apples"
+      ],
+      "why": "Feed a parrot seeds. Never feed them cookies; that kills them."
+    },
+    {
+      "q": "Which food is poisonous to parrots?",
+      "right": "Cookies",
+      "wrong": [
+        "Seeds",
+        "Melon seeds",
+        "Beetroot seeds"
+      ],
+      "why": "Cookies kill parrots, a nod to chocolate being toxic to real parrots."
+    },
+    {
+      "q": "What do parrots do near a playing jukebox?",
+      "right": "They dance",
+      "wrong": [
+        "They sing along",
+        "They fall asleep",
+        "They fly away"
+      ],
+      "why": "Parrots dance when a nearby jukebox plays."
+    },
+    {
+      "q": "What does a sniffer dig up?",
+      "right": "Ancient seeds",
+      "wrong": [
+        "Diamonds",
+        "Bones",
+        "Truffles"
+      ],
+      "why": "Sniffers dig up torchflower seeds and pitcher pods."
+    },
+    {
+      "q": "Where do you find sniffer eggs?",
+      "right": "In suspicious sand in warm ocean ruins",
+      "wrong": [
+        "In ancient cities",
+        "In bastions",
+        "In desert wells"
+      ],
+      "why": "Brushing suspicious sand in warm ocean ruins can reveal a sniffer egg."
+    },
+    {
+      "q": "What do armadillos drop when brushed?",
+      "right": "Armadillo scutes",
+      "wrong": [
+        "Leather",
+        "Bones",
+        "Turtle scutes"
+      ],
+      "why": "Brushing an armadillo drops a scute, used for wolf armor."
+    },
+    {
+      "q": "What is made from armadillo scutes?",
+      "right": "Wolf armor",
+      "wrong": [
+        "Turtle shells",
+        "Horse armor",
+        "Shields"
+      ],
+      "why": "Six armadillo scutes craft wolf armor."
+    },
+    {
+      "q": "What does the warden use to find you?",
+      "right": "Vibrations and smell",
+      "wrong": [
+        "Sight",
+        "Light",
+        "Your armor"
+      ],
+      "why": "The warden is blind; it tracks vibrations and sniffs out players."
+    },
+    {
+      "q": "What summons the warden?",
+      "right": "A sculk shrieker going off four times",
+      "wrong": [
+        "Breaking sculk",
+        "Lighting a torch",
+        "Opening a chest in an ancient city"
+      ],
+      "why": "Sculk shriekers summon the warden after the warning level reaches its limit."
+    },
+    {
+      "q": "Which block hides your vibrations from sculk sensors?",
+      "right": "Wool",
+      "wrong": [
+        "Carpet on stone",
+        "Glass",
+        "Sculk"
+      ],
+      "why": "Wool blocks and carpets block vibrations."
+    },
+    {
+      "q": "Where did the creeper come from?",
+      "right": "A coding mistake on a pig model",
+      "wrong": [
+        "A fan drawing",
+        "A dream Notch had",
+        "A cut boss"
+      ],
+      "why": "Notch swapped the length and height values when making a pig, giving the creeper's tall shape."
+    },
+    {
+      "q": "What does a shulker do when it hits you?",
+      "right": "Makes you float",
+      "wrong": [
+        "Slows you",
+        "Poisons you",
+        "Blinds you"
+      ],
+      "why": "Shulker bullets give you levitation."
+    },
+    {
+      "q": "What do shulkers drop?",
+      "right": "Shulker shells",
+      "wrong": [
+        "Purpur",
+        "Chorus fruit",
+        "Ender pearls"
+      ],
+      "why": "Two shulker shells and a chest craft a shulker box."
+    },
+    {
+      "q": "What do guardians protect?",
+      "right": "Ocean monuments",
+      "wrong": [
+        "Shipwrecks",
+        "Ocean ruins",
+        "Buried treasure"
+      ],
+      "why": "Guardians and elder guardians live in ocean monuments."
+    },
+    {
+      "q": "What effect do elder guardians give you?",
+      "right": "Mining Fatigue",
+      "wrong": [
+        "Weakness",
+        "Slowness",
+        "Darkness"
+      ],
+      "why": "Elder guardians give Mining Fatigue III to stop you breaking into the monument."
+    },
+    {
+      "q": "What do you get from a breeze?",
+      "right": "Breeze rods",
+      "wrong": [
+        "Blaze rods",
+        "Wind charges only",
+        "Feathers"
+      ],
+      "why": "Breezes in trial chambers drop breeze rods, used for the mace and wind charges."
+    },
+    {
+      "q": "Where do breezes spawn?",
+      "right": "Trial chambers",
+      "wrong": [
+        "Mountains",
+        "End cities",
+        "Strongholds"
+      ],
+      "why": "Breezes appear from trial spawners in trial chambers."
+    },
+    {
+      "q": "Which mob is the bogged?",
+      "right": "A mossy skeleton that shoots poison arrows",
+      "wrong": [
+        "A swamp zombie",
+        "A slime variant",
+        "A drowned in mud"
+      ],
+      "why": "The bogged lives in swamps and trial chambers and shoots arrows of poison."
+    },
+    {
+      "q": "What turns a skeleton into a stray?",
+      "right": "Being stuck in powder snow",
+      "wrong": [
+        "Getting hit by a snowball",
+        "A polar bear's attack",
+        "A night in a taiga"
+      ],
+      "why": "A skeleton stuck in powder snow turns into a stray."
+    },
+    {
+      "q": "What happens when a zombie stands in water too long?",
+      "right": "It turns into a drowned",
+      "wrong": [
+        "It dies",
+        "It turns into a husk",
+        "Nothing"
+      ],
+      "why": "Zombies drown and become drowned after about 30 seconds underwater."
+    },
+    {
+      "q": "What do husks do differently from zombies?",
+      "right": "They don't burn in sunlight",
+      "wrong": [
+        "They can swim",
+        "They shoot arrows",
+        "They fly"
+      ],
+      "why": "Husks live in deserts, don't burn, and give Hunger when they hit you."
+    },
+    {
+      "q": "What does the creaking do when you look at it?",
+      "right": "It freezes",
+      "wrong": [
+        "It attacks",
+        "It teleports",
+        "It screams"
+      ],
+      "why": "The creaking only moves while nobody is looking at it."
+    },
+    {
+      "q": "How do you defeat a creaking for good?",
+      "right": "Break its creaking heart",
+      "wrong": [
+        "Hit it with fire",
+        "Splash it with water",
+        "Lure it into daylight"
+      ],
+      "why": "Its creaking heart in a pale oak log keeps it alive."
+    },
+    {
+      "q": "Which mob can carry two players at once?",
+      "right": "Camel",
+      "wrong": [
+        "Horse",
+        "Llama",
+        "Strider"
+      ],
+      "why": "Camels can carry two players at once."
+    },
+    {
+      "q": "Which animal can you ride and dash with?",
+      "right": "Camel",
+      "wrong": [
+        "Horse",
+        "Donkey",
+        "Mule"
+      ],
+      "why": "Camels can dash forward, and they're tall enough that most zombies can't reach you."
+    },
+    {
+      "q": "What do you feed a camel to breed it?",
+      "right": "Cactus",
+      "wrong": [
+        "Wheat",
+        "Hay bales",
+        "Sugar cane"
+      ],
+      "why": "Camels love cactus."
+    },
+    {
+      "q": "What does a goat drop when it rams a block?",
+      "right": "A goat horn",
+      "wrong": [
+        "Leather",
+        "Milk",
+        "Wool"
+      ],
+      "why": "Goats ramming stone, logs, ore, packed ice or copper ore can drop a goat horn."
+    },
+    {
+      "q": "What does a fox do with items?",
+      "right": "Picks them up and carries them in its mouth",
+      "wrong": [
+        "Buries them",
+        "Eats all of them",
+        "Gives them to you"
+      ],
+      "why": "Foxes carry one item in their mouth, and sometimes spawn with emeralds or eggs."
+    },
+    {
+      "q": "How do you get a fox to trust you?",
+      "right": "Breed two wild foxes",
+      "wrong": [
+        "Feed it berries once",
+        "Give it a chicken",
+        "Use a lead"
+      ],
+      "why": "Baby foxes from bred wild parents trust you."
+    },
+    {
+      "q": "What does a panda's personality depend on?",
+      "right": "Its genes",
+      "wrong": [
+        "The biome",
+        "The weather",
+        "What it eats"
+      ],
+      "why": "Pandas have main and hidden genes: lazy, worried, playful, aggressive, weak, brown and normal."
+    },
+    {
+      "q": "Which panda color is rare?",
+      "right": "Brown",
+      "wrong": [
+        "Red",
+        "White",
+        "Golden"
+      ],
+      "why": "Brown pandas have a recessive gene and are rare."
+    },
+    {
+      "q": "What do bees need to make honey?",
+      "right": "Flowers",
+      "wrong": [
+        "Sugar",
+        "Water",
+        "Leaves"
+      ],
+      "why": "Bees collect pollen from flowers and fill their hive."
+    },
+    {
+      "q": "How do you collect honey without angering bees?",
+      "right": "A campfire under the hive",
+      "wrong": [
+        "Wear a pumpkin",
+        "Crouch",
+        "Do it at noon"
+      ],
+      "why": "Smoke from a campfire under the hive or nest calms the bees."
+    },
+    {
+      "q": "What happens to a bee after it stings you?",
+      "right": "It loses its stinger and dies later",
+      "wrong": [
+        "It flies home",
+        "It stings again",
+        "It turns hostile forever"
+      ],
+      "why": "Bees die shortly after stinging, like real honeybees."
+    },
+    {
+      "q": "What does a glow squid drop?",
+      "right": "Glow ink sacs",
+      "wrong": [
+        "Ink sacs",
+        "Glowstone dust",
+        "Sea lanterns"
+      ],
+      "why": "Glow ink sacs make sign text glow and craft glow item frames."
+    },
+    {
+      "q": "Which tool do you use to get wool from a sheep without killing it?",
+      "right": "Shears",
+      "wrong": [
+        "An axe",
+        "A hoe",
+        "A brush"
+      ],
+      "why": "Shears give one to three wool, and the wool grows back when the sheep eats grass."
+    },
+    {
+      "q": "Which sheep color is the rarest in the wild?",
+      "right": "Pink",
+      "wrong": [
+        "Brown",
+        "Black",
+        "Light gray"
+      ],
+      "why": "Pink sheep spawn about 0.16% of the time."
+    },
+    {
+      "q": "What happens when you name a sheep jeb_?",
+      "right": "Its wool cycles through rainbow colors",
+      "wrong": [
+        "It turns golden",
+        "It flies",
+        "It grows huge"
+      ],
+      "why": "A name tag with jeb_ makes the sheep rainbow. It still drops its original color."
+    },
+    {
+      "q": "What happens when you name a mob Dinnerbone?",
+      "right": "It turns upside down",
+      "wrong": [
+        "It spins",
+        "It becomes tiny",
+        "It becomes invisible"
+      ],
+      "why": "Dinnerbone or Grumm flip mobs upside down."
+    },
+    {
+      "q": "What happens when you name a rabbit Toast?",
+      "right": "It gets a special black and white skin",
+      "wrong": [
+        "It turns into bread",
+        "It jumps higher",
+        "It glows"
+      ],
+      "why": "Toast was a player's lost pet rabbit, added in memory."
+    },
+    {
+      "q": "What rare rabbit attacks players?",
+      "right": "The Killer Bunny",
+      "wrong": [
+        "The Moon Rabbit",
+        "The Vorpal Rabbit",
+        "The Rabbit of Doom"
+      ],
+      "why": "The Killer Bunny is a reference to Monty Python and only appears through commands."
+    },
+    {
+      "q": "What happens when you name a vindicator Johnny?",
+      "right": "It attacks almost every mob",
+      "wrong": [
+        "It becomes friendly",
+        "It dances",
+        "It drops more emeralds"
+      ],
+      "why": "Johnny is a reference to The Shining."
+    },
+    {
+      "q": "Which illager summons vexes?",
+      "right": "Evoker",
+      "wrong": [
+        "Vindicator",
+        "Pillager",
+        "Illusioner"
+      ],
+      "why": "Evokers summon vexes and evoker fangs."
+    },
+    {
+      "q": "What does an evoker drop?",
+      "right": "A totem of undying",
+      "wrong": [
+        "An emerald block",
+        "A crossbow",
+        "A banner"
+      ],
+      "why": "Evokers always drop a totem of undying."
+    },
+    {
+      "q": "What gives you the Bad Omen effect?",
+      "right": "Drinking an ominous bottle",
+      "wrong": [
+        "Killing any pillager",
+        "Sleeping outside",
+        "Breaking a banner"
+      ],
+      "why": "Ominous bottles give Bad Omen, which turns into a raid or trial omen."
+    },
+    {
+      "q": "What do raids reward the hero with?",
+      "right": "Hero of the Village (villagers give discounts)",
+      "wrong": [
+        "A free beacon",
+        "Ten diamonds",
+        "An enchanted book"
+      ],
+      "why": "Defeating a raid gives Hero of the Village and cheaper trades."
+    },
+    {
+      "q": "Which mob rides a ravager in raids?",
+      "right": "Pillagers, vindicators or evokers",
+      "wrong": [
+        "Witches",
+        "Vexes",
+        "Zombies"
+      ],
+      "why": "Ravagers can carry a pillager, vindicator or evoker in later waves."
+    },
+    {
+      "q": "What do witches throw?",
+      "right": "Splash potions",
+      "wrong": [
+        "Fireballs",
+        "Snowballs",
+        "Arrows"
+      ],
+      "why": "Witches throw harmful potions and drink helpful ones."
+    },
+    {
+      "q": "What do wandering traders come with?",
+      "right": "Two trader llamas",
+      "wrong": [
+        "A donkey",
+        "A cat",
+        "A parrot"
+      ],
+      "why": "Wandering traders bring two trader llamas on leads."
+    },
+    {
+      "q": "What does the allay do?",
+      "right": "Collects items like the one you give it",
+      "wrong": [
+        "Fights mobs",
+        "Heals you",
+        "Plants seeds"
+      ],
+      "why": "Give an allay an item and it gathers matching items for you."
+    },
+    {
+      "q": "What makes allays duplicate?",
+      "right": "Giving one an amethyst shard while it dances",
+      "wrong": [
+        "Feeding it cake",
+        "Two allays near a note block",
+        "A full moon"
+      ],
+      "why": "An allay dancing to a jukebox duplicates when given an amethyst shard."
+    },
+    {
+      "q": "Which mob was chosen in the 2020 Mob Vote?",
+      "right": "Glow squid",
+      "wrong": [
+        "Iceologer",
+        "Moobloom",
+        "Allay"
+      ],
+      "why": "Glow squids won the 2020 vote, beating the iceologer and moobloom."
+    },
+    {
+      "q": "Which mob won the 2023 Mob Vote?",
+      "right": "Armadillo",
+      "wrong": [
+        "Crab",
+        "Penguin",
+        "Sniffer"
+      ],
+      "why": "The armadillo beat the crab and the penguin."
+    },
+    {
+      "q": "Which mob won the 2022 Mob Vote?",
+      "right": "Sniffer",
+      "wrong": [
+        "Rascal",
+        "Tuff golem",
+        "Allay"
+      ],
+      "why": "The sniffer beat the rascal and the tuff golem."
+    },
+    {
+      "q": "Which mob won the 2021 Mob Vote?",
+      "right": "Allay",
+      "wrong": [
+        "Glare",
+        "Copper golem",
+        "Phantom"
+      ],
+      "why": "The allay won against the glare and the copper golem."
+    },
+    {
+      "q": "What does a dolphin give you if you swim with it?",
+      "right": "Dolphin's Grace (faster swimming)",
+      "wrong": [
+        "Water Breathing",
+        "Speed",
+        "Night Vision"
+      ],
+      "why": "Swimming near dolphins gives Dolphin's Grace."
+    },
+    {
+      "q": "What do dolphins lead you to when fed raw fish?",
+      "right": "Treasure like shipwrecks or ruins",
+      "wrong": [
+        "Diamonds",
+        "Villages",
+        "Strongholds"
+      ],
+      "why": "Feed a dolphin raw cod or salmon and it swims to the nearest shipwreck, ruin or buried treasure."
+    },
+    {
+      "q": "Which mob drops prismarine shards?",
+      "right": "Guardian",
+      "wrong": [
+        "Squid",
+        "Drowned",
+        "Pufferfish"
+      ],
+      "why": "Guardians drop prismarine shards and sometimes crystals."
+    },
+    {
+      "q": "What happens when you eat a pufferfish?",
+      "right": "Poison, Hunger and Nausea",
+      "wrong": [
+        "Water breathing",
+        "Regeneration",
+        "Nothing"
+      ],
+      "why": "Pufferfish give Poison II, Hunger III and Nausea."
+    },
+    {
+      "q": "What do polar bears do when you get near their cubs?",
+      "right": "They attack",
+      "wrong": [
+        "They run away",
+        "They follow you",
+        "They sit down"
+      ],
+      "why": "Adult polar bears turn hostile near their cubs."
+    },
+    {
+      "q": "Which mob can climb walls?",
+      "right": "Spider",
+      "wrong": [
+        "Zombie",
+        "Creeper",
+        "Slime"
+      ],
+      "why": "Spiders and cave spiders climb walls."
+    },
+    {
+      "q": "When are spiders hostile?",
+      "right": "In the dark",
+      "wrong": [
+        "Always",
+        "Only at noon",
+        "Only in caves"
+      ],
+      "why": "Spiders are neutral in bright light, unless you hit them."
+    },
+    {
+      "q": "What does a cave spider bite give you?",
+      "right": "Poison",
+      "wrong": [
+        "Wither",
+        "Weakness",
+        "Slowness"
+      ],
+      "why": "Cave spiders poison you on Normal and Hard difficulty."
+    },
+    {
+      "q": "What do silverfish hide in?",
+      "right": "Infested blocks",
+      "wrong": [
+        "Leaves",
+        "Sand",
+        "Chests"
+      ],
+      "why": "Silverfish hide in infested stone, cobblestone and bricks, often in strongholds."
+    },
+    {
+      "q": "Where do slimes spawn in the Overworld?",
+      "right": "Slime chunks and swamps",
+      "wrong": [
+        "Deserts",
+        "Mountains",
+        "Oceans"
+      ],
+      "why": "Slimes spawn deep in slime chunks and at night in swamps."
+    },
+    {
+      "q": "What moon phase makes the most slimes spawn in swamps?",
+      "right": "Full moon",
+      "wrong": [
+        "New moon",
+        "First quarter",
+        "Third quarter"
+      ],
+      "why": "Swamp slimes spawn most on full moons and never on new moons."
+    },
+    {
+      "q": "What tool do you need to mine obsidian?",
+      "right": "A diamond or netherite pickaxe",
+      "wrong": [
+        "An iron pickaxe",
+        "A golden pickaxe",
+        "Any shovel"
+      ],
+      "why": "Only diamond or netherite pickaxes break obsidian and drop it."
+    },
+    {
+      "q": "What is the weakest pickaxe that can mine diamond ore?",
+      "right": "Iron",
+      "wrong": [
+        "Stone",
+        "Gold",
+        "Wood"
+      ],
+      "why": "Diamond, gold, emerald and redstone ore need an iron pickaxe or better."
+    },
+    {
+      "q": "What do you get when lava flows onto water?",
+      "right": "Stone or obsidian, depending on which flows",
+      "wrong": [
+        "Glass",
+        "Sand",
+        "Basalt"
+      ],
+      "why": "Water on a lava source makes obsidian; lava flowing into water makes stone or cobblestone."
+    },
+    {
+      "q": "What makes basalt form naturally?",
+      "right": "Lava over soul soil next to blue ice",
+      "wrong": [
+        "Lava and water",
+        "Magma and ice",
+        "Lava and soul sand"
+      ],
+      "why": "A basalt generator needs lava flowing over soul soil beside blue ice."
+    },
+    {
+      "q": "What does a sponge do?",
+      "right": "Absorbs water",
+      "wrong": [
+        "Absorbs lava",
+        "Bounces you",
+        "Slows mobs"
+      ],
+      "why": "Sponges soak up water and dry in a furnace or the Nether."
+    },
+    {
+      "q": "Where do you find sponges?",
+      "right": "Ocean monuments",
+      "wrong": [
+        "Shipwrecks",
+        "Coral reefs",
+        "Desert wells"
+      ],
+      "why": "Elder guardians drop wet sponges, and monuments have sponge rooms."
+    },
+    {
+      "q": "Which of these blocks survives a TNT explosion?",
+      "right": "Obsidian",
+      "wrong": [
+        "Stone",
+        "Glass",
+        "Oak planks"
+      ],
+      "why": "Obsidian (and crying obsidian, the anvil and ancient debris) survive explosions easily."
+    },
+    {
+      "q": "How many blocks of obsidian does a smallest nether portal frame need?",
+      "right": "10 (without corners)",
+      "wrong": [
+        "14",
+        "8",
+        "12"
+      ],
+      "why": "A 4 by 5 frame needs 14, but 10 is enough when you skip the corners."
+    },
+    {
+      "q": "What lights a nether portal?",
+      "right": "Fire, like flint and steel or a fire charge",
+      "wrong": [
+        "Redstone",
+        "A torch",
+        "Lava placed next to it"
+      ],
+      "why": "Any fire inside the frame lights it, including a fire charge."
+    },
+    {
+      "q": "What is crying obsidian used for?",
+      "right": "Respawn anchors",
+      "wrong": [
+        "Beacons",
+        "Enchanting tables",
+        "Conduits"
+      ],
+      "why": "Six crying obsidian and three glowstone craft a respawn anchor."
+    },
+    {
+      "q": "What charges a respawn anchor?",
+      "right": "Glowstone",
+      "wrong": [
+        "Redstone",
+        "Lava",
+        "Blaze powder"
+      ],
+      "why": "Each glowstone block adds one charge."
+    },
+    {
+      "q": "What happens when you use a bed in the Nether?",
+      "right": "It explodes",
+      "wrong": [
+        "You sleep normally",
+        "You get teleported",
+        "Nothing"
+      ],
+      "why": "Beds explode in the Nether and the End."
+    },
+    {
+      "q": "Which block makes a beacon beam change color?",
+      "right": "Stained glass",
+      "wrong": [
+        "Wool",
+        "Concrete",
+        "Terracotta"
+      ],
+      "why": "Stained glass or panes above a beacon tint the beam."
+    },
+    {
+      "q": "How many layers can a beacon pyramid have?",
+      "right": "4",
+      "wrong": [
+        "3",
+        "5",
+        "6"
+      ],
+      "why": "A full pyramid has four layers and uses 164 mineral blocks."
+    },
+    {
+      "q": "Which blocks can a beacon pyramid be made of?",
+      "right": "Iron, gold, emerald, diamond or netherite blocks",
+      "wrong": [
+        "Any stone",
+        "Obsidian",
+        "Quartz blocks"
+      ],
+      "why": "Any mix of those five mineral blocks works."
+    },
+    {
+      "q": "What does a conduit need around it?",
+      "right": "Prismarine, sea lanterns and similar blocks",
+      "wrong": [
+        "Obsidian",
+        "Ice",
+        "Coral"
+      ],
+      "why": "Conduits need a frame of prismarine, dark prismarine, prismarine bricks or sea lanterns."
+    },
+    {
+      "q": "What is the conduit made of?",
+      "right": "A heart of the sea and nautilus shells",
+      "wrong": [
+        "Prismarine and a nether star",
+        "Sponges and gold",
+        "Pearls and diamonds"
+      ],
+      "why": "A heart of the sea surrounded by eight nautilus shells."
+    },
+    {
+      "q": "Where do you find a heart of the sea?",
+      "right": "Buried treasure",
+      "wrong": [
+        "Ocean monuments",
+        "Shipwreck captain's quarters",
+        "Elder guardians"
+      ],
+      "why": "Buried treasure chests always have one."
+    },
+    {
+      "q": "Which block is the hardest to break by hand of these?",
+      "right": "Obsidian",
+      "wrong": [
+        "Stone",
+        "Iron ore",
+        "Netherrack"
+      ],
+      "why": "Obsidian takes 250 seconds by hand."
+    },
+    {
+      "q": "Which block can't be broken in Survival?",
+      "right": "Bedrock",
+      "wrong": [
+        "Obsidian",
+        "End stone",
+        "Ancient debris"
+      ],
+      "why": "Bedrock is unbreakable. Reinforced deepslate can't be mined in Survival either, but bedrock is the classic answer."
+    },
+    {
+      "q": "What does a note block's sound depend on?",
+      "right": "The block underneath it",
+      "wrong": [
+        "The time of day",
+        "The block above it",
+        "Who placed it"
+      ],
+      "why": "Wood gives bass, sand gives snare drums, gold gives bells, and so on."
+    },
+    {
+      "q": "What sound does a note block on a gold block make?",
+      "right": "Bells",
+      "wrong": [
+        "Flute",
+        "Guitar",
+        "Piano"
+      ],
+      "why": "Gold blocks under a note block play the bell (glockenspiel)."
+    },
+    {
+      "q": "What does a jukebox play?",
+      "right": "Music discs",
+      "wrong": [
+        "Note blocks",
+        "Goat horns",
+        "Bells"
+      ],
+      "why": "Jukeboxes play music discs and give a redstone signal."
+    },
+    {
+      "q": "Which music disc is made from fragments?",
+      "right": "Disc 5",
+      "wrong": [
+        "Pigstep",
+        "Otherside",
+        "Relic"
+      ],
+      "why": "Nine disc fragments from ancient cities craft Disc 5."
+    },
+    {
+      "q": "Where do you find the Pigstep disc?",
+      "right": "Bastion remnants",
+      "wrong": [
+        "Ancient cities",
+        "Strongholds",
+        "Dungeons"
+      ],
+      "why": "Pigstep is only found in bastion chests."
+    },
+    {
+      "q": "How do you get a music disc from a creeper?",
+      "right": "Let a skeleton's arrow kill it",
+      "wrong": [
+        "Kill it with a sword",
+        "Let it explode near a jukebox",
+        "Trade it with a villager"
+      ],
+      "why": "Creepers killed by skeleton arrows drop one of several music discs."
+    },
+    {
+      "q": "What does a composter make?",
+      "right": "Bone meal",
+      "wrong": [
+        "Dirt",
+        "Fertile soil",
+        "Moss"
+      ],
+      "why": "Filling a composter with plant items makes bone meal."
+    },
+    {
+      "q": "What do you get from smelting cactus?",
+      "right": "Green dye",
+      "wrong": [
+        "Cactus slime",
+        "Lime dye",
+        "Paper"
+      ],
+      "why": "Cactus smelts into green dye."
+    },
+    {
+      "q": "What do you get from smelting sand?",
+      "right": "Glass",
+      "wrong": [
+        "Sandstone",
+        "Quartz",
+        "Concrete"
+      ],
+      "why": "Sand and red sand smelt into glass."
+    },
+    {
+      "q": "How do you make concrete?",
+      "right": "Place concrete powder next to water",
+      "wrong": [
+        "Smelt concrete powder",
+        "Mix stone and sand",
+        "Freeze it"
+      ],
+      "why": "Concrete powder hardens when it touches water."
+    },
+    {
+      "q": "What do you smelt clay into?",
+      "right": "Terracotta",
+      "wrong": [
+        "Bricks",
+        "Pottery",
+        "Concrete"
+      ],
+      "why": "A clay block smelts into terracotta; a clay ball into a brick."
+    },
+    {
+      "q": "What makes glazed terracotta?",
+      "right": "Smelting dyed terracotta",
+      "wrong": [
+        "Smelting clay with dye",
+        "Combining terracotta and glass",
+        "Using a stonecutter"
+      ],
+      "why": "Any dyed terracotta smelts into its glazed version."
+    },
+    {
+      "q": "What does a lodestone do?",
+      "right": "Makes a compass point to it",
+      "wrong": [
+        "Attracts iron",
+        "Repels mobs",
+        "Stores items"
+      ],
+      "why": "Use a compass on a lodestone to link it."
+    },
+    {
+      "q": "What does a recovery compass point to?",
+      "right": "Where you last died",
+      "wrong": [
+        "Your bed",
+        "World spawn",
+        "The nearest village"
+      ],
+      "why": "Echo shards and a compass craft a recovery compass."
+    },
+    {
+      "q": "Where do you find echo shards?",
+      "right": "Ancient cities",
+      "wrong": [
+        "Strongholds",
+        "Bastions",
+        "End cities"
+      ],
+      "why": "Echo shards are found in ancient city chests."
+    },
+    {
+      "q": "What does a spyglass do?",
+      "right": "Lets you zoom in",
+      "wrong": [
+        "Shows ores",
+        "Finds structures",
+        "Lights caves"
+      ],
+      "why": "Spyglasses are made of amethyst and copper."
+    },
+    {
+      "q": "What grows on budding amethyst?",
+      "right": "Amethyst clusters",
+      "wrong": [
+        "Calcite",
+        "Geodes",
+        "Quartz"
+      ],
+      "why": "Amethyst buds grow on budding amethyst into clusters, which drop shards."
+    },
+    {
+      "q": "Can you move budding amethyst with Silk Touch?",
+      "right": "No, it breaks",
+      "wrong": [
+        "Yes",
+        "Only with netherite",
+        "Only in Creative"
+      ],
+      "why": "Budding amethyst drops nothing, even with Silk Touch."
+    },
+    {
+      "q": "What does tinted glass do?",
+      "right": "Blocks light but lets you see through",
+      "wrong": [
+        "Glows",
+        "Blocks mobs only",
+        "Changes color"
+      ],
+      "why": "Tinted glass is see-through but blocks light."
+    },
+    {
+      "q": "What does a daylight detector do at night when inverted?",
+      "right": "Gives a signal",
+      "wrong": [
+        "Turns off",
+        "Explodes",
+        "Nothing"
+      ],
+      "why": "Right-click a daylight detector to invert it into a night sensor."
+    },
+    {
+      "q": "What does an observer do?",
+      "right": "Sends a pulse when the block in front changes",
+      "wrong": [
+        "Watches mobs",
+        "Shows a map",
+        "Counts items"
+      ],
+      "why": "Observers detect block updates."
+    },
+    {
+      "q": "What does a comparator measure from a chest?",
+      "right": "How full it is",
+      "wrong": [
+        "How many players opened it",
+        "Its age",
+        "Its weight"
+      ],
+      "why": "Comparators give a signal strength based on container fullness."
+    },
+    {
+      "q": "How far does a redstone signal travel through dust?",
+      "right": "15 blocks",
+      "wrong": [
+        "10 blocks",
+        "16 blocks",
+        "32 blocks"
+      ],
+      "why": "Redstone dust loses one strength per block, from 15 to 0."
+    },
+    {
+      "q": "What is a redstone repeater used for?",
+      "right": "To strengthen and delay signals",
+      "wrong": [
+        "To store power",
+        "To make sounds",
+        "To light up"
+      ],
+      "why": "Repeaters reset the signal to 15 and can delay it up to four ticks."
+    },
+    {
+      "q": "Which of these blocks can't be moved by a piston?",
+      "right": "Obsidian",
+      "wrong": [
+        "Stone",
+        "Dirt",
+        "Wool"
+      ],
+      "why": "Obsidian, bedrock and some other blocks can't be moved by pistons."
+    },
+    {
+      "q": "What does a slime block do with pistons?",
+      "right": "Moves the blocks stuck to it",
+      "wrong": [
+        "Stops pistons",
+        "Speeds pistons up",
+        "Makes pistons quiet"
+      ],
+      "why": "Slime and honey blocks drag neighboring blocks along."
+    },
+    {
+      "q": "What's special about honey blocks?",
+      "right": "They slow you down and reduce fall damage",
+      "wrong": [
+        "They heal you",
+        "They make you jump higher",
+        "They're edible"
+      ],
+      "why": "Honey blocks are sticky: slow movement and less fall damage."
+    },
+    {
+      "q": "Which of these cancels fall damage completely when you land in it?",
+      "right": "Water",
+      "wrong": [
+        "Sand",
+        "Wool",
+        "Leaves"
+      ],
+      "why": "Landing in water stops fall damage. Hay bales reduce it by 80%."
+    },
+    {
+      "q": "Which of these also cancels fall damage?",
+      "right": "Cobweb",
+      "wrong": [
+        "Snow block",
+        "Sand",
+        "Dirt"
+      ],
+      "why": "Cobwebs, powder snow, sweet berry bushes, vines, ladders and scaffolding also cancel it."
+    },
+    {
+      "q": "What does scaffolding let you do?",
+      "right": "Climb up and drop down quickly",
+      "wrong": [
+        "Glide",
+        "Teleport",
+        "Swim"
+      ],
+      "why": "Scaffolding is made of bamboo and string."
+    },
+    {
+      "q": "What's made from bamboo and string?",
+      "right": "Scaffolding",
+      "wrong": [
+        "Fishing rods",
+        "Bows",
+        "Ladders"
+      ],
+      "why": "Six bamboo and a string craft six scaffolding."
+    },
+    {
+      "q": "What crop can you only grow on soul sand?",
+      "right": "Nether wart",
+      "wrong": [
+        "Crimson fungus",
+        "Chorus flower",
+        "Glow berries"
+      ],
+      "why": "Nether wart grows only on soul sand."
+    },
+    {
+      "q": "What does chorus fruit do when eaten?",
+      "right": "Teleports you randomly",
+      "wrong": [
+        "Makes you float",
+        "Gives night vision",
+        "Nothing"
+      ],
+      "why": "Eating chorus fruit teleports you up to 8 blocks."
+    },
+    {
+      "q": "What do you smelt chorus fruit into?",
+      "right": "Popped chorus fruit",
+      "wrong": [
+        "Purpur",
+        "End rods",
+        "Chorus flowers"
+      ],
+      "why": "Popped chorus fruit crafts purpur blocks and end rods."
+    },
+    {
+      "q": "Which food gives you the most saturation?",
+      "right": "Golden carrot",
+      "wrong": [
+        "Steak",
+        "Bread",
+        "Cake"
+      ],
+      "why": "Golden carrots give 14.4 saturation, more than any other common food."
+    },
+    {
+      "q": "What does eating a golden apple give you?",
+      "right": "Regeneration and Absorption",
+      "wrong": [
+        "Speed and Strength",
+        "Fire Resistance",
+        "Night Vision"
+      ],
+      "why": "Golden apples give Regeneration II and Absorption."
+    },
+    {
+      "q": "How many slices does a cake have?",
+      "right": "7",
+      "wrong": [
+        "6",
+        "8",
+        "4"
+      ],
+      "why": "A cake has seven slices."
+    },
+    {
+      "q": "What does honey do to poison?",
+      "right": "Cures it",
+      "wrong": [
+        "Makes it worse",
+        "Nothing",
+        "Turns it into wither"
+      ],
+      "why": "Drinking honey cures poison without removing other effects."
+    },
+    {
+      "q": "What does milk do?",
+      "right": "Removes all status effects",
+      "wrong": [
+        "Heals you",
+        "Cures hunger",
+        "Gives regeneration"
+      ],
+      "why": "Drinking milk clears every effect, good and bad."
+    },
+    {
+      "q": "What is suspicious stew made with?",
+      "right": "Mushrooms, a bowl and a flower",
+      "wrong": [
+        "Rotten flesh",
+        "Spider eyes",
+        "Fish and potatoes"
+      ],
+      "why": "The flower decides which effect the stew gives."
+    },
+    {
+      "q": "Which item is used to brew almost every potion first?",
+      "right": "Nether wart",
+      "wrong": [
+        "Blaze powder",
+        "Glowstone",
+        "Redstone"
+      ],
+      "why": "Nether wart turns water bottles into awkward potions."
+    },
+    {
+      "q": "What does adding redstone to a potion do?",
+      "right": "Makes it last longer",
+      "wrong": [
+        "Makes it stronger",
+        "Makes it splash",
+        "Changes its color"
+      ],
+      "why": "Redstone extends the duration; glowstone makes it stronger."
+    },
+    {
+      "q": "What turns a potion into a splash potion?",
+      "right": "Gunpowder",
+      "wrong": [
+        "Dragon's breath",
+        "Sugar",
+        "Fermented spider eye"
+      ],
+      "why": "Gunpowder makes splash potions; dragon's breath then makes lingering ones."
+    },
+    {
+      "q": "What does a fermented spider eye do in brewing?",
+      "right": "Corrupts potions into their opposite",
+      "wrong": [
+        "Makes them stronger",
+        "Makes them last longer",
+        "Makes them splash"
+      ],
+      "why": "It turns Speed into Slowness, Healing into Harming, and so on."
+    },
+    {
+      "q": "What fuels a brewing stand?",
+      "right": "Blaze powder",
+      "wrong": [
+        "Coal",
+        "Lava",
+        "Redstone"
+      ],
+      "why": "One blaze powder fuels 20 brews."
+    },
+    {
+      "q": "What does a potion of the turtle master give?",
+      "right": "Resistance and Slowness",
+      "wrong": [
+        "Water Breathing",
+        "Strength",
+        "Jump Boost"
+      ],
+      "why": "Brewed with a turtle shell."
+    },
+    {
+      "q": "What is the max level of an enchanting table?",
+      "right": "30",
+      "wrong": [
+        "20",
+        "40",
+        "50"
+      ],
+      "why": "An enchanting table with 15 bookshelves offers level 30."
+    },
+    {
+      "q": "How many bookshelves does a max enchanting table need?",
+      "right": "15",
+      "wrong": [
+        "10",
+        "16",
+        "20"
+      ],
+      "why": "Fifteen bookshelves, one block away from the table."
+    },
+    {
+      "q": "Which enchantment lets you walk on water by freezing it?",
+      "right": "Frost Walker",
+      "wrong": [
+        "Depth Strider",
+        "Aqua Affinity",
+        "Feather Falling"
+      ],
+      "why": "Frost Walker turns water under you into frosted ice."
+    },
+    {
+      "q": "Which enchantment repairs items with experience?",
+      "right": "Mending",
+      "wrong": [
+        "Unbreaking",
+        "Infinity",
+        "Fortune"
+      ],
+      "why": "Mending uses experience orbs to repair the item."
+    },
+    {
+      "q": "Can Mending and Infinity go on the same bow?",
+      "right": "No",
+      "wrong": [
+        "Yes",
+        "Only with an anvil",
+        "Only on crossbows"
+      ],
+      "why": "Mending and Infinity are mutually exclusive."
+    },
+    {
+      "q": "Which enchantment gives more drops from ores?",
+      "right": "Fortune",
+      "wrong": [
+        "Looting",
+        "Efficiency",
+        "Silk Touch"
+      ],
+      "why": "Fortune increases drops from ores like diamonds and coal."
+    },
+    {
+      "q": "Which enchantment makes mobs drop more loot?",
+      "right": "Looting",
+      "wrong": [
+        "Fortune",
+        "Sharpness",
+        "Sweeping Edge"
+      ],
+      "why": "Looting works on swords."
+    },
+    {
+      "q": "Which enchantment lets a trident pull you through the air in rain?",
+      "right": "Riptide",
+      "wrong": [
+        "Loyalty",
+        "Channeling",
+        "Impaling"
+      ],
+      "why": "Riptide launches you when it's raining or you're in water."
+    },
+    {
+      "q": "Which trident enchantment summons lightning?",
+      "right": "Channeling",
+      "wrong": [
+        "Riptide",
+        "Impaling",
+        "Loyalty"
+      ],
+      "why": "Channeling strikes lightning during thunderstorms."
+    },
+    {
+      "q": "Which mace enchantment makes you float up after a hit?",
+      "right": "Wind Burst",
+      "wrong": [
+        "Density",
+        "Breach",
+        "Riptide"
+      ],
+      "why": "Wind Burst launches you upward after a smash attack."
+    },
+    {
+      "q": "What is the mace made of?",
+      "right": "A heavy core and a breeze rod",
+      "wrong": [
+        "Iron blocks and a stick",
+        "Netherite and a blaze rod",
+        "Obsidian and a stick"
+      ],
+      "why": "Heavy cores come from ominous vaults."
+    },
+    {
+      "q": "Which curse makes an item disappear when you die?",
+      "right": "Curse of Vanishing",
+      "wrong": [
+        "Curse of Binding",
+        "Curse of Loss",
+        "Curse of Fading"
+      ],
+      "why": "Items with Curse of Vanishing vanish on death."
+    },
+    {
+      "q": "What's needed to upgrade diamond gear to netherite?",
+      "right": "A netherite upgrade smithing template and an ingot",
+      "wrong": [
+        "Four netherite scraps",
+        "An anvil and an ingot",
+        "A beacon"
+      ],
+      "why": "Use a smithing table with the template, the diamond item and a netherite ingot."
+    },
+    {
+      "q": "How many netherite scraps make a netherite ingot?",
+      "right": "4 (plus 4 gold ingots)",
+      "wrong": [
+        "9",
+        "2",
+        "8"
+      ],
+      "why": "Four scraps and four gold ingots craft one ingot."
+    },
+    {
+      "q": "What do you smelt ancient debris into?",
+      "right": "Netherite scrap",
+      "wrong": [
+        "Netherite ingot",
+        "Iron",
+        "Quartz"
+      ],
+      "why": "Ancient debris smelts into netherite scrap."
+    },
+    {
+      "q": "At what height is ancient debris most common?",
+      "right": "Around Y 15",
+      "wrong": [
+        "Around Y 100",
+        "Around Y -50",
+        "At the Nether roof"
+      ],
+      "why": "Ancient debris is most common around Y 15 in the Nether."
+    },
+    {
+      "q": "At what height are diamonds most common?",
+      "right": "Around Y -58",
+      "wrong": [
+        "Around Y 11",
+        "Around Y 64",
+        "Around Y 120"
+      ],
+      "why": "Since 1.18, diamonds are most common near the bottom of the world."
+    },
+    {
+      "q": "Which ore only generates in mountain biomes?",
+      "right": "Emerald ore",
+      "wrong": [
+        "Diamond ore",
+        "Lapis ore",
+        "Gold ore"
+      ],
+      "why": "Emerald ore only generates in mountain biomes."
+    },
+    {
+      "q": "Which biome has extra gold ore near the surface?",
+      "right": "Badlands",
+      "wrong": [
+        "Desert",
+        "Savanna",
+        "Jungle"
+      ],
+      "why": "Badlands generate extra gold ore up to Y 256."
+    },
+    {
+      "q": "What does nether gold ore drop?",
+      "right": "Gold nuggets",
+      "wrong": [
+        "Gold ingots",
+        "Raw gold",
+        "Nothing"
+      ],
+      "why": "Nether gold ore drops 2 to 6 gold nuggets."
+    },
+    {
+      "q": "What is raw copper smelted into?",
+      "right": "A copper ingot",
+      "wrong": [
+        "A copper block",
+        "Oxidized copper",
+        "Lightning rods"
+      ],
+      "why": "Raw copper smelts into copper ingots."
+    },
+    {
+      "q": "What stops copper from oxidizing?",
+      "right": "Waxing it with honeycomb",
+      "wrong": [
+        "Painting it",
+        "Keeping it dry",
+        "Covering it with sand"
+      ],
+      "why": "Honeycomb waxes copper so it stays the same."
+    },
+    {
+      "q": "How do you remove oxidation from copper?",
+      "right": "Scrape it with an axe",
+      "wrong": [
+        "Wash it in water",
+        "Smelt it",
+        "Use shears"
+      ],
+      "why": "Axes scrape off one stage of oxidation, and lightning removes it too."
+    },
+    {
+      "q": "What does a lightning rod do?",
+      "right": "Attracts lightning",
+      "wrong": [
+        "Gives redstone power always",
+        "Stops rain",
+        "Charges batteries"
+      ],
+      "why": "Lightning rods protect flammable builds and give a signal when struck."
+    },
+    {
+      "q": "What is a totem of undying used for?",
+      "right": "Saves you from death once",
+      "wrong": [
+        "Respawns you at home",
+        "Gives you flight",
+        "Revives pets"
+      ],
+      "why": "Held in either hand, it saves you from a lethal hit."
+    },
+    {
+      "q": "Which item lets you breathe longer underwater as a helmet?",
+      "right": "Turtle shell",
+      "wrong": [
+        "Iron helmet",
+        "Conduit",
+        "Glass helmet"
+      ],
+      "why": "Turtle shells give 10 seconds of Water Breathing when you go underwater."
+    },
+    {
+      "q": "What does a trial key open?",
+      "right": "A vault",
+      "wrong": [
+        "A chest",
+        "A door",
+        "A shulker box"
+      ],
+      "why": "Trial keys from trial spawners unlock vaults in trial chambers."
+    },
+    {
+      "q": "What do you need for an ominous vault?",
+      "right": "An ominous trial key",
+      "wrong": [
+        "A trial key and an emerald",
+        "A heavy core",
+        "A bad omen potion only"
+      ],
+      "why": "Ominous trial spawners drop ominous trial keys."
+    },
+    {
+      "q": "What does a brush do?",
+      "right": "Uncovers items from suspicious sand and gravel",
+      "wrong": [
+        "Cleans armor",
+        "Paints blocks",
+        "Removes oxidation"
+      ],
+      "why": "Brushes are for archaeology and for armadillo scutes."
+    },
+    {
+      "q": "What are pottery sherds used for?",
+      "right": "Decorated pots",
+      "wrong": [
+        "Banners",
+        "Maps",
+        "Armor trims"
+      ],
+      "why": "Four sherds or bricks craft a decorated pot."
+    },
+    {
+      "q": "What can you add to armor at a smithing table for decoration?",
+      "right": "An armor trim",
+      "wrong": [
+        "A banner",
+        "A dye",
+        "A sherd"
+      ],
+      "why": "Armor trim templates plus a material add patterns."
+    },
+    {
+      "q": "Which trim template is found in ancient cities?",
+      "right": "Silence",
+      "wrong": [
+        "Rib",
+        "Snout",
+        "Spire"
+      ],
+      "why": "Silence trims are the rarest and come from ancient cities."
+    },
+    {
+      "q": "What does the bundle do?",
+      "right": "Holds several kinds of items in one slot",
+      "wrong": [
+        "Stores liquids",
+        "Fires arrows",
+        "Hides you"
+      ],
+      "why": "Bundles hold up to a stack's worth of mixed items."
+    },
+    {
+      "q": "Which item can show you a map of your area?",
+      "right": "A map",
+      "wrong": [
+        "A compass",
+        "A clock",
+        "A spyglass"
+      ],
+      "why": "Empty maps fill in as you explore."
+    },
+    {
+      "q": "What do you add to a map at a cartography table to lock it?",
+      "right": "Glass pane",
+      "wrong": [
+        "Paper",
+        "A compass",
+        "Ink"
+      ],
+      "why": "A glass pane locks a map so it never changes."
+    },
+    {
+      "q": "What is crafted from a ghast tear and an eye of ender?",
+      "right": "An end crystal (with glass)",
+      "wrong": [
+        "A beacon",
+        "A conduit",
+        "A respawn anchor"
+      ],
+      "why": "Seven glass, an eye of ender and a ghast tear craft an end crystal."
+    },
+    {
+      "q": "How many eyes of ender does an End portal frame need?",
+      "right": "12",
+      "wrong": [
+        "8",
+        "10",
+        "16"
+      ],
+      "why": "A stronghold portal has 12 frames, each needing an eye."
+    },
+    {
+      "q": "What structure has the End portal?",
+      "right": "Stronghold",
+      "wrong": [
+        "Ancient city",
+        "Woodland mansion",
+        "Bastion"
+      ],
+      "why": "Strongholds hide the End portal room."
+    },
+    {
+      "q": "What is an eye of ender made from?",
+      "right": "An ender pearl and blaze powder",
+      "wrong": [
+        "An ender pearl and redstone",
+        "A ghast tear and a pearl",
+        "A blaze rod and an eye"
+      ],
+      "why": "Throw it and it flies toward the nearest stronghold."
+    },
+    {
+      "q": "How long is a full Minecraft day by default?",
+      "right": "20 minutes",
+      "wrong": [
+        "10 minutes",
+        "24 minutes",
+        "30 minutes"
+      ],
+      "why": "A day-night cycle is 24000 ticks, which is 20 minutes."
+    },
+    {
+      "q": "How many ticks happen in one second?",
+      "right": "20",
+      "wrong": [
+        "10",
+        "24",
+        "60"
+      ],
+      "why": "Minecraft runs at 20 ticks per second."
+    },
+    {
+      "q": "How tall is the Overworld from bottom to top since 1.18?",
+      "right": "384 blocks",
+      "wrong": [
+        "256 blocks",
+        "320 blocks",
+        "512 blocks"
+      ],
+      "why": "From Y -64 to Y 320."
+    },
+    {
+      "q": "At what Y level is the bottom of the Overworld?",
+      "right": "-64",
+      "wrong": [
+        "0",
+        "-128",
+        "5"
+      ],
+      "why": "Since Caves & Cliffs Part II."
+    },
+    {
+      "q": "What is the build height limit in the Overworld?",
+      "right": "Y 320",
+      "wrong": [
+        "Y 256",
+        "Y 384",
+        "Y 512"
+      ],
+      "why": "You can build up to Y 319."
+    },
+    {
+      "q": "How many blocks in the Overworld equal one block in the Nether?",
+      "right": "8",
+      "wrong": [
+        "4",
+        "16",
+        "2"
+      ],
+      "why": "Moving one block in the Nether moves you 8 in the Overworld."
+    },
+    {
+      "q": "What's the name of the biggest Overworld structure for illagers?",
+      "right": "Woodland mansion",
+      "wrong": [
+        "Pillager outpost",
+        "Ancient city",
+        "Stronghold"
+      ],
+      "why": "Woodland mansions in dark forests house vindicators and evokers."
+    },
+    {
+      "q": "In which biome do no hostile mobs spawn naturally?",
+      "right": "Mushroom fields",
+      "wrong": [
+        "Meadow",
+        "Cherry grove",
+        "Plains"
+      ],
+      "why": "Hostile mobs don't spawn naturally in mushroom fields."
+    },
+    {
+      "q": "Which biome has pink trees?",
+      "right": "Cherry grove",
+      "wrong": [
+        "Flower forest",
+        "Pale garden",
+        "Meadow"
+      ],
+      "why": "Cherry groves were added in 1.20."
+    },
+    {
+      "q": "Which biome is home to the creaking?",
+      "right": "Pale garden",
+      "wrong": [
+        "Dark forest",
+        "Deep dark",
+        "Swamp"
+      ],
+      "why": "Pale gardens have pale oaks and creaking hearts."
+    },
+    {
+      "q": "Where do you find ancient cities?",
+      "right": "In the deep dark",
+      "wrong": [
+        "In the Nether",
+        "Under deserts",
+        "In the End"
+      ],
+      "why": "Ancient cities are deep underground in deep dark biomes."
+    },
+    {
+      "q": "Which structure has a hidden treasure under its center in deserts?",
+      "right": "Desert pyramid",
+      "wrong": [
+        "Desert well",
+        "Desert village",
+        "Trail ruins"
+      ],
+      "why": "Desert pyramids hide four chests over a TNT trap."
+    },
+    {
+      "q": "What's the trap in a desert pyramid?",
+      "right": "A pressure plate with TNT",
+      "wrong": [
+        "Arrow dispensers",
+        "Lava",
+        "Silverfish"
+      ],
+      "why": "Stepping on the pressure plate sets off nine TNT."
+    },
+    {
+      "q": "What's the trap in a jungle temple?",
+      "right": "Tripwires and dispensers",
+      "wrong": [
+        "TNT under a plate",
+        "Pistons",
+        "Lava"
+      ],
+      "why": "Jungle temples have tripwire dispensers and a lever puzzle."
+    },
+    {
+      "q": "Which dimension has end cities?",
+      "right": "The End",
+      "wrong": [
+        "The Nether",
+        "The Overworld",
+        "The Aether"
+      ],
+      "why": "End cities are on the outer End islands."
+    },
+    {
+      "q": "How do you get to the outer End islands?",
+      "right": "Through an end gateway",
+      "wrong": [
+        "Bridging from the main island only",
+        "A nether portal",
+        "Riding a phantom"
+      ],
+      "why": "Killing the dragon opens a gateway; throw an ender pearl into it."
+    },
+    {
+      "q": "What biome do you need for a pillager outpost? Pick a valid one.",
+      "right": "Plains",
+      "wrong": [
+        "Ocean",
+        "Mushroom fields",
+        "Deep dark"
+      ],
+      "why": "Outposts spawn in biomes like plains, deserts, taigas, savannas and meadows."
+    },
+    {
+      "q": "When was Minecraft first released publicly?",
+      "right": "2009",
+      "wrong": [
+        "2011",
+        "2007",
+        "2012"
+      ],
+      "why": "The first version came out in May 2009; the full release was November 2011."
+    },
+    {
+      "q": "Who created Minecraft?",
+      "right": "Markus \"Notch\" Persson",
+      "wrong": [
+        "Jens Bergensten",
+        "Lydia Winters",
+        "Gabe Newell"
+      ],
+      "why": "Notch created it; Jens \"Jeb\" Bergensten later became lead developer."
+    },
+    {
+      "q": "Which company bought Mojang in 2014?",
+      "right": "Microsoft",
+      "wrong": [
+        "Sony",
+        "Nintendo",
+        "Google"
+      ],
+      "why": "Microsoft bought Mojang for 2.5 billion dollars."
+    },
+    {
+      "q": "What was Minecraft's earliest working name?",
+      "right": "Cave Game",
+      "wrong": [
+        "Block World",
+        "Mine World",
+        "Craft Life"
+      ],
+      "why": "It started as Cave Game, then Minecraft: Order of the Stone."
+    },
+    {
+      "q": "Which update added the Nether's new biomes?",
+      "right": "The Nether Update (1.16)",
+      "wrong": [
+        "Caves & Cliffs",
+        "The Wild Update",
+        "Buzzy Bees"
+      ],
+      "why": "1.16 added crimson and warped forests, soul sand valleys and basalt deltas."
+    },
+    {
+      "q": "Which update added the warden?",
+      "right": "The Wild Update (1.19)",
+      "wrong": [
+        "Caves & Cliffs (1.18)",
+        "Trails & Tales (1.20)",
+        "Tricky Trials (1.21)"
+      ],
+      "why": "The warden came with 1.19."
+    },
+    {
+      "q": "Which update added trial chambers?",
+      "right": "Tricky Trials (1.21)",
+      "wrong": [
+        "Trails & Tales (1.20)",
+        "The Wild Update (1.19)",
+        "Bountiful Update"
+      ],
+      "why": "Trial chambers, breezes and the mace arrived in 1.21."
+    },
+    {
+      "q": "Which update added axolotls and goats?",
+      "right": "Caves & Cliffs Part I (1.17)",
+      "wrong": [
+        "The Wild Update",
+        "Village & Pillage",
+        "Aquatic"
+      ],
+      "why": "Axolotls, goats and glow squids arrived in 1.17."
+    },
+    {
+      "q": "Which update added bees?",
+      "right": "Buzzy Bees (1.15)",
+      "wrong": [
+        "Village & Pillage (1.14)",
+        "Aquatic (1.13)",
+        "The Nether Update (1.16)"
+      ],
+      "why": "Buzzy Bees was a small update all about bees."
+    },
+    {
+      "q": "Which update added dolphins, tridents and shipwrecks?",
+      "right": "Update Aquatic (1.13)",
+      "wrong": [
+        "Caves & Cliffs",
+        "Wild Update",
+        "World of Color"
+      ],
+      "why": "The ocean update was 1.13."
+    },
+    {
+      "q": "What does the F3 screen show?",
+      "right": "Debug info like coordinates",
+      "wrong": [
+        "Achievements",
+        "Your inventory",
+        "The server list"
+      ],
+      "why": "F3 shows coordinates, biome, facing and more."
+    },
+    {
+      "q": "Which key combo shows chunk borders?",
+      "right": "F3 + G",
+      "wrong": [
+        "F3 + B",
+        "F3 + H",
+        "F3 + C"
+      ],
+      "why": "F3+B shows hitboxes, F3+H shows advanced tooltips."
+    },
+    {
+      "q": "What does F3 + B show?",
+      "right": "Hitboxes",
+      "wrong": [
+        "Chunk borders",
+        "Biome borders",
+        "Block light"
+      ],
+      "why": "Hitboxes show the boxes around entities."
+    },
+    {
+      "q": "How big is a chunk?",
+      "right": "16 by 16 blocks",
+      "wrong": [
+        "8 by 8",
+        "32 by 32",
+        "16 by 32"
+      ],
+      "why": "A chunk is 16×16 and goes from the bottom to the top of the world."
+    },
+    {
+      "q": "What color is the experience bar?",
+      "right": "Green",
+      "wrong": [
+        "Blue",
+        "Yellow",
+        "Purple"
+      ],
+      "why": "The green bar shows progress to the next level."
+    },
+    {
+      "q": "How long does it take for a dropped item to disappear?",
+      "right": "5 minutes",
+      "wrong": [
+        "1 minute",
+        "10 minutes",
+        "Never"
+      ],
+      "why": "Items despawn after 6000 ticks, which is 5 minutes, in loaded chunks."
+    },
+    {
+      "q": "What's the maximum stack size for most items?",
+      "right": "64",
+      "wrong": [
+        "99",
+        "32",
+        "16"
+      ],
+      "why": "Most items stack to 64; ender pearls, eggs and snowballs stack to 16."
+    },
+    {
+      "q": "How many ender pearls stack together?",
+      "right": "16",
+      "wrong": [
+        "64",
+        "8",
+        "1"
+      ],
+      "why": "Ender pearls, eggs, snowballs, signs, banners and empty buckets stack to 16."
+    },
+    {
+      "q": "What does the Sharpness enchantment go up to?",
+      "right": "V",
+      "wrong": [
+        "III",
+        "IV",
+        "X"
+      ],
+      "why": "Sharpness has five levels."
+    },
+    {
+      "q": "What does the Unbreaking enchantment go up to?",
+      "right": "III",
+      "wrong": [
+        "V",
+        "II",
+        "IV"
+      ],
+      "why": "Unbreaking III is the highest level."
+    },
+    {
+      "q": "What happens when you sleep in a bed?",
+      "right": "Your spawn point is set and night is skipped",
+      "wrong": [
+        "You heal fully",
+        "You get XP",
+        "Mobs despawn"
+      ],
+      "why": "Sleeping skips the night and sets your respawn point."
+    },
+    {
+      "q": "What's the name of the moon's darkest phase?",
+      "right": "New moon",
+      "wrong": [
+        "Dark moon",
+        "Black moon",
+        "Shadow moon"
+      ],
+      "why": "On a new moon, swamp slimes don't spawn."
+    },
+    {
+      "q": "How many moon phases does Minecraft have?",
+      "right": "8",
+      "wrong": [
+        "4",
+        "6",
+        "12"
+      ],
+      "why": "The moon cycles through eight phases, one per day."
+    },
+    {
+      "q": "Which animal follows you when you hold wheat?",
+      "right": "Cows and sheep",
+      "wrong": [
+        "Pigs and chickens",
+        "Horses",
+        "Rabbits"
+      ],
+      "why": "Cows, sheep, goats and mooshrooms follow wheat."
+    },
+    {
+      "q": "Which crop can pigs be bred with? Pick one.",
+      "right": "Carrots",
+      "wrong": [
+        "Wheat",
+        "Seeds",
+        "Melon"
+      ],
+      "why": "Pigs breed with carrots, potatoes or beetroots."
+    },
+    {
+      "q": "What do chickens drop besides feathers and meat?",
+      "right": "Eggs (they lay them)",
+      "wrong": [
+        "Wool",
+        "Leather",
+        "Seeds"
+      ],
+      "why": "Chickens lay an egg every five to ten minutes."
+    },
+    {
+      "q": "What chance does a thrown egg have to spawn a chick?",
+      "right": "1 in 8",
+      "wrong": [
+        "1 in 2",
+        "1 in 32",
+        "Always"
+      ],
+      "why": "Thrown eggs have a 1/8 chance to hatch a chick, and a small chance for four."
+    },
+    {
+      "q": "What is the only mob that can be found in every dimension naturally?",
+      "right": "Enderman",
+      "wrong": [
+        "Zombie",
+        "Skeleton",
+        "Ghast"
+      ],
+      "why": "Endermen spawn in the Overworld, the Nether and the End."
+    }
+  ]
+}

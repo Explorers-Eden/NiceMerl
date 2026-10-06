@@ -29,6 +29,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.protocol.game.ClientboundSoundPacket;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
@@ -145,6 +146,15 @@ public final class MerlCommand {
 						.requires(Permissions.require(PERMISSION_MANNEQUIN, PermissionLevel.GAMEMASTERS))
 						.executes(ctx -> { reply(ctx.getSource(), MerlMannequin.spawn(ctx.getSource())); return 1; })
 						.then(Commands.literal("remove").executes(ctx -> { reply(ctx.getSource(), MerlMannequin.remove(ctx.getSource())); return 1; })))
+				.then(Commands.literal("quiz")
+						.then(Commands.argument("id", IntegerArgumentType.integer())
+								.then(Commands.argument("answer", IntegerArgumentType.integer(1, 4))
+										.executes(ctx -> {
+											ServerPlayer p = ctx.getSource().getPlayer();
+											if (p == null || !NiceMerl.config().trivia) return 0;
+											reply(ctx.getSource(), MerlTrivia.answer(p, IntegerArgumentType.getInteger(ctx, "id"), IntegerArgumentType.getInteger(ctx, "answer")));
+											return 1;
+										}))))
 				.then(toggle("comments"))
 				.then(toggle("celebrate")));
 	}
@@ -372,6 +382,13 @@ public final class MerlCommand {
 		}
 		visit.pending = question;
 
+		// "will it rain?", "next full moon", "what's the date?": the forecast.
+		String forecast = config.weatherForecast ? MerlLines.forecast(question) : null;
+		if (forecast != null) {
+			reply(source, MerlForecast.answer(source.getServer(), forecast, source.getTextName()));
+			sendNote(source, meeting.note());
+			return 1;
+		}
 		// "what's the tps?", "mob cap", "view distance": live server info, no wiki pages.
 		String serverInfo = config.serverInfo ? MerlLines.serverInfo(question) : null;
 		if (serverInfo != null && Permissions.check(source, MerlServerInfo.PERMISSION, true)) {
@@ -416,11 +433,15 @@ public final class MerlCommand {
 			sendNote(source, meeting.note());
 			return 1;
 		}
-		// "how do I craft a waypoint hub?": the server's recipe first, then the wiki answer as usual.
+		// "how do I craft a waypoint hub?": the server's recipe is the answer; only an item without a recipe gets the wiki.
 		String recipeItem = config.recipeHelp ? MerlLines.recipeItem(question) : null;
 		if (recipeItem != null) {
 			Component recipe = MerlRecipes.recipe(source.getServer(), recipeItem, source.getTextName());
-			if (recipe != null) reply(source, recipe);
+			if (recipe != null) {
+				reply(source, recipe);
+				sendNote(source, meeting.note());
+				return 1;
+			}
 		}
 
 		// "what can I craft?" looks at the player's inventory.
@@ -502,6 +523,12 @@ public final class MerlCommand {
 				return 1;
 			}
 			talk = last;
+		}
+		// Phrases the Discord bot answers with "only in game": in game they start the feature (when it's switched on).
+		if (talk != null && talk.startsWith("ingame_") && player != null) {
+			reply(source, inGame(talk, question, source, player, config));
+			sendNote(source, meeting.note());
+			return 1;
 		}
 		if (talk != null) {
 			String text = smallTalkLine(talk, source, player, visit, now, meeting);
@@ -681,6 +708,12 @@ public final class MerlCommand {
 		if (talk.equals("peanut_butter")) {
 			return MerlLines.peanutButter(LocalDate.now(), source.getTextName());
 		}
+		// "can you stay with me?" / "you can go now": companion Merl.
+		if (talk.equals("companion") || talk.equals("companion_stop")) {
+			if (player == null) return MerlLines.pick("companion", "user", source.getTextName());
+			if (!NiceMerl.config().companion) return MerlLines.pick("companion_off", "user", source.getTextName());
+			return talk.equals("companion") ? MerlCompanion.start(player) : MerlCompanion.stop(player);
+		}
 		// "anyone online?" is answered from the server itself; with server info off, the player list it is.
 		if (talk.equals("online")) return MerlLines.pick("online_ingame", "user", source.getTextName());
 		if (talk.equals("pet_pb")) {
@@ -847,6 +880,11 @@ public final class MerlCommand {
 				|| !MerlLines.chance(CONTEXT_CHANCE)) {
 			return null;
 		}
+		return situationLine(player);
+	}
+
+	/** A word about where the player is, what they're holding or how they're doing (also for companion Merl), or null. */
+	static String situationLine(ServerPlayer player) {
 		if (player.getHealth() <= player.getMaxHealth() * 0.3f) return MerlLines.pick("context_hurt", "user", player.getName().getString());
 
 		ServerLevel level = player.level();
@@ -1069,18 +1107,16 @@ public final class MerlCommand {
 
 	/** The message sound from the config (the packs' egg plop), only for this player. */
 	static void plop(ServerPlayer player) {
-		MerlConfig config = NiceMerl.config();
-		if (config.messageSound == null || config.messageSound.isBlank()) return;
+		if (!NiceMerl.config().messageSounds) return;
 		long now = System.currentTimeMillis();
 		Long last = LAST_SOUND.put(player.getUUID(), now);
 		if (last != null && now - last < SOUND_GAP_MS) return;
-		Identifier id = Identifier.tryParse(config.messageSound.strip());
-		if (id == null) return;
-		// A sound from a resource pack isn't in the registry, but the client can still play it.
-		Holder<SoundEvent> sound = BuiltInRegistries.SOUND_EVENT.get(id).<Holder<SoundEvent>>map(h -> h)
-				.orElseGet(() -> Holder.direct(SoundEvent.createVariableRangeEvent(id)));
+		// A villager "hmm" (now and then a "yes") at the highest pitch the game plays, 2.0.
+		var random = player.getRandom();
+		SoundEvent event = random.nextInt(4) == 0 ? SoundEvents.VILLAGER_YES : SoundEvents.VILLAGER_AMBIENT;
+		Holder<SoundEvent> sound = BuiltInRegistries.SOUND_EVENT.wrapAsHolder(event);
 		player.connection.send(new ClientboundSoundPacket(sound, SoundSource.NEUTRAL, player.getX(), player.getY(), player.getZ(),
-				config.messageSoundVolume, config.messageSoundPitch, player.getRandom().nextLong()));
+				0.5f, 2.0f, random.nextLong()));
 	}
 
 	/**
@@ -1088,6 +1124,23 @@ public final class MerlCommand {
 	 * enchantments, smelting and brewing, and "where's my bed / where did I die?". True when one answered.
 	 */
 	private static boolean helpers(CommandSourceStack source, ServerPlayer player, String question, MerlConfig config) {
+		// Games and progress: trivia, hide and seek, biome collection, the advancement coach.
+		String trivia = config.trivia ? MerlLines.trivia(question) : null;
+		if (trivia != null) {
+			reply(source, trivia.equals("board") ? MerlTrivia.leaderboard(player) : MerlTrivia.ask(player));
+			return true;
+		}
+		String hide = config.hideAndSeek ? MerlLines.hideAndSeek(question, MerlHideAndSeek.playing(player.getUUID())) : null;
+		if (hide != null) {
+			reply(source, hide.equals("giveup") ? MerlHideAndSeek.giveUp(player) : MerlHideAndSeek.start(player));
+			return true;
+		}
+		if (config.biomeCollection && MerlLines.biomeCollection(question)) {
+			MerlProgress.biomes(source, player, body -> reply(source, body));
+			return true;
+		}
+		String coach = config.advancementCoach ? MerlLines.advancementCoach(question) : null;
+		if (coach != null && MerlProgress.coach(source, player, question, coach.equals("named"), body -> reply(source, body))) return true;
 		if (config.reminders) {
 			MerlLines.Reminder reminder = MerlLines.reminder(question);
 			if (reminder != null) {
@@ -1147,6 +1200,38 @@ public final class MerlCommand {
 			return true;
 		}
 		return false;
+	}
+
+	/** The feature behind an "ingame_" phrase, or a word that it's switched off. Biome lookups reply on their own. */
+	private static Component inGame(String talk, String question, CommandSourceStack source, ServerPlayer player, MerlConfig config) {
+		String user = source.getTextName();
+		Component off = Component.literal(MerlLines.pick("feature_off", "user", user));
+		switch (talk) {
+			case "ingame_quiz":
+				return !config.trivia ? off : "board".equals(MerlLines.trivia(question)) ? MerlTrivia.leaderboard(player) : MerlTrivia.ask(player);
+			case "ingame_hide":
+				return config.hideAndSeek ? MerlHideAndSeek.start(player) : off;
+			case "ingame_forecast":
+				return config.weatherForecast ? MerlForecast.answer(source.getServer(), java.util.Objects.requireNonNullElse(MerlLines.forecast(question), "weather"), user) : off;
+			case "ingame_biomes":
+				if (!config.biomeCollection) return off;
+				Component[] first = {null};
+				MerlProgress.biomes(source, player, body -> {
+					if (first[0] == null) first[0] = body;
+					else reply(source, body);
+				});
+				return first[0];
+			case "ingame_coach":
+				if (!config.advancementCoach) return off;
+				Component[] answer = {null};
+				MerlProgress.coach(source, player, "", false, body -> {
+					if (answer[0] == null) answer[0] = body;
+					else reply(source, body);
+				});
+				return answer[0];
+			default:
+				return Component.literal(MerlLines.pick(talk, "user", user));
+		}
 	}
 
 	/** "That's a Cow!" plus the wiki's first sentences about it and a link, when there's a page about exactly it. */

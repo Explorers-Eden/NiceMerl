@@ -121,6 +121,19 @@ public final class MerlLocate {
 		}
 
 		reply.accept(Component.literal(MerlLines.pick("locate_looking")).withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
+		closest(source, wanted, asked, MerlLines.wantsGuide(question), "locate_found", reply);
+		return true;
+	}
+
+	/**
+	 * Looks for the closest of the wanted biomes off the server thread and replies with its coordinates (and a
+	 * [Guide me], or a guide right away when {@code guide}); the line comes from {@code pool}.
+	 */
+	static void closest(CommandSourceStack source, Set<Holder<Biome>> wanted, String asked, boolean guideNow, String pool, Consumer<Component> reply) {
+		ServerLevel level = source.getLevel();
+		BlockPos from = BlockPos.containing(source.getPosition());
+		String user = source.getTextName();
+		BiomeNames biomeNames = names(source.getServer());
 		boolean teleport = canTeleport(source);
 		MinecraftServer server = source.getServer();
 		// Biome sampling is pure world-generation math, made to run off the server thread.
@@ -135,14 +148,13 @@ public final class MerlLocate {
 					Holder<Biome> biome = found.getSecond();
 					boolean height = biome.is(UNDERGROUND) || biome.unwrapKey().map(k -> k.identifier().getPath())
 							.filter(p -> p.contains("cave") || p.contains("cavern") || p.contains("deep_dark") || p.contains("underground")).isPresent();
-					boolean guide = MerlLines.wantsGuide(question) && source.getPlayer() != null && NiceMerl.config().particleGuide;
-					MutableComponent answer = found(MerlLines.pick("locate_found", "biome", name(biomeNames, biome), "user", user,
+					boolean guide = guideNow && source.getPlayer() != null && NiceMerl.config().particleGuide;
+					MutableComponent answer = found(MerlLines.pick(pool, "biome", name(biomeNames, biome), "user", user,
 							"distance", distance(from, pos), "direction", BiomeNames.direction(pos.getX() - from.getX(), pos.getZ() - from.getZ())),
 							pos.getX(), height ? pos.getY() : null, pos.getZ(), teleport, guide ? null : name(biomeNames, biome));
 					if (guide) answer.append(MerlGuide.startNow(source.getPlayer(), pos.getX(), height ? (double) pos.getY() : null, pos.getZ(), name(biomeNames, biome)));
 					reply.accept(answer);
 				}));
-		return true;
 	}
 
 	/**

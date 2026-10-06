@@ -1131,6 +1131,88 @@ public final class MerlLines {
 		return null;
 	}
 
+	// Weather forecast, moon phase and the date (Nice Actions' calendar when installed): "will it rain?", "next full moon".
+	private static final Pattern FORECAST_NOT = Pattern.compile(
+			"\\b(how (does|do|is|are)|what (does|do)|why (does|do|is)|irl|in real life|real world|outside my window|my window)\\b");
+	private static final Pattern FORECAST_WEATHER = Pattern.compile(
+			"\\b(weather (forecast|report|today|tonight|tomorrow|like|now|be)|forecast|whats the weather|how is the weather|hows the weather"
+			+ "|will it (rain|storm|thunder|snow|be sunny|clear up|stop raining)|(is it|its) (going to|gonna) (rain|storm|thunder|snow|clear up)"
+			+ "|when (does|will|is) (the )?(rain|storm|thunderstorm|thunder|weather)( going to)? (stop|end|start|clear|be over|come|change|begin)"
+			+ "|when (does|will) it (stop|start) (raining|storming|thundering|snowing)|when (does|will) it (rain|storm|thunder|snow)( again)?"
+			+ "|next (rain|storm|thunderstorm|rainfall)|how long (will|does|is) (the |this |it )?(rain|storm|thunderstorm|raining|storming)( last| go on| going to last)?"
+			+ "|any (rain|storms?) (coming|soon)|(rain|storm|thunderstorm) (coming|soon))\\b");
+	private static final Pattern FORECAST_MOON = Pattern.compile(
+			"\\b(moon ?phases?|phase of the moon|(next|when is the|whens the|when will there be a|when is a) (full|new) moon"
+			+ "|is it (a )?(full|new) moon|(which|what) moon( is it)?( tonight)?|moon tonight|how many (days|nights) (until|till|to) (the )?(next )?(full|new) moon)\\b");
+	private static final Pattern FORECAST_DATE = Pattern.compile(
+			"\\b((what|which) (day|date|season|month|year|weekday|day of the week) is (it|today)|whats the (date|day|season|month|year|time|weekday)"
+			+ "|todays date|what time is it|what is the (date|time|season)|what day are we|what season are we in)\\b");
+
+	/** "weather", "moon", "date" or null. How-it-works questions ("how does rain work") go to the wiki. */
+	public static String forecast(String message) {
+		String text = normalize(message);
+		if (FORECAST_NOT.matcher(text).find() || SERVER_HOW.matcher(text).find()) return null;
+		if (FORECAST_MOON.matcher(text).find()) return "moon";
+		if (FORECAST_WEATHER.matcher(text).find()) return "weather";
+		if (FORECAST_DATE.matcher(text).find()) return "date";
+		return null;
+	}
+
+	// Games and progress: trivia, hide and seek, biome collection, advancement coach.
+	private static final Pattern TRIVIA_BOARD = Pattern.compile(
+			"\\b((quiz|trivia) (leaderboard|scoreboard|scores?|ranking|rankings|top ?10|highscores?|high scores?|stats|results)"
+			+ "|my (quiz|trivia) (score|stats|streak|points|results)|(leaderboard|scoreboard|ranking) (for|of) (the )?(quiz|trivia)"
+			+ "|who is (the )?best at (the )?(quiz|trivia)|(quiz|trivia) champion)\\b");
+	private static final Pattern TRIVIA_ASK = Pattern.compile(
+			"\\b(quiz me|quiz time|trivia time|trivia question|trivia game|minecraft (quiz|trivia)|play (a |some )?(quiz|trivia)"
+			+ "|(give|ask) me (a |another |some )?(trivia|quiz|minecraft) questions?|ask me (a |another )?questions?|test (me|my (minecraft )?knowledge)"
+			+ "|start (a |the )?(quiz|trivia)|lets (do|play|have) (a |some )?(quiz|trivia)|(can|could|will) (you|u) quiz me|(another|next) (quiz|trivia) question"
+			+ "|i want (a |to do a |to play a |some )?(quiz|trivia)|^quiz( please| pls)?$)\\b");
+	private static final Pattern HIDE_START = Pattern.compile(
+			"\\b(hide and seek|hide n seek|hide & seek|hide and go seek|hide ?(n|and)? ?seek|play hide|go hide|you hide|hide from me|lets play hiding)\\b");
+	private static final Pattern HIDE_GIVE_UP = Pattern.compile(
+			"\\b(i give up|give up|i surrender|where are you|come out|show yourself|i cant find you|i can not find you|i quit|stop hiding|olly olly oxen free)\\b");
+	private static final Pattern BIOME_COLLECTION = Pattern.compile(
+			"\\b((which|what) biomes? (have i|havent i|i havent|did i|didnt i|do i still|am i missing|are (still )?left|are missing|do i need)"
+			+ "|biomes? (progress|collection|left|missing|i (still )?need|i havent (visited|seen|been to|found)|to (visit|discover|explore))"
+			+ "|my biome (progress|collection|count)|missing biomes?|unvisited biomes?|biomes i (have not|havent) (visited|seen|been to)"
+			+ "|how many biomes (have i|did i|i have)( visited| seen| found| explored| discovered)?|adventuring time (progress|left|missing))\\b");
+	private static final Pattern COACH = Pattern.compile(
+			"\\b((what|which) advancements? (should|could|can|shall) i (get|do|go for|work on|try|aim for)|advancement (help|coach|coaching|tips?|ideas?|progress|suggestions?)"
+			+ "|help me with (my )?advancements|(next|closest|easiest) advancements?|(what|which) advancements? (am i|are) (close|missing|left|almost)"
+			+ "|what advancements? (do i|have i) (still )?(need|missing|left)|suggest (an |me an )?advancement|my advancements)\\b");
+	private static final Pattern COACH_NAMED = Pattern.compile(
+			"\\b((whats|what is|what) (still )?(left|missing|needed) (for|on|in|to get)|how (close|far) am i (to|from)|progress (on|for|of) |criteria (for|of))\\b");
+
+	/** "ask" (a trivia question), "board" (the leaderboard) or null. "trivia about axolotls" is a fact, not a quiz. */
+	public static String trivia(String message) {
+		String text = normalize(message);
+		if (text.matches(".*\\btrivia (about|on|regarding)\\b.*")) return null;
+		if (TRIVIA_BOARD.matcher(text).find()) return "board";
+		if (TRIVIA_ASK.matcher(text).find()) return "ask";
+		return null;
+	}
+
+	/** "start", "giveup" or null. Giving up only counts while a game is running. */
+	public static String hideAndSeek(String message, boolean playing) {
+		String text = normalize(message);
+		if (playing && HIDE_GIVE_UP.matcher(text).find()) return "giveup";
+		if (HIDE_START.matcher(text).find() && !text.matches(".*\\b(how (do|to|does)|what is)\\b.*")) return "start";
+		return null;
+	}
+
+	public static boolean biomeCollection(String message) {
+		return BIOME_COLLECTION.matcher(normalize(message)).find();
+	}
+
+	/** "coach" (pick one), "named" (a named advancement's progress, if the server has it) or null. */
+	public static String advancementCoach(String message) {
+		String text = normalize(message);
+		if (COACH.matcher(text).find()) return "coach";
+		if (COACH_NAMED.matcher(text).find()) return "named";
+		return null;
+	}
+
 	/** Ways of asking to be led somewhere ("lead me to", "give me a route to", "how do I get to"); they start the trail. */
 	public static final String GUIDE_PHRASES = "\\b(lead|guide|take|bring|navigate|direct|walk|escort|point) me\\b"
 			+ "|\\bshow me (the way|how to get|where)\\b|\\bgive me (a |the )?(route|path|way|directions?)\\b"

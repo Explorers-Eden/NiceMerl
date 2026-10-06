@@ -25,6 +25,12 @@ Type `/merl` and your question:
 - `/merl fun fact about axolotls`, `/merl tell me a joke about Katter`, `/merl tip about creepers` or `/merl make fun of me`
 - `/merl who is MrNox` or `/merl who is the player Notch`
 - `/merl what should I build next` or `/merl any idea for a new structure`
+- `/merl can you stay with me?` or `/merl give me a hand` (and `/merl you can go now`)
+- `/merl will it rain?`, `/merl when does the storm end?`, `/merl when is the next full moon?` or `/merl what's the date?`
+- `/merl quiz me` or `/merl quiz leaderboard`
+- `/merl let's play hide and seek` (and `/merl I give up`)
+- `/merl which biomes haven't I visited?` or `/merl my biome progress`
+- `/merl what advancement should I get?` or `/merl what's left for Monster Hunter?`
 
 Ask in your own words: typos, abbreviations like tp or xp, and other wordings (*"how do I unlock the boss room"*) are fine. Merl answers in one line when she can, then shows up to three wiki pages with a link and a short excerpt. Spoilers stay hidden until you hover over them.
 
@@ -41,7 +47,13 @@ Ask in your own words: typos, abbreviations like tp or xp, and other wordings (*
 - **Reminders:** `/merl remind me in 10 minutes to …`, `/merl my reminders`, `/merl cancel my reminders`. Gone after a server restart.
 - **Ideas:** `/merl what should I do next` suggests a next step based on your advancements, or one of over 4,500 ideas.
 - **Small talk:** over 2,000 jokes (stories, dialogues, mob reviews and more), tips, over 1,200 fun facts, stories, `/merl pet peanut butter` and more. Ask for `another one` after a joke.
+- **Companion Merl:** *"Can you stay with me?"*, *"give me a hand"* or *"keep me company"* and Merl stays by your side (only you see her). She dresses for the situation: a gold helmet and fire resistance in the Nether, a pumpkin in the End, a turtle helmet underwater, sword and shield when monsters are near, a pickaxe and torch underground, a fishing rod, a hoe or your building block when you're fishing, farming or building, warm clothes in the snow, and a golden apple ready when you're hurt. She warns you about creepers, reminds you when you're hurt, hungry or night falls, and chats now and then. She flies along when you glide or fly. *"You can go now"* sends her home.
 - **Who is…?** *"Who is MrNox?"* shows what the server knows about a player: online or last seen, play time, deaths, mobs defeated, since when Merl knows them, and a link to their skin. Plain *"who is …"* only counts for players Merl knows (part of the name works, *"who is Nox"*), so *"who is Arachne"* still gets the wiki; *"who is the player …"* always looks them up.
+- **Weather forecast:** *"Will it rain?"*, *"when does the storm end?"* or *"weather forecast"*: when rain or a thunderstorm starts or stops, read from the world's real weather timers, in real minutes and as an in-game time. With Nice Actions, times are dates from its calendar (*"tomorrow, 7:17 AM"*, *"Tuesday, January 9, 7:00 PM"*), and *"what's the date?"* gives the weekday, date, season and time. *"When is the next full moon?"* tells you tonight's moon and how many nights until the next full and new moon (handy for swamp slimes). A slower day (like a 40-minute daylight cycle) is taken into account.
+- **Trivia quiz:** *"Quiz me"* asks one of over 250 hand-written Minecraft questions with clickable answers (two minutes to answer). Right answers, streaks and the best streak are kept, and *"quiz leaderboard"* shows the top 10. No question repeats until you've had them all.
+- **Hide and seek:** *"Let's play hide and seek"* and Merl hides 15 to 40 blocks away, out of sight if she can (only you see her). The action bar says warmer or colder every second; walk up to her and look her in the eyes to find her. Your fastest time is saved. *"I give up"* (or five minutes) and she shows you where she was.
+- **Biome collection:** *"Which biomes haven't I visited?"* shows your Adventuring Time progress (*"41 of 53 biomes"*), the biomes you're still missing, and the closest one with coordinates and **[Guide me]**.
+- **Advancement coach:** *"What advancement should I get?"* picks the unlocked advancement you're closest to, says what's still missing, and gives a tip. *"What's left for Monster Hunter?"* does the same for one you name. Missing biomes come with the closest one and **[Guide me]**.
 - **Build ideas:** *"What should I build next?"* or *"any idea for a new structure?"* gets one of over 1,200 ideas.
 - **Facts and jokes about anything:** *"fun fact about axolotls"* or *"trivia about the ender dragon"* gets a fact about exactly that. *"Tell me a joke about Katter"*, *"make fun of Katter"* or *"roast me"* gets a friendly little tease (always lighthearted, never mean), and *"tip about creepers"* or *"tip about Ron"* a tip. `another one` stays on the same topic.
 - **She remembers you:** when you met, what you're up to, which page helped and which packs you ask about most, so her answers fit you better over time. Ask `/merl do you remember me`, or say `/merl forget me` to erase it. She never saves what you write.
@@ -53,6 +65,7 @@ Ask in your own words: typos, abbreviations like tp or xp, and other wordings (*
 - `/merl <question>`: Ask Merl anything
 - `/nicemerl comments [on|off]`: Turn her comments on your situation on or off, just for you
 - `/nicemerl celebrate [on|off]`: Turn her congratulations on or off, just for you
+- `/nicemerl quiz <id> <answer>`: What the quiz's answer buttons run
 - `/nicemerl guide stop`: Stop the sparkle trail (`/nicemerl guide debug` shows what the path search did)
 - `/nicemerl mannequin`: Place a Merl mannequin where you stand (operators). It looks at players nearby, and clicking it (or looking it in the eyes up close) shows a message; `/nicemerl mannequin remove` removes the closest one
 - `/nicemerl reindex`: Read the wikis again right away (operators)
@@ -73,7 +86,7 @@ The config is in `config/nicemerl.json`, created on the first start. Restart the
 - **wikis**: the wikis Merl searches. Remove the Minecraft Wiki to turn off vanilla answers
 - **communityName**: your community's name (Explorer's Eden)
 - **messagePrefix** and **prefixColor**: what Merl's messages start with (a pink `Merl: `); the color can be a name like `gold` or a hex color
-- **messageSound**, **messageSoundVolume** and **messageSoundPitch**: the sound with her messages (the egg plop our packs use); leave the sound empty for none
+- **messageSounds**: a high-pitched villager "hmm" with her messages; `false` for none
 - **results**: pages per answer (3)
 - **cooldownSeconds**: wait time between questions (5)
 - **settingsSources**: the data pack storages she reads settings from
@@ -83,6 +96,8 @@ The config is in `config/nicemerl.json`, created on the first start. Restart the
 - **locateBiomes** and **locateSlimeChunks**: turn coordinates off for everyone (turn slime chunks off if your seed is a secret)
 - **locateWaypoints**: turn waypoint answers off for everyone
 - **particleGuide**: turn the guide off for everyone; **guideMerl**: off means just the sparkle trail, without Merl walking ahead
+- **companion**: turn companion Merl ("can you stay with me?") off for everyone
+- **weatherForecast**, **trivia**, **hideAndSeek**, **biomeCollection** and **advancementCoach**: turn the weather forecast, the quiz, hide and seek, biome collection and the advancement coach off for everyone
 - **craftingHelp**: turn "what can I craft?" off for everyone
 - **blockPalettes**: turn block palettes off for everyone
 - **recipeHelp**: turn real recipes, smelting, brewing and enchanting answers off for everyone; **recipesUrl** is where the recipe pictures come from
@@ -98,7 +113,7 @@ This is `config/nicemerl.json` as it's created on the first start. Delete the fi
 
 ```json
 {
-  "configVersion": 5,
+  "configVersion": 6,
   "wikis": [
     {
       "name": "Explorer's Eden",
@@ -113,9 +128,7 @@ This is `config/nicemerl.json` as it's created on the first start. Delete the fi
   ],
   "messagePrefix": "Merl: ",
   "prefixColor": "#F06EAA",
-  "messageSound": "minecraft:entity.chicken.egg",
-  "messageSoundVolume": 0.6,
-  "messageSoundPitch": 2.0,
+  "messageSounds": true,
   "mannequinMessage": "Ask /merl anything at any time!",
   "mannequinGreetOnLook": true,
   "mannequinMessageType": "actionbar",
@@ -129,6 +142,7 @@ This is `config/nicemerl.json` as it's created on the first start. Delete the fi
   "locateWaypoints": true,
   "particleGuide": true,
   "guideMerl": true,
+  "companion": true,
   "whatsThis": true,
   "recipeHelp": true,
   "blockPalettes": true,
@@ -137,6 +151,11 @@ This is `config/nicemerl.json` as it's created on the first start. Delete the fi
   "locateHome": true,
   "reminders": true,
   "serverInfo": true,
+  "weatherForecast": true,
+  "trivia": true,
+  "hideAndSeek": true,
+  "biomeCollection": true,
+  "advancementCoach": true,
   "craftingHelp": true,
   "cooldownSeconds": 5,
   "settingsSources": [

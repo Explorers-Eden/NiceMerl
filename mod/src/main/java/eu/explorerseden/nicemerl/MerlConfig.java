@@ -21,7 +21,7 @@ public class MerlConfig {
 	 * Raise this when a default list gains entries, so existing config files pick them up.
 	 * Entries are only added once, so anything a server owner removed stays removed.
 	 */
-	private static final int CURRENT_VERSION = 5;
+	private static final int CURRENT_VERSION = 6;
 
 	/** Which defaults this file has seen. Files from before versioning count as 1. */
 	public int configVersion = CURRENT_VERSION;
@@ -37,10 +37,8 @@ public class MerlConfig {
 	public String messagePrefix = "Merl: ";
 	/** The prefix's color: a name like "gold" or "dark_aqua", or a hex color like "#F06EAA" (Merl's pink). */
 	public String prefixColor = "#F06EAA";
-	/** The sound played to the player with Merl's messages, like the packs' egg plop. Empty for none. */
-	public String messageSound = "minecraft:entity.chicken.egg";
-	public float messageSoundVolume = 0.6f;
-	public float messageSoundPitch = 2.0f;
+	/** A high-pitched villager "hmm" with Merl's messages, only for the player she talks to. */
+	public boolean messageSounds = true;
 	/** What a Merl mannequin says when someone right-clicks it ({user} is their name). Empty for Merl's own lines. */
 	public String mannequinMessage = "Ask /merl anything at any time!";
 	/** The mannequin also says it when a player looks straight at it from a few blocks away (once a minute at most). */
@@ -71,6 +69,8 @@ public class MerlConfig {
 	public boolean particleGuide = true;
 	/** Merl herself walks ahead along the trail, holding a map (only the guided player sees her). */
 	public boolean guideMerl = true;
+	/** "Can you stay with me?": Merl stays with the player, dressed for the situation, with help now and then. */
+	public boolean companion = true;
 	/** "What's this?" names the block or mob the player looks at (mob variants included) and shows its wiki page. */
 	public boolean whatsThis = true;
 	/** Real recipes from the server ("how do I craft …"), "what can I smelt / brew with this?" and "what can I enchant this with?". */
@@ -87,6 +87,16 @@ public class MerlConfig {
 	public boolean reminders = true;
 	/** "What's the TPS?", "mob cap", "view distance", "server info": live server info without wiki pages. */
 	public boolean serverInfo = true;
+	/** "Will it rain?", "next full moon", "what's the date?": forecast from the weather timers, with Nice Actions' calendar dates. */
+	public boolean weatherForecast = true;
+	/** "Quiz me": Minecraft trivia with clickable answers, scores and a leaderboard. */
+	public boolean trivia = true;
+	/** "Let's play hide and seek": Merl hides nearby and gives warmer/colder hints. */
+	public boolean hideAndSeek = true;
+	/** "Which biomes haven't I visited?": Adventuring Time progress and a guide to the closest missing biome. */
+	public boolean biomeCollection = true;
+	/** "What advancement should I get?": the closest unfinished advancement, what's missing and a tip. */
+	public boolean advancementCoach = true;
 	/** "What can I craft?" lists what the player can make from their inventory right now. */
 	public boolean craftingHelp = true;
 	/** Minimum seconds between questions per player. */
@@ -246,6 +256,11 @@ public class MerlConfig {
 		}
 		// Version 5: the old default prefix "▊ " became "Merl: " (a changed prefix stays as it is).
 		if (configVersion < 5 && "▊ ".equals(messagePrefix)) messagePrefix = defaults.messagePrefix;
+		// Version 6: the sound choice became an on/off switch; an empty sound meant off.
+		if (configVersion < 6 && json.has("messageSound") && json.get("messageSound").isJsonPrimitive()
+				&& json.get("messageSound").getAsString().isBlank()) {
+			messageSounds = false;
+		}
 		configVersion = CURRENT_VERSION;
 	}
 

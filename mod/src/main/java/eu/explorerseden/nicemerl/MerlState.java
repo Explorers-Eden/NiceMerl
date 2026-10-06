@@ -70,6 +70,15 @@ public final class MerlState {
 			milestones = all.entrySet().stream().map(e -> e.getKey() + ":" + e.getValue()).reduce((a, b) -> a + " " + b).orElse(null);
 		}
 
+		/** Trivia: right answers, questions answered, the current and the best streak. */
+		@SerializedName("qr") public Integer quizRight;
+		@SerializedName("qa") public Integer quizAnswered;
+		@SerializedName("qs") public Integer quizStreak;
+		@SerializedName("qb") public Integer quizBest;
+		/** Hide and seek: games won and the fastest find in seconds. */
+		@SerializedName("hw") public Integer hideWins;
+		@SerializedName("hb") public Integer hideBest;
+
 		/** Projects they ask about most: "katters_structures:12 nice_keep_inventory:3". */
 		@SerializedName("in") public String interests;
 
@@ -136,6 +145,7 @@ public final class MerlState {
 			met = chats = topicDay = pageDay = anniversary = noted = null;
 			seen = null;
 			topic = page = name = interests = null;
+			quizRight = quizAnswered = quizStreak = quizBest = hideWins = hideBest = null;
 		}
 
 		boolean isDefault() {
@@ -241,6 +251,13 @@ public final class MerlState {
 			else if (wanted.length() >= 3 && lower.contains(wanted)) containing.put(UUID.fromString(e.getKey()), name);
 		}
 		return exact.isEmpty() ? containing : exact;
+	}
+
+	/** Everyone Merl remembers, by UUID (a copy, for leaderboards). */
+	public static synchronized Map<UUID, Player> players() {
+		Map<UUID, Player> all = new HashMap<>();
+		data.players.forEach((id, player) -> all.put(UUID.fromString(id), player));
+		return all;
 	}
 
 	/** "forget me": erases what Merl remembers about the player. */

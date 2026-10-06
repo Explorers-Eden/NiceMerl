@@ -96,6 +96,10 @@ final class MerlGuideNpc {
 		Vec3 playerSpeed = Vec3.ZERO;
 		Vec3 velocity = Vec3.ZERO;
 		int boostTicks;
+		/** The outfit companion Merl wears now (null: the guide's map and compass), re-sent after she reappears. */
+		String outfit;
+		List<Pair<EquipmentSlot, ItemStack>> outfitItems;
+		boolean outfitSent;
 		/** Ticks the player has been too far behind, and when she last said something (in update ticks). */
 		int waiting;
 		long ticks;
@@ -146,7 +150,8 @@ final class MerlGuideNpc {
 			remark(npc, "guide_landing");
 		}
 		if (path == null || path.size() < 2 || nearest < 0) {
-			if (npc.body != null && npc.pos.distanceTo(player.position()) > 24) remove(npc);
+			// No path yet (still searching, or none found): she waits next to the player instead of not being there.
+			stayClose(npc, player);
 			return;
 		}
 		int goal = Math.min(path.size() - 1, nearest + LEAD_STEPS);
@@ -174,6 +179,37 @@ final class MerlGuideNpc {
 		float pitch = moving ? 0f : (float) Math.max(-40, Math.min(40, -Math.toDegrees(Math.atan2(facing.y, Math.hypot(facing.x, facing.z)))));
 		move(npc, next, yaw, pitch);
 		npc.step = moving ? closestStep(path, next) : npc.step;
+	}
+
+	/** Beside the player, facing them; she walks over when they move away and appears there when far behind. */
+	private static void stayClose(Npc npc, ServerPlayer player) {
+		Vec3 spot = besidePlayer(player);
+		if (npc.body == null) {
+			spawn(npc, player, spot);
+			return;
+		}
+		Vec3 next = npc.pos;
+		double gap = npc.pos.distanceTo(spot);
+		if (gap > SNAP_DISTANCE) {
+			next = spot;
+		} else if (gap > 2.5) {
+			next = npc.pos.add(spot.subtract(npc.pos).normalize().scale(Math.min(gap > 4 ? CATCH_UP : WALK, gap)));
+		}
+		boolean moving = next.distanceToSqr(npc.pos) > 1e-4;
+		Vec3 facing = moving ? next.subtract(npc.pos) : player.getEyePosition().subtract(next.add(0, 1.62, 0));
+		float pitch = moving ? 0f : (float) Math.max(-40, Math.min(40, -Math.toDegrees(Math.atan2(facing.y, Math.hypot(facing.x, facing.z)))));
+		move(npc, next, yaw(facing), pitch);
+	}
+
+	/** A spot a step to the player's right where she can stand, else to their left, else right where they are. */
+	private static Vec3 besidePlayer(ServerPlayer player) {
+		double yaw = Math.toRadians(player.getYRot());
+		Vec3 right = new Vec3(-Math.cos(yaw), 0, -Math.sin(yaw));
+		for (double side : new double[] {1.5, -1.5}) {
+			Vec3 at = player.position().add(right.scale(side));
+			if (MerlPath.standable(player.level(), BlockPos.containing(at))) return at;
+		}
+		return player.position();
 	}
 
 	/** The player's speed in blocks per tick, averaged over the last few ticks so their uneven updates don't shake her. */
@@ -285,6 +321,7 @@ final class MerlGuideNpc {
 	private static void setAir(Npc npc, Air air) {
 		npc.air = air;
 		npc.boostTicks = 0;
+		npc.outfitSent = false;
 		npc.velocity = Vec3.ZERO;
 		Entity body = npc.body;
 		boolean gliding = air == Air.GLIDING;
@@ -332,6 +369,77 @@ final class MerlGuideNpc {
 		}
 	}
 
+	/**
+	 * Companion Merl, one tick: next to the player, flying along when they glide or fly. The guide's figure is the
+	 * same one, so a guide simply takes over and she comes back afterwards.
+	 */
+	static void accompany(ServerPlayer player) {
+		Npc npc = NPCS.computeIfAbsent(player.getUUID(), id -> new Npc());
+		if (npc.goodbyeTicks >= 0) return;
+		npc.ticks++;
+		if (npc.owner != player) {
+			if (npc.owner != null && npc.body != null && !npc.owner.hasDisconnected()) remove(npc);
+			npc.owner = player;
+			npc.body = null;
+			npc.air = Air.WALKING;
+			npc.playerTrail.clear();
+		}
+		trackSpeed(npc, player);
+		if (player.isFallFlying() || player.getAbilities().flying) {
+			// Flying with them, toward where they're looking.
+			fly(npc, player, player.position().add(player.getLookAngle().multiply(1, 0, 1).scale(40)),
+					player.isFallFlying() ? Air.GLIDING : Air.HOVERING);
+		} else {
+			if (npc.air != Air.WALKING && npc.body != null) setAir(npc, Air.WALKING);
+			stayClose(npc, player);
+		}
+		// Just (re)appeared, or back from flying: her outfit again.
+		if (npc.body != null && npc.air == Air.WALKING && !npc.outfitSent && npc.outfitItems != null) sendOutfit(npc);
+	}
+
+	/** Companion Merl's outfit for the situation; sent only when it changes. Returns whether it changed. */
+	static boolean dress(UUID player, String name, List<Pair<EquipmentSlot, ItemStack>> items) {
+		Npc npc = NPCS.get(player);
+		if (npc == null || name.equals(npc.outfit)) return false;
+		npc.outfit = name;
+		npc.outfitItems = items;
+		if (npc.body != null && npc.air == Air.WALKING) sendOutfit(npc);
+		return true;
+	}
+
+	private static void sendOutfit(Npc npc) {
+		npc.owner.connection.send(new ClientboundSetEquipmentPacket(npc.body.getId(), npc.outfitItems));
+		npc.outfitSent = true;
+	}
+
+	/** Hide and seek: she stands still at her hiding spot, facing the given way, with empty hands. */
+	static void hideAt(ServerPlayer player, Vec3 at, float yaw) {
+		stop(player.getUUID());
+		Npc npc = new Npc();
+		npc.owner = player;
+		NPCS.put(player.getUUID(), npc);
+		spawn(npc, player, at);
+		if (npc.body == null) return;
+		move(npc, at, yaw, 0f);
+		npc.outfit = "hiding";
+		npc.outfitItems = List.of(Pair.of(EquipmentSlot.MAINHAND, ItemStack.EMPTY), Pair.of(EquipmentSlot.OFFHAND, ItemStack.EMPTY));
+		sendOutfit(npc);
+	}
+
+	/** Hide and seek is over: she turns to the player, waves for a moment, then goes. */
+	static void foundAt(ServerPlayer player) {
+		Npc npc = NPCS.get(player.getUUID());
+		if (npc == null || npc.body == null) return;
+		npc.owner.connection.send(new ClientboundAnimatePacket(npc.body, 0));
+		npc.goodbyeTicks = GOODBYE_TICKS;
+	}
+
+	/** Where her figure is, or null. */
+	static Vec3 position(UUID player) {
+		Npc npc = NPCS.get(player);
+		return npc == null || npc.body == null ? null : npc.pos;
+	}
+
 	/** The guide was stopped (or the player left): she disappears right away. */
 	static void stop(UUID player) {
 		Npc npc = NPCS.remove(player);
@@ -344,6 +452,7 @@ final class MerlGuideNpc {
 		npc.body = body;
 		npc.pos = at;
 		npc.yaw = 0;
+		npc.outfitSent = false;
 		var connection = player.connection;
 		connection.send(new ClientboundAddEntityPacket(body.getId(), body.getUUID(), at.x, at.y, at.z, 0f, 0f,
 				body.getType(), 0, Vec3.ZERO, 0.0));
@@ -357,7 +466,7 @@ final class MerlGuideNpc {
 	 * A real filled map for her hand (one without a map id is drawn blank). It's made once, of the area around
 	 * spawn, and reused for every guide.
 	 */
-	private static ItemStack map(ServerPlayer player) {
+	static ItemStack map(ServerPlayer player) {
 		ItemStack stack = new ItemStack(Items.FILLED_MAP);
 		try {
 			ServerLevel overworld = player.level().getServer().overworld();

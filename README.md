@@ -62,6 +62,8 @@ Every message in the configured channel is treated as a question. NiceMerl repli
 - **Saying hi** (or @-mentioning her) gets a greeting that fits the time of day, using their name.
 - **Small talk:** *thanks*, *bye*, *how are you*, *who are you*, *what can you do*, *tell me a joke*, *give me a tip*, *fun fact*, *what should I do next?* (over 1,200 ideas), *good bot*, *who is Peanut Butter*, *pet Peanut Butter*, *I died*, *I'm bored*… Over 21,000 lines in all, including about 2,200 jokes: classic question-and-punchline ones, plus little stories, dialogues, mob reviews, patch notes, diary entries, signs, shower thoughts and Peanut Butter anecdotes. She answers in character and reacts with 💗, 👋 or 🐱.
 - **Forgiving about wording:** stretched letters (*"thaaanks"*), small typos (*"thnaks"*, *"jok pls"*), politeness (*"can you tell me a joke please"*) and loose phrasing (*"im bored gimme ideas"*, *"got any tips for beginners"*) all work. As soon as a message has a real subject in it (*"tips for the nether"*), it's treated as a question.
+- **Companion Merl (mod):** *"can you stay with me?"* / *"give me a hand"* makes Merl's mannequin stay with the player (sent as packets to them only, the same figure as the guide, which takes over while guiding), dressed for the situation (Nether, End, underwater, monsters nearby, mining, farming, fishing, building, snow, low health), with creeper warnings, health, hunger and nightfall reminders and a comment now and then; *"you can go now"* ends it. `companion` in the config turns it off. On Discord she says she can only do that in game.
+- **Weather, quiz, hide and seek, biomes and advancements (mod):** *"will it rain?"* / *"next full moon"* / *"what's the date?"* (the world's weather timers and clock, as Nice Actions calendar dates when it's installed, `MerlForecast`), *"quiz me"* (over 250 hand-written questions in `bot/data/trivia.json`, clickable answers via `/nicemerl quiz`, scores and a leaderboard in `state.json`, `MerlTrivia`), *"let's play hide and seek"* (the packet figure hides out of sight, warmer/colder on the action bar, found by eye contact, `MerlHideAndSeek`), *"which biomes haven't I visited?"* (Adventuring Time progress and the closest missing biome) and *"what advancement should I get?"* (the unlocked advancement with the most progress, what's missing and a tip from `bot/data/advancement_tips.json`, `MerlProgress`). Each has a config switch. On Discord she says these only work in game.
 - **Player cards:** *"who is MrNox?"* (or *"who is the player Notch"*, *"NiceRon's skin"*) shows the player's skin (rendered by mc-heads.net from their Mojang profile), skin type and cape, and since when Merl knows them; in game, online or last seen, play time, deaths and mobs defeated from the server's statistics, with a link to the skin on NameMC. Plain *"who is …"* only counts for players Merl knows (part of the name works) and never wins over a wiki page named after it.
 - **Build ideas:** *"what should I build next?"* gets one of over 1,200 ideas: 100 written by hand plus combinations of a building, a place it fits and a twist (`mod/tools/scripts/build_ideas.py`).
 - **Facts and jokes about anything:** *"fun fact about axolotls"*, *"tell me a joke about Katter"*, *"make fun of @someone"* or *"roast me"*: a fun fact that mentions it, or a joke about it (existing jokes about things like creepers, otherwise one of about 500 friendly, never mean name jokes), in the bot and the mod alike (`data/topic_patterns.json`). *"Another one"* stays on the topic.
@@ -205,8 +207,7 @@ Example: `/lp group default permission set nicemerl.settings false` hides settin
 | `communityName` | `Explorer's Eden` | used in Merl's lines |
 | `messagePrefix` | `Merl: ` | what Merl's messages start with (in `prefixColor`); configs with the old default `▊ ` switch automatically |
 | `prefixColor` | `#F06EAA` | the prefix's color: a name like `gold` or a hex color |
-| `messageSound` | `minecraft:entity.chicken.egg` | sound played to the player with Merl's messages (the packs' egg plop); empty for none |
-| `messageSoundVolume` / `messageSoundPitch` | `0.6` / `2.0` | volume and pitch of that sound |
+| `messageSounds` | `true` | a high-pitched villager "hmm" with Merl's messages, only for the player she talks to |
 | `reindexHours` | `6` | how often the wiki is re-read |
 | `results` | `3` | wiki pages per answer |
 | `excerptLength` | `160` | excerpt length in characters |
@@ -221,6 +222,7 @@ Example: `/lp group default permission set nicemerl.settings false` hides settin
 | `locateSlimeChunks` | `true` | slime chunk coordinates; turn off if your world seed is a secret |
 | `locateWaypoints` | `true` | with Warping Wonders: the closest Waypoint Hub the player may use |
 | `particleGuide` | `true` | the **[Guide me]** sparkle trail after coordinates |
+| `companion` | `true` | *"can you stay with me?"*: Merl stays with the player, dressed for the situation, with help now and then |
 | `guideMerl` | `true` | Merl herself walks ahead along the trail with a map (a mannequin only the guided player sees, sent as packets, never added to the world) |
 | `recipeHelp` | `true` | real recipes, smelting, brewing and enchanting answers |
 | `blockPalettes` | `true` | *"what blocks go with this?"* and *"random palette"*: block palettes around the block the player looks at, holds or names |
@@ -230,6 +232,11 @@ Example: `/lp group default permission set nicemerl.settings false` hides settin
 | `locateClaims` | `true` | with Get Off My Lawn: the player's claims and the ones they're trusted on |
 | `reminders` | `true` | *"remind me in 10 minutes to …"* |
 | `serverInfo` | `true` | TPS, mob caps, distances, server info and pings |
+| `weatherForecast` | `true` | *"will it rain?"*, moon phase and the date (Nice Actions' calendar when installed) |
+| `trivia` | `true` | *"quiz me"*: Minecraft trivia with clickable answers, scores and a leaderboard |
+| `hideAndSeek` | `true` | *"let's play hide and seek"*: Merl hides nearby with warmer/colder hints |
+| `biomeCollection` | `true` | *"which biomes haven't I visited?"*: Adventuring Time progress and the closest missing biome |
+| `advancementCoach` | `true` | *"what advancement should I get?"*: the closest unfinished advancement, what's missing and a tip |
 | `settingsGameRules` | `true` | game rules count as settings in answers |
 | `mannequinMessage` | `Ask /merl anything at any time!` | what a Merl mannequin says when right-clicked (`{user}` is the player) |
 | `mannequinMessageType` | `actionbar` | `actionbar` or `chat` |

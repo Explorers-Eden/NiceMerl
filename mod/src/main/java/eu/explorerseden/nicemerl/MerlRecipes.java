@@ -204,6 +204,8 @@ public final class MerlRecipes {
 	/** A name as players see it, also for data pack items whose translation the server doesn't have. */
 	static String readable(Component component) {
 		String text = component.getString();
+		// A pack item's name the server has no translation for shows its key ("item.warping_wonders.acacia_waypoint_hub").
+		if (text.matches("(item|block|entity)\\.[a-z0-9_]+\\.[a-z0-9_.]+")) return titleCase(text.substring(text.lastIndexOf('.') + 1).replace('_', ' '));
 		if (component.getContents() instanceof TranslatableContents translatable && text.equals(translatable.getKey())) {
 			if (translatable.getFallback() != null) return translatable.getFallback();
 			String key = translatable.getKey();

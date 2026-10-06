@@ -76,6 +76,9 @@ public class NiceMerl implements ModInitializer {
 		ServerTickEvents.END_SERVER_TICK.register(MerlStats::tick);
 		// Sparkle trails for players Merl is guiding somewhere.
 		ServerTickEvents.END_SERVER_TICK.register(MerlGuide::tick);
+		// Companion Merl: "can you stay with me?"
+		ServerTickEvents.END_SERVER_TICK.register(MerlCompanion::tick);
+		ServerTickEvents.END_SERVER_TICK.register(MerlHideAndSeek::tick);
 		// A guided player firing a rocket mid-glide: guide Merl fires one too.
 		UseItemCallback.EVENT.register((player, level, hand) -> {
 			if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer && serverPlayer.isFallFlying()

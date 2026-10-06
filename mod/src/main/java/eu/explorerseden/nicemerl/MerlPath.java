@@ -13,6 +13,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.Heightmap;
 
 /**
  * A walkable path toward a target, for the guide: an A* search over standing spots (solid ground below, room for a
@@ -116,10 +117,14 @@ final class MerlPath {
 			return Math.hypot(gx - (at.getX() + 0.5), gz - (at.getZ() + 0.5));
 		}
 
-		/** Never more than the real cost left, so the path found is a good one. */
+		/**
+		 * About the cost left. On the way out from under a roof it also counts the height to the surface above the
+		 * spot, so the search heads up stairs and shafts instead of combing every cave around the base first.
+		 */
 		private double guess(BlockPos at) {
 			double left = Math.max(0, flat(at) - (toTarget ? GOAL_FLAT : 0));
 			if (toTarget && goalY != null) left += Math.max(0, Math.abs(goalY - at.getY()) - GOAL_HEIGHT) * 0.5;
+			if (needSky) left += Math.max(0, level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, at.getX(), at.getZ()) - at.getY());
 			return left;
 		}
 
@@ -204,7 +209,8 @@ final class MerlPath {
 		if (climbable(level, feet)) return true;
 		BlockState ground = level.getBlockState(feet.below());
 		String groundId = id(ground.getBlock());
-		if (groundId.equals("magma_block") || groundId.contains("campfire") || groundId.equals("cactus")) return false;
+		// Magma blocks are fine to walk over (and common in bases); campfires and cactus aren't.
+		if (groundId.contains("campfire") || groundId.equals("cactus")) return false;
 		var shape = ground.getCollisionShape(level, feet.below());
 		// Fences and walls are taller than a block: you don't walk on top of those.
 		return !ground.getFluidState().is(FluidTags.LAVA) && !shape.isEmpty() && shape.max(Direction.Axis.Y) <= 1.0
