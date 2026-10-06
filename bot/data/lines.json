@@ -80210,7 +80210,7 @@
     },
     {
       "pool": "companion",
-      "pattern": "(merl |hey merl )?(can|could|would|will) (you|u) (please )?(stay with me|come with me|keep me company|follow me|tag along|join me|accompany me|hang out with me|give me a hand|lend me a hand|be my (companion|buddy|helper|sidekick|partner))( for a (while|bit))?( please| pls)?( merl)?|(merl |hey merl )?(please )?(stay with me|come with me|keep me company|follow me|tag along|join me|accompany me|hang out with me|give me a hand|lend me a hand|be my (companion|buddy|helper|sidekick|partner)|i need a hand|i need (a )?(companion|buddy|sidekick|helper)|come along|lets go together|lets adventure together|adventure with me)( for a (while|bit))?( please| pls)?( merl)?"
+      "pattern": "(merl |hey merl )?(can|could|would|will) (you|u) (please )?(stay with me|come with me|keep me company|give me (some )?company|be my company|keep me some company|join me for a bit|follow me|tag along|join me|accompany me|hang out with me|give me a hand|lend me a hand|be my (companion|buddy|helper|sidekick|partner))( for a (while|bit))?( please| pls)?( merl)?|(merl |hey merl )?(please )?(stay with me|come with me|keep me company|give me (some )?company|be my company|keep me some company|join me for a bit|follow me|tag along|join me|accompany me|hang out with me|give me a hand|lend me a hand|be my (companion|buddy|helper|sidekick|partner)|i need a hand|i (need|want|could use) (some )?company|(some )?company please|stay by my side|i need (a )?(companion|buddy|sidekick|helper)|come along|lets go together|lets adventure together|adventure with me)( for a (while|bit))?( please| pls)?( merl)?"
     },
     {
       "pool": "greeting",

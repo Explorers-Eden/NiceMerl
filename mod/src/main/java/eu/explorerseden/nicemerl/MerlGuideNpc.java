@@ -23,6 +23,7 @@ import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket;
 import net.minecraft.network.protocol.game.ClientboundSetPassengersPacket;
+import net.minecraft.network.protocol.game.ClientboundUpdateAttributesPacket;
 import net.minecraft.network.FriendlyByteBuf;
 import io.netty.buffer.Unpooled;
 import net.minecraft.core.component.DataComponents;
@@ -36,6 +37,9 @@ import net.minecraft.world.entity.EntityProcessor;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.decoration.Cushion;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.entity.PositionPath;
@@ -91,6 +95,8 @@ final class MerlGuideNpc {
 		Entity body;
 		/** Hide and seek: the cushion she sits on (packet-only too), or null. */
 		Entity cushion;
+		/** The size last sent for her (the client starts at 1), so she's always as big as the player. */
+		double sentScale = 1.0;
 		/** Companion Merl: ticks the player has stood still (she sits down on a cushion after a while). */
 		int idleTicks;
 		Vec3 pos;
@@ -152,6 +158,7 @@ final class MerlGuideNpc {
 		}
 		if (npc.cushion != null) standUp(npc);
 		trackSpeed(npc, player);
+		matchSize(npc, player);
 		// The player glides or flies: she puts on an elytra (or just takes off) and flies ahead of them.
 		if (player.isFallFlying() || player.getAbilities().flying) {
 			fly(npc, player, destination, player.isFallFlying() ? Air.GLIDING : Air.HOVERING);
@@ -398,6 +405,7 @@ final class MerlGuideNpc {
 			npc.playerTrail.clear();
 		}
 		trackSpeed(npc, player);
+		matchSize(npc, player);
 		if (player.isFallFlying() || player.getAbilities().flying) {
 			// Flying with them, toward where they're looking.
 			fly(npc, player, player.position().add(player.getLookAngle().multiply(1, 0, 1).scale(40)),
@@ -525,6 +533,20 @@ final class MerlGuideNpc {
 		if (data != null && !data.isEmpty()) connection.send(new ClientboundSetEntityDataPacket(body.getId(), data));
 		connection.send(new ClientboundSetEquipmentPacket(body.getId(), List.of(Pair.of(EquipmentSlot.MAINHAND, map(player)),
 				Pair.of(EquipmentSlot.OFFHAND, new ItemStack(Items.COMPASS)))));
+		npc.sentScale = 1.0;
+		matchSize(npc, player);
+	}
+
+	/** Makes her the player's size (a scale attribute from a pack, a potion or a command), sent only when it changes. */
+	private static void matchSize(Npc npc, ServerPlayer player) {
+		if (!(npc.body instanceof LivingEntity living)) return;
+		double scale = player.getAttributeValue(Attributes.SCALE);
+		if (Math.abs(scale - npc.sentScale) < 1e-3) return;
+		AttributeInstance size = living.getAttribute(Attributes.SCALE);
+		if (size == null) return;
+		size.setBaseValue(scale);
+		player.connection.send(new ClientboundUpdateAttributesPacket(living.getId(), List.of(size)));
+		npc.sentScale = scale;
 	}
 
 	/**

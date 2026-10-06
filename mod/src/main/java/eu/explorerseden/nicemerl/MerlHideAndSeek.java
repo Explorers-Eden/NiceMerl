@@ -144,9 +144,9 @@ final class MerlHideAndSeek {
 	}
 
 	private static boolean found(ServerPlayer player, Game game) {
-		Vec3 face = game.spot.add(0, FACE_HEIGHT, 0);
+		Vec3 face = game.spot.add(0, FACE_HEIGHT * player.getScale(), 0);
 		Vec3 eyes = player.getEyePosition();
-		if (eyes.distanceTo(face) > FOUND_RANGE + 1.0) return false;
+		if (eyes.distanceTo(face) > (FOUND_RANGE + 1.0) * Math.max(1, player.getScale())) return false;
 		if (eyes.distanceTo(face) <= 1.5) return true;
 		if (player.getViewVector(1.0f).dot(face.subtract(eyes).normalize()) < FOUND_COS) return false;
 		return visible(player.level(), eyes, face, player);
@@ -177,7 +177,7 @@ final class MerlHideAndSeek {
 				if (!MerlPath.standable(level, at) || level.canSeeSky(at.above()) != outdoors) continue;
 				if (!level.getFluidState(at).isEmpty()) continue;
 				Vec3 spot = Vec3.atBottomCenterOf(at);
-				if (!visible(level, eyes, spot.add(0, FACE_HEIGHT, 0), player)) return spot;
+				if (!visible(level, eyes, spot.add(0, FACE_HEIGHT * player.getScale(), 0), player)) return spot;
 				if (fallback == null) fallback = spot;
 				break;
 			}

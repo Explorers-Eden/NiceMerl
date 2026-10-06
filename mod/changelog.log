@@ -1,42 +1,14 @@
 # Minecraft Version(s): 26.3
-## New: Companion Merl
-- *"Can you stay with me?"*, *"give me a hand"* or *"keep me company"*: Merl stays by your side (only you see her) and follows you around, flying along when you glide or fly
-- She dresses for the situation: a gold helmet and fire resistance in the Nether, a pumpkin in the End, a turtle helmet and trident underwater, sword and shield when monsters are near, a pickaxe and torch underground, a fishing rod, a hoe or your building block when you're fishing, farming or building, warm clothes in the snow, and a golden apple ready when you're hurt
-- Stand still for a while and she puts down a cushion in a random color and sits on it, until you move on
-- She warns you about creepers, reminds you when you're hurt, hungry or night is falling, and chats with you now and then
-- *"You can go now"* or *"stop following me"* sends her home. While she guides you somewhere, the guide takes over, and she comes back afterwards
-- Server admins can turn her off with `companion` in the config
+## Fixes
+- Finding Merl in hide and seek no longer crashes your game
+- When Merl fires a rocket while gliding next to you, her arm swings again
 
-## New: Weather forecast
-- *"Will it rain?"*, *"when does the storm end?"* or *"weather forecast"*: Merl reads the world's real weather timers and tells you when rain or thunder starts or stops, in real minutes and as an in-game time
-- With Nice Actions installed, she uses its calendar: *"tomorrow, 7:17 AM"* or *"Tuesday, January 9, 7:00 PM"*, and *"what's the date?"* gives the weekday, date, season and time
-- *"When is the next full moon?"*: tonight's moon and the nights until the next full and new moon
-- A slower day, like a 40-minute daylight cycle, is taken into account
+## Cushions
+- In hide and seek, Merl now hides sitting on a cushion of a random color
+- Companion Merl sits down on a cushion when you stand still for a while, and gets up as soon as you move on
 
-## New: Trivia quiz
-- *"Quiz me"*: over 250 hand-written Minecraft questions with clickable answers
-- Right answers, streaks and your best streak are saved; *"quiz leaderboard"* shows the top 10
+## Merl is your size
+- Merl is always as big as you: when a pack, a potion or a command makes you bigger or smaller, she changes size with you (guide, companion and hide and seek)
 
-## New: Hide and seek
-- *"Let's play hide and seek"*: Merl hides somewhere nearby, sitting on a cushion of a random color (only you see her), and the action bar tells you warmer or colder
-- Walk up and look her in the eyes to find her. Your fastest time is saved. *"I give up"* and she shows you where she was
-
-## New: Biome collection and advancement coach
-- *"Which biomes haven't I visited?"*: your Adventuring Time progress, the biomes you still need, and the closest one with **[Guide me]**
-- *"What advancement should I get?"*: the advancement you're closest to, what's still missing, and a tip. *"What's left for Monster Hunter?"* works for any advancement by name
-- Each new feature can be turned off in the config: `weatherForecast`, `trivia`, `hideAndSeek`, `biomeCollection`, `advancementCoach`
-
-## Merl has a lot more to say
-- Every kind of message Merl has now comes in at least 200 versions, almost 80,000 lines in total: answers, greetings, reminders, server info, coordinates, her moods, favorites, stories and songs, so she repeats herself far less
-
-## Guide
-- **Merl is there right away:** while she's still finding the way (a big base can take a few seconds) or when there's no way, she waits next to you and follows you, instead of not showing up at all
-- Out of caves and bases, the path search heads for the surface sooner
-- Magma blocks count as walkable
-
-## Merl's voice
-- Merl now speaks with a high-pitched villager "hmm" instead of the egg plop
-- The sound settings became one switch in the config: `messageSounds` (on by default). If you had turned the sound off, it stays off
-
-## Recipes
-- *"How do I craft …?"* now answers with just the recipe, without wiki pages underneath (an item without a recipe still gets the wiki)
+## Companion Merl
+- *"Give me company"*, *"I could use some company"*, *"company please"* and *"stay by my side"* now ask her to stay with you too
