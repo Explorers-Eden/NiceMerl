@@ -155,7 +155,7 @@ She also does small talk (`/merl thanks`, `/merl tell me a joke`, `/merl give me
 - **Real recipes:** *"how do I craft a waypoint hub?"* shows the recipe from the server's own recipe list (our packs' included): ingredients, crafting table or not, the shape on hover, and a **[Recipe picture]** link to the PNG the website renders. *"What can I smelt / brew / enchant this with?"* answers for the held item (enchantments include Enchantments Encore's).
 - **What's this?** *"what is this"* names the block or mob the player looks at (mob variants from data components, like `nice_mob_variants:creamy` → *Creamy Cow (Nice Mob Variants)*), with health and owner, plus a short summary from the page that's about exactly that thing: the pack's variant page, our wiki's page with that title, or the Minecraft Wiki page with that title (exact title only, never a search, so nothing unrelated shows up); *"what am I holding"* does the held item.
 - **Block palettes:** *"what blocks go with this?"* builds a palette around the block the player looks at (up to 20 blocks away), holds or names (*"palette for deepslate bricks"*; stairs, slabs and walls count as their full block), and *"random palette"* around a block Merl picks. Each block shows in its own color; clicking one gives a palette around it, **[Another one]** shuffles. Same colors and rules as the Discord bot's palettes (`MerlPalette.java` and `bot/palettes.py`).
-- **Bed, death and claims:** *"where's my bed?"*, *"where did I die?"* and, with [Get Off My Lawn ReServed](https://modrinth.com/mod/goml-reserved), *"where's my claim?"* / *"nearest claim I'm trusted on"* / *"where is Steve's claim"* (GOML is read through reflection, so it stays optional). All with coordinates and **[Guide me]**.
+- **Bed, death and claims:** *"where's my bed?"*, *"where did I die?"* and *"where's my claim?"* / *"nearest claim I'm trusted on"* / *"where is Steve's claim"* / *"my farm claim"*, with the Nice Control Center's land claims (when they're switched on) or [Get Off My Lawn ReServed](https://modrinth.com/mod/goml-reserved). Both are read through reflection, so they stay optional. All with coordinates and **[Guide me]**.
 - **Server info:** *"what's the tps?"*, *"mob cap"*, *"view distance"*, *"server info"*, *"what's my ping?"*: live from the server (TPS/MSPT from the tick times, mob counts and caps from the last spawn round, distances, players, difficulty, whitelist, PvP; nothing secret like the seed or IPs). Game rules count as settings (*"is keep inventory on?"*), and settings answers come without wiki links.
 - **Context:** *"say that again"* and *"what was I asking?"* (also in the Discord bot), and *"take me to … / guide me to … / give me a route to …"* start the sparkle path right away (*"stop the route"*, *"turn off GPS"*, *"don't guide me"* end it).
 - **Merl mannequin:** `/nicemerl mannequin` (operators) places an invulnerable, immovable, nameless Merl (her skin is built in) that shows `mannequinMessage` when right-clicked.
@@ -229,7 +229,8 @@ Example: `/lp group default permission set nicemerl.settings false` hides settin
 | `recipesUrl` | the explorerseden.eu recipe list | where [Recipe picture] links come from; empty for none |
 | `whatsThis` | `true` | *"what is this?"* for the block or mob the player looks at |
 | `locateHome` | `true` | *"where's my bed?"* and *"where did I die?"* |
-| `locateClaims` | `true` | with Get Off My Lawn: the player's claims and the ones they're trusted on |
+| `locateClaims` | `true` | with the Nice Control Center's land claims or Get Off My Lawn: the player's claims and the ones they're a member of |
+| `priceAdvice` | `true` | with the Nice Control Center's market: *"how much should I sell diamonds for?"*, *"what's this worth?"* (held item), from recent sales and today's listings |
 | `reminders` | `true` | *"remind me in 10 minutes to …"* |
 | `serverInfo` | `true` | TPS, mob caps, distances, server info and pings |
 | `weatherForecast` | `true` | *"will it rain?"*, moon phase and the date (Nice Actions' calendar when installed) |
@@ -238,6 +239,7 @@ Example: `/lp group default permission set nicemerl.settings false` hides settin
 | `biomeCollection` | `true` | *"which biomes haven't I visited?"*: Adventuring Time progress and the closest missing biome |
 | `advancementCoach` | `true` | *"what advancement should I get?"*: the closest unfinished advancement, what's missing and a tip |
 | `settingsGameRules` | `true` | game rules count as settings in answers |
+| `settingsServerRules` | `true` | with the Nice Control Center: its performance tweaks, world borders and claim rules count as settings in answers |
 | `mannequinMessage` | `Ask /merl anything at any time!` | what a Merl mannequin says when right-clicked (`{user}` is the player) |
 | `mannequinMessageType` | `actionbar` | `actionbar` or `chat` |
 | `mannequinGreetOnLook` | `true` | the mannequin also says its message when a player looks it in the eyes from up to 4 blocks away (once a minute per player) |

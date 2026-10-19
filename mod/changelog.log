@@ -1,23 +1,13 @@
 # Minecraft Version(s): 26.3
-## Fixes
-- Finding Merl in hide and seek no longer crashes your game
-- When Merl fires a rocket while gliding next to you, her arm swings again
+## Market prices
+- *"How much should I sell diamonds for?"*, *"what's a good price for oak logs?"*, *"what's this worth?"* (the item in your hand): with the Nice Control Center's market, Merl tells you what it sold for lately and what it's listed for now, and suggests a price per item and per lot ("For how many" in /market). Switch it off with **priceAdvice**
 
-## Cushions
-- In hide and seek, Merl now hides sitting on a cushion of a random color
-- Companion Merl sits down on a cushion when you stand still for a while, and gets up as soon as you move on
+## Land claims
+- *"Where's my claim?"* now knows the Nice Control Center's land claims (when they're switched on there): your nearest claim, one you're a member of, or one by its name or owner ("my farm claim", "Steve's claim"), with **[Guide me]**. Get Off My Lawn still works when it's the one installed
+- When you have no claim yet, Merl tells you to use `/claim mode` instead of placing a claim anchor
 
-## Merl is your size
-- Merl is always as big as you: when a pack, a potion or a command makes you bigger or smaller, she changes size with you (guide, companion and hide and seek)
+## Server rules
+- With the Nice Control Center, Merl also knows the server's own rules: the switched-on performance tweaks (*"why did my items disappear so fast?"*, *"is there a mob limit per chunk?"*, *"do far away mobs move slower?"*), the world borders (*"how big is the permanent area?"*) and how land claims work (*"how many claim blocks do I get?"*). Switch it off with **settingsServerRules**
 
-## Quiz
-- The quiz now has over 1,100 questions. Many of them come straight from the game's data (recipes, smelting, the right tool, mob drops, advancements, enchantments and biomes), so their answers are always right
-
-## Build ideas
-- *"What to build next?"*, *"what structure should I build?"*, *"what can I build?"*, *"I don't know what to build"* and similar questions now get a build idea instead of a general tip or a wiki page
-
-## Mannequin
-- Placing a Merl mannequin no longer sometimes says it couldn't be placed when it was
-
-## Companion Merl
-- *"Give me company"*, *"I could use some company"*, *"company please"* and *"stay by my side"* now ask her to stay with you too
+## Discord
+- The Discord: JustSync fix is gone: the server now uses the Nice Control Center's Discord bridge, which never shows /merl questions on Discord

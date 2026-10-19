@@ -15,7 +15,7 @@ Type `/merl` and your question:
 - `/merl what can I craft` or `/merl how do I craft a waypoint hub`
 - `/merl what is this` (look at a block or mob)
 - `/merl what blocks go with this`, `/merl palette for deepslate bricks` or `/merl random palette`
-- `/merl where's my bed`, `/merl where did I die` or `/merl where's my claim` (with Get Off My Lawn)
+- `/merl where's my bed`, `/merl where did I die` or `/merl where's my claim` (with the Nice Control Center's land claims or Get Off My Lawn)
 - `/merl remind me in 10 minutes to check the furnace`
 - `/merl what's the tps`, `/merl mob cap`, `/merl view distance`, `/merl server info` or `/merl what's my ping`
 - `/merl is keep inventory on` or `/merl what's the random tick speed` (game rules and pack settings)
@@ -40,7 +40,7 @@ Ask in your own words: typos, abbreviations like tp or xp, and other wordings (*
 - **Crafting:** `/merl what can I craft` lists what your inventory can make right now; `/merl what can I make with this` only what uses the item in your hand. `/merl how do I craft …` shows the real recipe (our packs' too) with a link to its picture, and she also answers *"what can I smelt / brew / enchant this with?"* for the item in your hand.
 - **What's this?** Look at a block or mob (or hold an item) and ask `/merl what is this`: she names it (for mobs with their variant, like *"Variant: Creamy (Nice Mob Variants)"*) and adds a short summary from the wiki page that's about exactly that thing, if there is one.
 - **Block palettes:** look at a block (or hold one, or name it) and ask *"what blocks go with this?"*: Merl suggests eight blocks that go with it, from dark to light plus one accent, each in its own color. Name several blocks (*"a palette with prismarine and gold"*) and all of them are in it; any block works as a start, even ores, plants or cactus. Click one for a palette around that block, or click **[Another one]**. *"Give me a random palette"* starts from a block she picks herself.
-- **Your places:** your bed, where you died (your grave), and with Get Off My Lawn your claims or the ones you're trusted on, with coordinates and **[Guide me]**.
+- **Your places:** your bed, where you died (your grave), and your claims or the ones you're a member of (with the Nice Control Center's land claims or Get Off My Lawn), with coordinates and **[Guide me]**.
 - **Server info:** TPS and MSPT, mob counts and caps, view and simulation distance, players online, difficulty and more, read live from the server. *"What's my ping?"* (or a player's, or everyone's) too. No wiki links, just the numbers.
 - **Settings and game rules:** *"is keep inventory on?"*, *"do mobs grief?"* or *"can I pvp?"* show the server's game rules and our packs' settings, without wiki links.
 - **Context:** *"say that again"* repeats her last answer, *"what was I asking?"* tells you your last question (she forgets both after half an hour). *"Take me to …"*, *"guide me to …"* or *"give me a route to …"* start the sparkle path straight away, and *"stop the route"*, *"turn off GPS"* or *"don't guide me"* turn it off.
@@ -101,8 +101,8 @@ The config is in `config/nicemerl.json`, created on the first start. Restart the
 - **craftingHelp**: turn "what can I craft?" off for everyone
 - **blockPalettes**: turn block palettes off for everyone
 - **recipeHelp**: turn real recipes, smelting, brewing and enchanting answers off for everyone; **recipesUrl** is where the recipe pictures come from
-- **whatsThis**, **locateHome**, **locateClaims** and **reminders**: turn "what's this?", bed and death, claims, and reminders off for everyone
-- **serverInfo** and **settingsGameRules**: turn server info, or game rules in settings answers, off for everyone
+- **whatsThis**, **locateHome**, **locateClaims**, **priceAdvice** and **reminders**: turn "what's this?", bed and death, claims, market prices, and reminders off for everyone
+- **serverInfo**, **settingsGameRules** and **settingsServerRules**: turn server info, game rules in settings answers, or the Nice Control Center's rules (performance tweaks, borders, claims) in settings answers, off for everyone
 - **mannequinMessage** and **mannequinMessageType**: what a Merl mannequin says when clicked, in `chat` or on the `actionbar`; **mannequinGreetOnLook**: it also says it when you look it in the eyes from a few blocks away
 - **semanticSearch**: understanding other wordings. Downloads a small file (about 31 MB) once to `config/nicemerl/model/`
 
@@ -148,6 +148,7 @@ This is `config/nicemerl.json` as it's created on the first start. Delete the fi
   "blockPalettes": true,
   "recipesUrl": "https://explorerseden.eu/api/generated-data.php?key=recipes-manifest",
   "locateClaims": true,
+  "priceAdvice": true,
   "locateHome": true,
   "reminders": true,
   "serverInfo": true,
@@ -201,6 +202,7 @@ This is `config/nicemerl.json` as it's created on the first start. Delete the fi
     "*_template"
   ],
   "settingsGameRules": true,
+  "settingsServerRules": true,
   "settingsResults": 6,
   "mediaWikiResults": 2,
   "playerComments": true,

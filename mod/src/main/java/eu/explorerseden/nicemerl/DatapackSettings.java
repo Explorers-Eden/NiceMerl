@@ -404,7 +404,38 @@ public final class DatapackSettings {
 			}
 		}
 		if (config.settingsGameRules) settings.addAll(gameRules(server));
+		if (config.settingsServerRules) settings.addAll(serverRules());
 		return settings;
+	}
+
+	/**
+	 * The Nice Control Center's rules for players, when it's installed: switched-on performance tweaks
+	 * ("Junk despawns sooner › Junk items go after: 60 seconds"), world borders and land claims. Read
+	 * through its ServerFacts by reflection, so Merl works without it.
+	 */
+	@SuppressWarnings("unchecked")
+	static List<Setting> serverRules() {
+		List<Setting> out = new ArrayList<>();
+		if (!net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("nicecontrolcenter")) return out;
+		List<Map<String, Object>> facts;
+		try {
+			Class<?> c = Class.forName("eu.explorerseden.nicecontrolcenter.ServerFacts", true, DatapackSettings.class.getClassLoader());
+			facts = (List<Map<String, Object>>) c.getMethod("all", java.nio.file.Path.class)
+					.invoke(null, net.fabricmc.loader.api.FabricLoader.getInstance().getConfigDir());
+		} catch (ReflectiveOperationException | LinkageError | RuntimeException e) {
+			return out;
+		}
+		for (Map<String, Object> fact : facts) {
+			String title = String.valueOf(fact.get("title"));
+			String about = String.valueOf(fact.getOrDefault("description", ""));
+			for (Map<String, String> row : (List<Map<String, String>>) fact.getOrDefault("rows", List.of())) {
+				String label = title + " › " + row.get("label");
+				String value = row.get("value").isEmpty() ? row.getOrDefault("description", "") : row.get("value");
+				String words = (title + " " + row.get("label") + " " + row.getOrDefault("description", "") + " " + about).toLowerCase(Locale.ROOT);
+				out.add(new Setting("Server", label, words, value, Component.literal(label), Component.literal(value)));
+			}
+		}
+		return out;
 	}
 
 	/** The server's game rules as settings ("Game Rules › Keep inventory after death: off"), with their English names. */

@@ -1186,6 +1186,13 @@ public final class MerlCommand {
 				return true;
 			}
 		}
+		if (config.priceAdvice && MerlPrices.available() && MerlLines.priceQuestion(question)) {
+			Component answer = MerlPrices.answer(player, question);
+			if (answer != null) {
+				reply(source, answer);
+				return true;
+			}
+		}
 		String claim = config.locateClaims ? MerlLines.claimQuestion(question) : null;
 		if (claim != null && Permissions.check(source, MerlLocate.PERMISSION_LOCATE, true)) {
 			Component answer = MerlClaims.answer(player, claim, question, MerlLines.wantsGuide(question));

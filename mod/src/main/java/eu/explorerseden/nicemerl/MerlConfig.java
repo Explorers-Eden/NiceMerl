@@ -79,8 +79,10 @@ public class MerlConfig {
 	public boolean blockPalettes = true;
 	/** The website's recipe list, for [Recipe picture] links. Empty for none. */
 	public String recipesUrl = "https://explorerseden.eu/api/generated-data.php?key=recipes-manifest";
-	/** With Get Off My Lawn: "where's my claim?" points to the closest claim the player owns or is trusted on. */
+	/** With the Nice Control Center's land claims (or Get Off My Lawn): "where's my claim?" points to the closest claim the player owns or is a member of. */
 	public boolean locateClaims = true;
+	/** "How much should I sell diamonds for?": a price from the Nice Control Center's market. */
+	public boolean priceAdvice = true;
 	/** "Where's my bed?" and "where did I die?" with coordinates. */
 	public boolean locateHome = true;
 	/** "Remind me in 10 minutes to …" (kept in memory, gone after a restart). */
@@ -114,6 +116,8 @@ public class MerlConfig {
 	public List<String> settingsIgnoreKeys = new ArrayList<>(List.of("*_initial", "command_template", "*_template"));
 	/** Game rules count as settings too ("is keep inventory on?", "what's the random tick speed?"). */
 	public boolean settingsGameRules = true;
+	/** With the Nice Control Center: its performance tweaks, world borders and claim rules count as settings too. */
+	public boolean settingsServerRules = true;
 	/** Most settings listed per answer. */
 	public int settingsResults = 6;
 	/** Most pages from "mediawiki" wikis (the Minecraft Wiki) per answer. */

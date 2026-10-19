@@ -1104,6 +1104,20 @@ public final class MerlLines {
 		return "any";
 	}
 
+	// Prices on the player market: "how much should I sell diamonds for", "what's this worth", "a good price for iron".
+	private static final Pattern PRICE = Pattern.compile(
+			"\\b(how much (should|could|can|do|would) i (sell|ask|charge|get|list)|how much (is|are|for|do) .* (worth|go for|sell for|cost)|what(s| is| are)? .*(worth|a good price|a fair price)"
+			+ "|(good|fair|right|best) price|price (for|of)|what (should|could|can) i (ask|charge|sell)|sell .* for how much|how much .* sell for)\\b");
+
+	/** About Merl herself ("what are you worth"): small talk, not a price. */
+	private static final Pattern PRICE_ABOUT_MERL = Pattern.compile("\\b(are you|you are|youre|yourself)\\b");
+
+	/** A question about what to sell something for on the market. */
+	public static boolean priceQuestion(String message) {
+		String text = normalize(message);
+		return PRICE.matcher(text).find() && !PRICE_ABOUT_MERL.matcher(text).find();
+	}
+
 	// Server info: TPS and MSPT, mob counts and caps, view and simulation distance, general server info.
 	private static final Pattern SERVER_HOW = Pattern.compile("\\bhow (do|can|to|should|would)\\b|\\b(fix|reduce|lower|improve|increase|change|set)\\b");
 	private static final Pattern SERVER_TPS = Pattern.compile(
