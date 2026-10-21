@@ -1,13 +1,5 @@
 # Minecraft Version(s): 26.3
-## Market prices
-- *"How much should I sell diamonds for?"*, *"what's a good price for oak logs?"*, *"what's this worth?"* (the item in your hand): with the Nice Control Center's market, Merl tells you what it sold for lately and what it's listed for now, and suggests a price per item and per lot ("For how many" in /market). Switch it off with **priceAdvice**
-
-## Land claims
-- *"Where's my claim?"* now knows the Nice Control Center's land claims (when they're switched on there): your nearest claim, one you're a member of, or one by its name or owner ("my farm claim", "Steve's claim"), with **[Guide me]**. Get Off My Lawn still works when it's the one installed
-- When you have no claim yet, Merl tells you to use `/claim mode` instead of placing a claim anchor
-
-## Server rules
-- With the Nice Control Center, Merl also knows the server's own rules: the switched-on performance tweaks (*"why did my items disappear so fast?"*, *"is there a mob limit per chunk?"*, *"do far away mobs move slower?"*), the world borders (*"how big is the permanent area?"*) and how land claims work (*"how many claim blocks do I get?"*). Switch it off with **settingsServerRules**
-
-## Discord
-- The Discord: JustSync fix is gone: the server now uses the Nice Control Center's Discord bridge, which never shows /merl questions on Discord
+## Nice Actions menu
+- With the Nice Actions data pack, its quick actions menu (the G key) gets an **Ask Merl** button. It opens Merl's own menu: **Ask a question** (a box for anything), **Server settings** and **Find a biome** (type the setting or biome), and quick actions **Nearest slime chunk**, **Nearest claim**, **Nearest waypoint hub**, **Stay with me** / **You can go now** and **Hide and seek** / **I give up**. Every button just asks /merl, so Merl answers the same way as when you type it
+- Only features that are switched on get a button (read when the server starts). Switch the button off with **niceActionsMenu**
+- The data pack itself stays as it is: the button is added while the server loads the menu

@@ -101,6 +101,11 @@ public class MerlConfig {
 	public boolean advancementCoach = true;
 	/** "What can I craft?" lists what the player can make from their inventory right now. */
 	public boolean craftingHelp = true;
+	/**
+	 * With the Nice Actions data pack: an "Ask Merl" button in its quick actions menu, with a question box,
+	 * server settings, biomes and quick actions (only for the features switched on here). Read at server start.
+	 */
+	public boolean niceActionsMenu = true;
 	/** Minimum seconds between questions per player. */
 	public int cooldownSeconds = 5;
 	/** Command storages holding data pack settings that /merl can report on. */

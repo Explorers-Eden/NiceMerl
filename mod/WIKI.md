@@ -58,6 +58,7 @@ Ask in your own words: typos, abbreviations like tp or xp, and other wordings (*
 - **Facts and jokes about anything:** *"fun fact about axolotls"* or *"trivia about the ender dragon"* gets a fact about exactly that. *"Tell me a joke about Katter"*, *"make fun of Katter"* or *"roast me"* gets a friendly little tease (always lighthearted, never mean), and *"tip about creepers"* or *"tip about Ron"* a tip. `another one` stays on the same topic.
 - **She remembers you:** when you met, what you're up to, which page helped and which packs you ask about most, so her answers fit you better over time. Ask `/merl do you remember me`, or say `/merl forget me` to erase it. She never saves what you write.
 - **She comments now and then** on where you are and what you're doing.
+- **Nice Actions menu:** with the Nice Actions data pack, its quick actions menu (the G key) gets an **Ask Merl** button: a box for any question, *Server settings* and *Find a biome* (type what you're after), and one-click *Nearest slime chunk*, *Nearest claim*, *Nearest waypoint hub*, *Stay with me* / *You can go now* and *Hide and seek* / *I give up*. Each button just asks `/merl`, so the answers are the same as typed ones. Only switched-on features get a button; switch the whole thing off with **niceActionsMenu**. The data pack itself isn't changed.
 - **She celebrates with you:** big advancements (and how few players have them), and milestones like 100,000 blocks mined or 1,000 km traveled.
 
 # Commands
@@ -158,6 +159,7 @@ This is `config/nicemerl.json` as it's created on the first start. Delete the fi
   "biomeCollection": true,
   "advancementCoach": true,
   "craftingHelp": true,
+  "niceActionsMenu": true,
   "cooldownSeconds": 5,
   "settingsSources": [
     {
